@@ -72,96 +72,96 @@ BEGIN
     COMMENT ON COLUMN public_security.citizen.created_by IS 'Người tạo bản ghi';
     COMMENT ON COLUMN public_security.citizen.updated_by IS 'Người cập nhật bản ghi gần nhất';
     
-    -- Tạo các chỉ mục cho bảng citizen
-    CREATE INDEX IF NOT EXISTS idx_citizen_full_name ON public_security.citizen USING gin (full_name gin_trgm_ops);
-    CREATE INDEX IF NOT EXISTS idx_citizen_date_of_birth ON public_security.citizen(date_of_birth);
-    CREATE INDEX IF NOT EXISTS idx_citizen_ethnicity ON public_security.citizen(ethnicity_id);
-    CREATE INDEX IF NOT EXISTS idx_citizen_religion ON public_security.citizen(religion_id);
-    CREATE INDEX IF NOT EXISTS idx_citizen_nationality ON public_security.citizen(nationality_id);
-    CREATE INDEX IF NOT EXISTS idx_citizen_region ON public_security.citizen(region_id);
-    CREATE INDEX IF NOT EXISTS idx_citizen_province ON public_security.citizen(province_id);
-    CREATE INDEX IF NOT EXISTS idx_citizen_father ON public_security.citizen(father_citizen_id);
-    CREATE INDEX IF NOT EXISTS idx_citizen_mother ON public_security.citizen(mother_citizen_id);
-    CREATE INDEX IF NOT EXISTS idx_citizen_death_status ON public_security.citizen(death_status);
+--     -- Tạo các chỉ mục cho bảng citizen
+--     CREATE INDEX IF NOT EXISTS idx_citizen_full_name ON public_security.citizen USING gin (full_name gin_trgm_ops);
+--     CREATE INDEX IF NOT EXISTS idx_citizen_date_of_birth ON public_security.citizen(date_of_birth);
+--     CREATE INDEX IF NOT EXISTS idx_citizen_ethnicity ON public_security.citizen(ethnicity_id);
+--     CREATE INDEX IF NOT EXISTS idx_citizen_religion ON public_security.citizen(religion_id);
+--     CREATE INDEX IF NOT EXISTS idx_citizen_nationality ON public_security.citizen(nationality_id);
+--     CREATE INDEX IF NOT EXISTS idx_citizen_region ON public_security.citizen(region_id);
+--     CREATE INDEX IF NOT EXISTS idx_citizen_province ON public_security.citizen(province_id);
+--     CREATE INDEX IF NOT EXISTS idx_citizen_father ON public_security.citizen(father_citizen_id);
+--     CREATE INDEX IF NOT EXISTS idx_citizen_mother ON public_security.citizen(mother_citizen_id);
+--     CREATE INDEX IF NOT EXISTS idx_citizen_death_status ON public_security.citizen(death_status);
     
-    -- Tạo chỉ mục toàn văn cho họ tên, để tìm kiếm không dấu
-    CREATE INDEX IF NOT EXISTS idx_citizen_full_name_unaccent ON public_security.citizen USING gin(unaccent(full_name) gin_trgm_ops);
+--     -- Tạo chỉ mục toàn văn cho họ tên, để tìm kiếm không dấu
+--     CREATE INDEX IF NOT EXISTS idx_citizen_full_name_unaccent ON public_security.citizen USING gin(unaccent(full_name) gin_trgm_ops);
     
-    -- Hàm cập nhật thời gian chỉnh sửa
-    CREATE OR REPLACE FUNCTION update_citizen_timestamp()
-    RETURNS TRIGGER AS $$
-    BEGIN
-        NEW.updated_at = CURRENT_TIMESTAMP;
-        RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
+--     -- Hàm cập nhật thời gian chỉnh sửa
+--     CREATE OR REPLACE FUNCTION update_citizen_timestamp()
+--     RETURNS TRIGGER AS $$
+--     BEGIN
+--         NEW.updated_at = CURRENT_TIMESTAMP;
+--         RETURN NEW;
+--     END;
+--     $$ LANGUAGE plpgsql;
     
-    -- Trigger tự động cập nhật thời gian chỉnh sửa
-    CREATE TRIGGER update_citizen_timestamp_trigger
-    BEFORE UPDATE ON public_security.citizen
-    FOR EACH ROW
-    EXECUTE FUNCTION update_citizen_timestamp();
+--     -- Trigger tự động cập nhật thời gian chỉnh sửa
+--     CREATE TRIGGER update_citizen_timestamp_trigger
+--     BEFORE UPDATE ON public_security.citizen
+--     FOR EACH ROW
+--     EXECUTE FUNCTION update_citizen_timestamp();
     
-    -- Các ràng buộc kiểm tra
+--     -- Các ràng buộc kiểm tra
     
-    -- Ràng buộc kiểm tra mã định danh công dân
-    ALTER TABLE public_security.citizen
-    ADD CONSTRAINT check_citizen_id_format
-    CHECK (citizen_id ~ '^[0-9]{12}$'); -- 12 chữ số
+--     -- Ràng buộc kiểm tra mã định danh công dân
+--     ALTER TABLE public_security.citizen
+--     ADD CONSTRAINT check_citizen_id_format
+--     CHECK (citizen_id ~ '^[0-9]{12}$'); -- 12 chữ số
     
-    -- Ràng buộc kiểm tra mã số thuế
-    ALTER TABLE public_security.citizen
-    ADD CONSTRAINT check_tax_code_format
-    CHECK (tax_code IS NULL OR tax_code ~ '^[0-9]{10}$|^[0-9]{13}$'); -- 10 hoặc 13 chữ số
+--     -- Ràng buộc kiểm tra mã số thuế
+--     ALTER TABLE public_security.citizen
+--     ADD CONSTRAINT check_tax_code_format
+--     CHECK (tax_code IS NULL OR tax_code ~ '^[0-9]{10}$|^[0-9]{13}$'); -- 10 hoặc 13 chữ số
     
-    -- Ràng buộc kiểm tra tuổi công dân (không quá 150 tuổi)
-    ALTER TABLE public_security.citizen
-    ADD CONSTRAINT check_citizen_age
-    CHECK (date_of_birth > CURRENT_DATE - INTERVAL '150 years');
+--     -- Ràng buộc kiểm tra tuổi công dân (không quá 150 tuổi)
+--     ALTER TABLE public_security.citizen
+--     ADD CONSTRAINT check_citizen_age
+--     CHECK (date_of_birth > CURRENT_DATE - INTERVAL '150 years');
     
-    -- Tạo chức năng tìm kiếm công dân
-    CREATE OR REPLACE FUNCTION public_security.search_citizens(
-        search_text TEXT,
-        birth_year INT DEFAULT NULL,
-        gender_val gender_type DEFAULT NULL,
-        province_id_val INT DEFAULT NULL
-    )
-    RETURNS TABLE (
-        citizen_id VARCHAR(12),
-        full_name VARCHAR(100),
-        date_of_birth DATE,
-        gender gender_type,
-        province_name VARCHAR(100)
-    ) AS $$
-    BEGIN
-        RETURN QUERY
-        SELECT 
-            c.citizen_id,
-            c.full_name,
-            c.date_of_birth,
-            c.gender,
-            p.province_name
-        FROM 
-            public_security.citizen c
-        JOIN 
-            reference.province p ON c.province_id = p.province_id
-        WHERE 
-            (search_text IS NULL OR 
-             c.full_name ILIKE '%' || search_text || '%' OR
-             unaccent(c.full_name) ILIKE unaccent('%' || search_text || '%') OR
-             c.citizen_id::TEXT LIKE '%' || search_text || '%') AND
-            (birth_year IS NULL OR EXTRACT(YEAR FROM c.date_of_birth) = birth_year) AND
-            (gender_val IS NULL OR c.gender = gender_val) AND
-            (province_id_val IS NULL OR c.province_id = province_id_val) AND
-            c.status = TRUE
-        ORDER BY 
-            c.full_name
-        LIMIT 100;
-    END;
-    $$ LANGUAGE plpgsql;
+--     -- Tạo chức năng tìm kiếm công dân
+--     CREATE OR REPLACE FUNCTION public_security.search_citizens(
+--         search_text TEXT,
+--         birth_year INT DEFAULT NULL,
+--         gender_val gender_type DEFAULT NULL,
+--         province_id_val INT DEFAULT NULL
+--     )
+--     RETURNS TABLE (
+--         citizen_id VARCHAR(12),
+--         full_name VARCHAR(100),
+--         date_of_birth DATE,
+--         gender gender_type,
+--         province_name VARCHAR(100)
+--     ) AS $$
+--     BEGIN
+--         RETURN QUERY
+--         SELECT 
+--             c.citizen_id,
+--             c.full_name,
+--             c.date_of_birth,
+--             c.gender,
+--             p.province_name
+--         FROM 
+--             public_security.citizen c
+--         JOIN 
+--             reference.province p ON c.province_id = p.province_id
+--         WHERE 
+--             (search_text IS NULL OR 
+--              c.full_name ILIKE '%' || search_text || '%' OR
+--              unaccent(c.full_name) ILIKE unaccent('%' || search_text || '%') OR
+--              c.citizen_id::TEXT LIKE '%' || search_text || '%') AND
+--             (birth_year IS NULL OR EXTRACT(YEAR FROM c.date_of_birth) = birth_year) AND
+--             (gender_val IS NULL OR c.gender = gender_val) AND
+--             (province_id_val IS NULL OR c.province_id = province_id_val) AND
+--             c.status = TRUE
+--         ORDER BY 
+--             c.full_name
+--         LIMIT 100;
+--     END;
+--     $$ LANGUAGE plpgsql;
 
-END;
-$$ LANGUAGE plpgsql;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
 -- Kết nối đến database miền Bắc
 \connect national_citizen_north
