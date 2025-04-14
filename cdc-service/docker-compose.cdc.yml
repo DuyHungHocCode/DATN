@@ -1,0 +1,66 @@
+version: "3.7"
+services:
+  cdc-service:
+    image: debezium/connect:2.1
+    container_name: cdc-service
+    depends_on:
+      - kafka-broker-1
+      - schema-registry
+    ports:
+      - "8084:8083"
+    environment:
+      GROUP_ID: cdc-service
+      BOOTSTRAP_SERVERS: kafka-broker-1:9092
+      CONFIG_STORAGE_TOPIC: cdc-connect-configs
+      OFFSET_STORAGE_TOPIC: cdc-connect-offsets
+      STATUS_STORAGE_TOPIC: cdc-connect-status
+      KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_REST_ADVERTISED_HOST_NAME: cdc-service
+      CONNECT_REST_PORT: 8083
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR
+    volumes:
+      - ./connectors:/opt/connectors
+      - ./transforms:/opt/transforms
+      - ./scripts:/opt/scripts
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing connectors"
+        confluent-hub install --no-prompt debezium/debezium-connector-postgresql:2.1.3
+        echo "Starting Kafka Connect with Debezium"
+        /docker-entrypoint.sh start &
+        echo "Waiting for Kafka Connect to start"
+        sleep 30
+        echo "Registering connectors"
+        /opt/scripts/register-connectors.sh
+        wait
+    networks:
+      - kafka-network
+
+  cdc-monitor:
+    image: python:3.9-slim
+    container_name: cdc-monitor
+    depends_on:
+      - cdc-service
+    volumes:
+      - ./scripts:/app/scripts
+    command: 
+      - /bin/bash
+      - -c
+      - |
+        apt-get update && apt-get install -y curl jq
+        cd /app/scripts
+        chmod +x monitor-connectors.sh
+        ./monitor-connectors.sh
+    networks:
+      - kafka-network
+
+networks:
+  kafka-network:
+    external: true

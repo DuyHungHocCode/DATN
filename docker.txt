@@ -1,0 +1,26 @@
+Thêm khóa GPG chính thức của Docker
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+Thêm repository Docker
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+gpg: directory '/home/duyhung/.gnupg' created
+gpg: keybox '/home/duyhung/.gnupg/pubring.kbx' created
+Note: Use "gpg --full-generate-key" for a full featured key generation dialog.
+
+GnuPG needs to construct a user ID to identify your key.
+
+gpg: /home/duyhung/.gnupg/trustdb.gpg: trustdb created
+gpg: directory '/home/duyhung/.gnupg/openpgp-revocs.d' created
+gpg: revocation certificate stored as '/home/duyhung/.gnupg/openpgp-revocs.d/D67207F276481EAF5A9FDE66DB208365251DA10A.rev'
+public and secret key created and signed.
+
+pub   ed25519 2025-04-13 [SC] [expires: 2028-04-12]
+      D67207F276481EAF5A9FDE66DB208365251DA10A
+uid                      hung <duyhungpham0209@gmail.com>
+sub   cv25519 2025-04-13 [E] [expires: 2028-04-12]
+
+mkdir: created directory '/home/duyhung/.password-store/'
+Password store initialized for D67207F276481EAF5A9FDE66DB208365251DA10A
+

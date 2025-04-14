@@ -1,0 +1,29 @@
+
+{
+    "name": "mps-connector",
+    "config": {
+      "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+      "database.hostname": "postgres-mps",
+      "database.port": "5432",
+      "database.user": "debezium",
+      "database.password": "debezium",
+      "database.dbname": "mps_db",
+      "database.server.name": "mps",
+      "schema.include.list": "public_security",
+      "table.include.list": "public_security.citizens,public_security.id_cards,public_security.households",
+      "plugin.name": "pgoutput",
+      "publication.name": "mps_publication",
+      "slot.name": "mps_debezium_slot",
+      "tombstones.on.delete": "true",
+      "snapshot.mode": "initial",
+      "max.queue.size": "8192",
+      "max.batch.size": "1024",
+      "transforms": "unwrap,addPrefix",
+      "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+      "transforms.unwrap.drop.tombstones": "false",
+      "transforms.unwrap.delete.handling.mode": "rewrite",
+      "transforms.addPrefix.type": "org.apache.kafka.connect.transforms.RegexRouter",
+      "transforms.addPrefix.regex": "([^.]+)\\.([^.]+)\\.([^.]+)",
+      "transforms.addPrefix.replacement": "mps.$2.$3"
+    }
+  }

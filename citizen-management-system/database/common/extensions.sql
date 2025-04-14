@@ -101,7 +101,7 @@ ALTER TEXT SEARCH CONFIGURATION vietnamese
    ALTER MAPPING FOR hword, hword_part, word WITH unaccent, simple;
 
 -- Xóa hàm tạm sau khi sử dụng xong
-DROP FUNCTION install_standard_extensions();
+
 
 -- In ra thông báo hoàn thành
 \echo 'Đã cài đặt xong các extension cho hệ thống quản lý dân cư quốc gia.'
