@@ -5,7 +5,7 @@
 TRUNCATE TABLE reference.ethnicities CASCADE;
 
 -- Nạp dữ liệu cho Bộ Công an
-INSERT INTO reference.districts (
+INSERT INTO reference.ethnicities (
     ethnicity_id, ethnicity_code, ethnicity_name, description,
     population
 ) VALUES
@@ -70,7 +70,7 @@ INSERT INTO reference.districts (
 TRUNCATE TABLE reference.ethnicities CASCADE;
 
 -- Nạp dữ liệu cho Bộ Công an
-INSERT INTO reference.districts (
+INSERT INTO reference.ethnicities (
     ethnicity_id, ethnicity_code, ethnicity_name, description,
     population
 ) VALUES
@@ -135,7 +135,7 @@ INSERT INTO reference.districts (
 TRUNCATE TABLE reference.ethnicities CASCADE;
 
 -- Nạp dữ liệu cho Bộ Công an
-INSERT INTO reference.districts (
+INSERT INTO reference.ethnicities (
     ethnicity_id, ethnicity_code, ethnicity_name, description,
     population
 ) VALUES
