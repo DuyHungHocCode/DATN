@@ -680,6 +680,106 @@ COMMENT ON TABLE reference.relationship_types IS 'Bảng tham chiếu mối quan
 CREATE INDEX idx_relationship_types_relationship_code ON reference.relationship_types(relationship_code);
 ALTER TABLE reference.relationship_types ADD CONSTRAINT fk_inverse_relationship FOREIGN KEY (inverse_relationship_type_id) REFERENCES reference.relationship_types(relationship_type_id) DEFERRABLE INITIALLY DEFERRED;
 
+
+
+
+
+-- ============================================================================
+-- 11. Bảng tham chiếu cơ sở giam giữ (Thêm mới)
+-- ============================================================================
+\echo 'Tạo bảng tham chiếu cơ sở giam giữ (prison_facilities)...'
+
+-- Bảng cơ sở giam giữ cho Bộ Công an
+\connect ministry_of_public_security
+DROP TABLE IF EXISTS reference.prison_facilities CASCADE;
+CREATE TABLE reference.prison_facilities (
+    prison_facility_id SERIAL PRIMARY KEY,        -- ID tự tăng của cơ sở
+    facility_code VARCHAR(20) UNIQUE,             -- Mã định danh cơ sở (nếu có)
+    facility_name VARCHAR(255) NOT NULL,          -- Tên đầy đủ của cơ sở giam giữ
+    facility_type VARCHAR(50),                    -- Loại cơ sở (Trại giam, Trại tạm giam, Nhà tạm giữ...)
+    address_detail TEXT,                          -- Địa chỉ chi tiết
+    ward_id INTEGER REFERENCES reference.wards(ward_id),             -- Phường/Xã
+    district_id INTEGER REFERENCES reference.districts(district_id), -- Quận/Huyện
+    province_id INTEGER NOT NULL REFERENCES reference.provinces(province_id), -- Tỉnh/Thành phố
+    capacity INTEGER,                             -- Sức chứa (số người)
+    managing_authority_id INTEGER REFERENCES reference.authorities(authority_id), -- Cơ quan quản lý
+    phone_number VARCHAR(20),
+    is_active BOOLEAN DEFAULT TRUE,               -- Trạng thái hoạt động
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE reference.prison_facilities IS 'Bảng tham chiếu các cơ sở giam giữ (trại giam, trại tạm giam...).';
+COMMENT ON COLUMN reference.prison_facilities.prison_facility_id IS 'ID tự tăng của cơ sở giam giữ.';
+COMMENT ON COLUMN reference.prison_facilities.facility_code IS 'Mã định danh duy nhất của cơ sở (nếu có).';
+COMMENT ON COLUMN reference.prison_facilities.facility_name IS 'Tên đầy đủ của cơ sở giam giữ.';
+COMMENT ON COLUMN reference.prison_facilities.facility_type IS 'Loại hình cơ sở (ví dụ: Trại giam, Trại tạm giam).';
+COMMENT ON COLUMN reference.prison_facilities.province_id IS 'Tỉnh/Thành phố nơi cơ sở tọa lạc.';
+COMMENT ON COLUMN reference.prison_facilities.capacity IS 'Sức chứa tối đa của cơ sở.';
+COMMENT ON COLUMN reference.prison_facilities.managing_authority_id IS 'Cơ quan trực tiếp quản lý cơ sở.';
+COMMENT ON COLUMN reference.prison_facilities.is_active IS 'Cơ sở có đang hoạt động không?';
+
+CREATE INDEX idx_prison_facilities_name ON reference.prison_facilities(facility_name);
+CREATE INDEX idx_prison_facilities_province ON reference.prison_facilities(province_id);
+CREATE INDEX idx_prison_facilities_type ON reference.prison_facilities(facility_type);
+CREATE INDEX idx_prison_facilities_active ON reference.prison_facilities(is_active);
+
+-- Bảng cơ sở giam giữ cho Bộ Tư pháp (Có thể cần để tham chiếu hoặc không, tùy logic nghiệp vụ)
+\connect ministry_of_justice
+DROP TABLE IF EXISTS reference.prison_facilities CASCADE;
+CREATE TABLE reference.prison_facilities (
+    prison_facility_id SERIAL PRIMARY KEY,
+    facility_code VARCHAR(20) UNIQUE,
+    facility_name VARCHAR(255) NOT NULL,
+    facility_type VARCHAR(50),
+    address_detail TEXT,
+    ward_id INTEGER REFERENCES reference.wards(ward_id),
+    district_id INTEGER REFERENCES reference.districts(district_id),
+    province_id INTEGER NOT NULL REFERENCES reference.provinces(province_id),
+    capacity INTEGER,
+    managing_authority_id INTEGER REFERENCES reference.authorities(authority_id),
+    phone_number VARCHAR(20),
+    is_active BOOLEAN DEFAULT TRUE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE reference.prison_facilities IS 'Bảng tham chiếu các cơ sở giam giữ (Bản sao tại BTP nếu cần).';
+CREATE INDEX idx_prison_facilities_name ON reference.prison_facilities(facility_name);
+CREATE INDEX idx_prison_facilities_province ON reference.prison_facilities(province_id);
+CREATE INDEX idx_prison_facilities_type ON reference.prison_facilities(facility_type);
+CREATE INDEX idx_prison_facilities_active ON reference.prison_facilities(is_active);
+
+-- Bảng cơ sở giam giữ cho Máy chủ trung tâm
+\connect national_citizen_central_server
+DROP TABLE IF EXISTS reference.prison_facilities CASCADE;
+CREATE TABLE reference.prison_facilities (
+    prison_facility_id SERIAL PRIMARY KEY,
+    facility_code VARCHAR(20) UNIQUE,
+    facility_name VARCHAR(255) NOT NULL,
+    facility_type VARCHAR(50),
+    address_detail TEXT,
+    ward_id INTEGER REFERENCES reference.wards(ward_id),
+    district_id INTEGER REFERENCES reference.districts(district_id),
+    province_id INTEGER NOT NULL REFERENCES reference.provinces(province_id),
+    capacity INTEGER,
+    managing_authority_id INTEGER REFERENCES reference.authorities(authority_id),
+    phone_number VARCHAR(20),
+    is_active BOOLEAN DEFAULT TRUE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE reference.prison_facilities IS 'Bảng tham chiếu các cơ sở giam giữ (Bản tổng hợp tại TT).';
+CREATE INDEX idx_prison_facilities_name ON reference.prison_facilities(facility_name);
+CREATE INDEX idx_prison_facilities_province ON reference.prison_facilities(province_id);
+CREATE INDEX idx_prison_facilities_type ON reference.prison_facilities(facility_type);
+CREATE INDEX idx_prison_facilities_active ON reference.prison_facilities(is_active);
+
+\echo '-> Đã bổ sung bảng tham chiếu cơ sở giam giữ (prison_facilities).'
+
+
 \echo 'Quá trình tạo các bảng tham chiếu đã hoàn tất'
 \echo 'Đã tạo các bảng: regions, provinces, districts, wards, ethnicities, religions, nationalities, occupations, authorities, relationship_types'
 \echo 'Tiếp theo là nhập dữ liệu tham chiếu vào các bảng này...'

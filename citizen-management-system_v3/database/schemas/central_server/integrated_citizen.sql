@@ -72,10 +72,6 @@ CREATE TABLE central.integrated_citizen (
     father_citizen_id VARCHAR(12),                        -- ID cha.
     mother_citizen_id VARCHAR(12),                        -- ID mẹ.
 
-    -- === Biometric & Image (Chỉ lưu thông tin cơ bản, ID tham chiếu nếu cần) ===
-    has_biometric_data BOOLEAN DEFAULT FALSE,             -- Cờ báo có dữ liệu sinh trắc học chi tiết không.
-    avatar_url VARCHAR(255),                              -- Đường dẫn tới ảnh đại diện (thay vì lưu BYTEA trực tiếp).
-
     -- === Administrative & Partitioning Info ===
     -- Các cột này cần được cập nhật dựa trên địa chỉ thường trú/tạm trú mới nhất
     region_id SMALLINT,                                   -- Vùng/Miền (FK reference.regions).

@@ -85,17 +85,6 @@ CREATE TYPE card_type AS ENUM ('CMND 9 số', 'CMND 12 số', 'CCCD', 'CCCD gắ
 DROP TYPE IF EXISTS card_status CASCADE;
 CREATE TYPE card_status AS ENUM ('Đang sử dụng', 'Hết hạn', 'Mất', 'Hỏng', 'Thu hồi', 'Đã thay thế', 'Tạm giữ');
 
-DROP TYPE IF EXISTS biometric_type CASCADE;
-CREATE TYPE biometric_type AS ENUM ('Vân tay', 'Khuôn mặt', 'Mống mắt', 'Giọng nói', 'ADN');
-
--- DROP TYPE IF EXISTS biometric_quality CASCADE; -- Có thể dùng INTEGER 0-100 thay thế
--- CREATE TYPE biometric_quality AS ENUM ('Kém', 'Trung bình', 'Khá', 'Tốt', 'Rất tốt');
-
-DROP TYPE IF EXISTS fingerprint_position CASCADE;
-CREATE TYPE fingerprint_position AS ENUM (
-    'Ngón cái trái', 'Ngón trỏ trái', 'Ngón giữa trái', 'Ngón áp út trái', 'Ngón út trái',
-    'Ngón cái phải', 'Ngón trỏ phải', 'Ngón giữa phải', 'Ngón áp út phải', 'Ngón út phải'
-);
 
 DROP TYPE IF EXISTS residence_change_type CASCADE;
 CREATE TYPE residence_change_type AS ENUM (
@@ -210,8 +199,6 @@ DROP TYPE IF EXISTS card_type CASCADE;
 CREATE TYPE card_type AS ENUM ('CMND 9 số', 'CMND 12 số', 'CCCD', 'CCCD gắn chip');
 DROP TYPE IF EXISTS card_status CASCADE;
 CREATE TYPE card_status AS ENUM ('Đang sử dụng', 'Hết hạn', 'Mất', 'Hỏng', 'Thu hồi', 'Đã thay thế', 'Tạm giữ');
-DROP TYPE IF EXISTS biometric_type CASCADE;
-CREATE TYPE biometric_type AS ENUM ('Vân tay', 'Khuôn mặt', 'Mống mắt', 'Giọng nói', 'ADN');
 DROP TYPE IF EXISTS household_relationship CASCADE;
 CREATE TYPE household_relationship AS ENUM (
     'Chủ hộ', 'Vợ', 'Chồng', 'Con đẻ', 'Con nuôi', 'Bố đẻ', 'Mẹ đẻ', 'Bố nuôi', 'Mẹ nuôi',
