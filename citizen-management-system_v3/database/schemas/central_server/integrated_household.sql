@@ -44,7 +44,6 @@ CREATE TABLE central.integrated_household (
     source_created_at TIMESTAMP WITH TIME ZONE,          -- Thời điểm tạo ở nguồn
     source_updated_at TIMESTAMP WITH TIME ZONE,          -- Thời điểm cập nhật ở nguồn
     integrated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, -- Thời điểm tích hợp/cập nhật vào central
-    last_sync_batch_id BIGINT,                           -- ID batch đồng bộ cuối cùng
 
     -- Ràng buộc Khóa chính (bao gồm cột phân vùng)
     CONSTRAINT pk_integrated_household PRIMARY KEY (integrated_household_id, geographical_region, province_id, district_id),
