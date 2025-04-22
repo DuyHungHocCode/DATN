@@ -1,0 +1,60 @@
+==================================================
+ Bắt đầu Script: Mon Apr 21 06:21:36 PM +07 2025
+==================================================
+*** BẮT ĐẦU QUÁ TRÌNH TẠO ENUM TYPES ***
+Bước 1: Tạo ENUMs cho ministry_of_public_security...
+You are now connected to database "ministry_of_public_security" as user "postgres".
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:     -> Định nghĩa hàm tạo ENUMs chung cho BCA...
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:        -> Tạo ENUMs chung...
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "gender_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "blood_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "death_status" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "marital_status" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "education_level" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "address_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "division_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "sync_status" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "cdc_operation_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "sync_priority" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "data_sensitivity_level" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:     -> Tạo ENUMs đặc thù của Bộ Công an...
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "card_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "card_status" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "movement_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "verification_level" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "user_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:113: NOTICE:  type "criminal_record_type" does not exist, skipping
+DO
+-> Hoàn thành tạo ENUMs cho ministry_of_public_security.
+Bước 2: Tạo ENUMs cho ministry_of_justice...
+You are now connected to database "ministry_of_justice" as user "postgres".
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:     -> Định nghĩa hàm tạo ENUMs chung cho BTP...
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:        -> Tạo ENUMs chung...
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "gender_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "blood_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "death_status" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "marital_status" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "education_level" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "address_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "division_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "sync_status" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "cdc_operation_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "sync_priority" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "data_sensitivity_level" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:     -> Tạo ENUMs đặc thù của Bộ Tư pháp...
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "civil_document_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "record_status" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "household_relationship" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "family_relationship_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: NOTICE:  type "guardianship_type" does not exist, skipping
+psql:/home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql:226: ERROR:  invalid enum label "Giám hộ cho người có khó khăn trong nhận thức, làm chủ hành vi"
+DETAIL:  Labels must be 63 bytes or less.
+CONTEXT:  SQL statement "CREATE TYPE guardianship_type AS ENUM (
+        'Giám hộ đương nhiên', 'Giám hộ cử', 'Giám hộ cho người chưa thành niên',
+        'Giám hộ cho người mất năng lực hành vi dân sự', 'Giám hộ cho người có khó khăn trong nhận thức, làm chủ hành vi'
+    )"
+PL/pgSQL function inline_code_block line 77 at SQL statement
+[FAILED] (BCA) /home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/02_enum.sql (Exit status: 3)
+==================================================
+ Script thất bại: Mon Apr 21 06:21:36 PM +07 2025
+==================================================
