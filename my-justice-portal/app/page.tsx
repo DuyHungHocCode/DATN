@@ -3,148 +3,234 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export default function Home() {
-  const services = [
-    { 
-      id: 'khai-sinh', 
-      title: 'Đăng ký khai sinh', 
-      description: 'Đăng ký khai sinh cho trẻ em mới sinh', 
-      icon: '👶' 
-    },
-    { 
-      id: 'khai-tu', 
-      title: 'Đăng ký khai tử', 
-      description: 'Đăng ký khai tử cho người đã mất', 
-      icon: '📜' 
-    },
-    { 
-      id: 'ket-hon', 
-      title: 'Đăng ký kết hôn', 
-      description: 'Đăng ký kết hôn cho các cặp đôi', 
-      icon: '💍' 
-    },
-    { 
-      id: 'ly-hon', 
-      title: 'Đăng ký ly hôn', 
-      description: 'Đăng ký ly hôn cho các cặp đôi', 
-      icon: '⚖️' 
-    },
-  ];
+  // Get current date in Vietnamese format
+  const today = new Date();
+  const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  const dayName = days[today.getDay()];
+  const formattedDate = `${dayName}, ${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-md">
-        <div className="container mx-auto px-4 py-6 flex items-center">
+    <main className="min-h-screen bg-white">
+      {/* Top header with logo and date */}
+      <div className="border-b">
+        <div className="container mx-auto px-4 py-2 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-16 h-16 relative mr-4">
+            <div className="w-16 h-16 relative mr-2">
               <Image
                 src="/logo.png"
-                alt="Logo Bộ Tư Pháp"
+                alt="Quốc huy Việt Nam"
                 width={64}
                 height={64}
                 className="object-contain"
               />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-red-600">CỔNG DỊCH VỤ CÔNG</h1>
-              <h2 className="text-xl text-blue-800">BỘ TƯ PHÁP VIỆT NAM</h2>
+              <p className="text-xs text-gray-700">CHÍNH PHỦ NƯỚC CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+              <h1 className="text-3xl font-bold text-red-600">botu.gov.vn</h1>
             </div>
           </div>
-          <nav className="ml-auto">
-            <ul className="flex space-x-6">
-              <li><a href="#" className="text-gray-700 hover:text-blue-600">Trang chủ</a></li>
-              <li><a href="#" className="text-gray-700 hover:text-blue-600">Dịch vụ</a></li>
-              <li><a href="#" className="text-gray-700 hover:text-blue-600">Hướng dẫn</a></li>
-              <li><a href="#" className="text-gray-700 hover:text-blue-600">Liên hệ</a></li>
-            </ul>
-          </nav>
-        </div>
-      </header>
-
-      <section className="py-12 bg-gradient-to-r from-blue-800 to-blue-600 text-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold mb-4">Dịch vụ công trực tuyến</h2>
-          <p className="text-xl max-w-3xl">
-            Hệ thống cung cấp các dịch vụ đăng ký hộ tịch trực tuyến, giúp người dân dễ dàng thực hiện thủ tục hành chính mà không cần đến trực tiếp cơ quan nhà nước.
-          </p>
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 py-12">
-        <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">Các dịch vụ hộ tịch</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {services.map((service) => (
-            <Link 
-              href={`/${service.id}`} 
-              key={service.id}
-              className="block bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
-            >
-              <div className="text-4xl mb-4">{service.icon}</div>
-              <h3 className="text-xl font-bold text-blue-700 mb-2">{service.title}</h3>
-              <p className="text-gray-600">{service.description}</p>
-              <div className="mt-4 text-blue-600 font-medium">Bắt đầu →</div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-gray-100 py-12">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">Hướng dẫn sử dụng</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl mb-4">1</div>
-              <h3 className="text-xl font-bold mb-2">Đăng nhập tài khoản</h3>
-              <p className="text-gray-600">Sử dụng tài khoản VNeID hoặc tài khoản dịch vụ công để đăng nhập vào hệ thống.</p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl mb-4">2</div>
-              <h3 className="text-xl font-bold mb-2">Chọn dịch vụ</h3>
-              <p className="text-gray-600">Lựa chọn dịch vụ hộ tịch phù hợp với nhu cầu của bạn.</p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl mb-4">3</div>
-              <h3 className="text-xl font-bold mb-2">Điền thông tin và gửi hồ sơ</h3>
-              <p className="text-gray-600">Hoàn thành biểu mẫu trực tuyến và gửi hồ sơ để chờ xét duyệt.</p>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm">{formattedDate}</span>
+            <div className="flex space-x-2">
+              <a href="#" className="text-sm text-blue-700 hover:underline">Tiếng Việt</a>
+              <a href="#" className="text-sm text-blue-700 hover:underline">English</a>
+              <a href="#" className="text-sm text-blue-700 hover:underline">中文</a>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <footer className="bg-blue-900 text-white py-6">
+      {/* Main navigation */}
+      <nav className="bg-white border-b">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-xl font-bold mb-4">Bộ Tư Pháp Việt Nam</h3>
-              <p>Địa chỉ: 58-60 Trần Phú, Ba Đình, Hà Nội</p>
-              <p>Điện thoại: (024) 62739718</p>
-              <p>Email: btp@moj.gov.vn</p>
+          <ul className="flex">
+            <li className="flex items-center">
+              <Link href="/" className="px-4 py-3 text-blue-800 font-medium hover:bg-blue-50 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                TRANG CHỦ
+              </Link>
+            </li>
+            <li className="flex items-center">
+              <Link href="#" className="px-4 py-3 text-blue-800 font-medium hover:bg-blue-50">
+                GIỚI THIỆU
+              </Link>
+            </li>
+            <li className="flex items-center">
+              <Link href="#" className="px-4 py-3 text-blue-800 font-medium hover:bg-blue-50">
+                DỊCH VỤ CÔNG
+              </Link>
+            </li>
+            <li className="flex items-center">
+              <Link href="khai-sinh" className="px-4 py-3 text-blue-800 font-medium hover:bg-blue-50">
+                KHAI SINH
+              </Link>
+            </li>
+            <li className="flex items-center">
+              <Link href="ket-hon" className="px-4 py-3 text-blue-800 font-medium hover:bg-blue-50">
+                KẾT HÔN
+              </Link>
+            </li>
+            <li className="flex items-center">
+              <Link href="khai-tu" className="px-4 py-3 text-blue-800 font-medium hover:bg-blue-50">
+                KHAI TỬ
+              </Link>
+            </li>
+            <li className="flex items-center">
+              <Link href="ly-hon" className="px-4 py-3 text-blue-800 font-medium hover:bg-blue-50">
+                LY HÔN
+              </Link>
+            </li>
+            <li className="flex items-center">
+              <Link href="ho-khau" className="px-4 py-3 text-blue-800 font-medium hover:bg-blue-50">
+                HỘ KHẨU
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      {/* Search bar */}
+      <div className="bg-gray-100 py-4 border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex max-w-xl mx-auto">
+            <input
+              type="text"
+              placeholder="Nhập từ khóa..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-l focus:outline-none"
+            />
+            <button className="bg-blue-700 text-white px-4 py-2 rounded-r hover:bg-blue-800">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick links */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Dịch vụ hộ tịch */}
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="bg-blue-700 text-white py-3 px-4">
+              <h2 className="text-lg font-medium">DỊCH VỤ HỘ TỊCH</h2>
             </div>
-            
-            <div>
-              <h3 className="text-xl font-bold mb-4">Liên kết hữu ích</h3>
+            <div className="p-4">
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-blue-300">Cổng thông tin điện tử Chính phủ</a></li>
-                <li><a href="#" className="hover:text-blue-300">Dịch vụ công quốc gia</a></li>
-                <li><a href="#" className="hover:text-blue-300">VNeID</a></li>
+                <li>
+                  <Link href="khai-sinh" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Đăng ký khai sinh
+                  </Link>
+                </li>
+                <li>
+                  <Link href="ket-hon" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Đăng ký kết hôn
+                  </Link>
+                </li>
+                <li>
+                  <Link href="khai-tu" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Đăng ký khai tử
+                  </Link>
+                </li>
+                <li>
+                  <Link href="ly-hon" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Đăng ký ly hôn
+                  </Link>
+                </li>
+                <li>
+                  <Link href="ho-khau" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Quản lý hộ khẩu
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Cấp giấy xác nhận tình trạng hôn nhân
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Đăng ký nhận cha, mẹ, con
+                  </Link>
+                </li>
               </ul>
             </div>
-            
-            <div>
-              <h3 className="text-xl font-bold mb-4">Hỗ trợ</h3>
+          </div>
+
+          {/* Các dịch vụ khác */}
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="bg-blue-700 text-white py-3 px-4">
+              <h2 className="text-lg font-medium">DỊCH VỤ HÀNH CHÍNH</h2>
+            </div>
+            <div className="p-4">
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-blue-300">Hướng dẫn sử dụng</a></li>
-                <li><a href="#" className="hover:text-blue-300">Câu hỏi thường gặp</a></li>
-                <li><a href="#" className="hover:text-blue-300">Liên hệ hỗ trợ kỹ thuật</a></li>
+                <li>
+                  <Link href="#" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Cấp phiếu lý lịch tư pháp
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Công chứng, chứng thực
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Cấp đổi giấy tờ
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Thủ tục hộ tịch khác
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
+
+          {/* Hướng dẫn */}
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="bg-blue-700 text-white py-3 px-4">
+              <h2 className="text-lg font-medium">THÔNG TIN CHUNG</h2>
+            </div>
+            <div className="p-4">
+              <ul className="space-y-2">
+                <li>
+                  <Link href="#" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Giới thiệu Bộ Tư pháp
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Văn bản pháp luật
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="flex items-center text-blue-600 hover:underline">
+                    <span className="text-red-500 mr-2">›</span> Liên hệ hỗ trợ
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact info */}
+      <footer className="bg-gray-100 border-t py-8 mt-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center md:text-left">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">BỘ TƯ PHÁP VIỆT NAM</h3>
+            <p className="text-gray-600">Địa chỉ: 58-60 Trần Phú, Ba Đình, Hà Nội</p>
+            <p className="text-gray-600">Điện thoại: (024) 62739718 - Fax: (024) 38431431</p>
+            <p className="text-gray-600">Email: btp@moj.gov.vn</p>
+          </div>
           
-          <div className="mt-8 pt-6 border-t border-blue-800 text-center">
-            <p>© {new Date().getFullYear()} Bộ Tư Pháp Việt Nam. Tất cả các quyền được bảo lưu.</p>
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-500">© {new Date().getFullYear()} Bộ Tư Pháp Việt Nam. Tất cả các quyền được bảo lưu.</p>
           </div>
         </div>
       </footer>
