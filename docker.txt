@@ -24,3 +24,9 @@ sub   cv25519 2025-04-13 [E] [expires: 2028-04-12]
 mkdir: created directory '/home/duyhung/.password-store/'
 Password store initialized for D67207F276481EAF5A9FDE66DB208365251DA10A
 
+/usr/share/doc/mssql-server or downloaded from: https://aka.ms/useterms
+
+The privacy statement can be viewed at:
+https://go.microsoft.com/fwlink/?LinkId=853010&clcid=0x409
+
+@Duyhung123
