@@ -1,108 +1,107 @@
--- =============================================================================
--- File: 01_common/04_reference_tables_constraints.sql
--- Description: Thêm các ràng buộc FOREIGN KEY và CHECK phức tạp cho các bảng
---              tham chiếu dùng chung trong schema 'reference'. Script này cần
---              chạy trên CẢ 3 database (BCA, BTP, TT).
--- Version: 3.1 (Adds constraints deferred from structure creation)
---
--- Yêu cầu:
--- - Chạy sau script 01_common/03_reference_tables_structure.sql.
--- - Các bảng tham chiếu phải tồn tại trong schema 'reference'.
--- - Cần quyền thay đổi bảng (ALTER TABLE) trong schema 'reference'.
--- =============================================================================
+-- Add constraints for reference tables in DB_BCA
+USE [DB_BCA];
+GO
 
-\echo '*** BẮT ĐẦU THÊM RÀNG BUỘC CHO BẢNG THAM CHIẾU (REFERENCE TABLES) ***'
+-- Constraints for Reference.Provinces
+ALTER TABLE [Reference].[Provinces]
+ADD CONSTRAINT FK_Province_Region FOREIGN KEY ([region_id]) REFERENCES [Reference].[Regions]([region_id]);
+GO
 
--- === 1. THỰC THI TRÊN DATABASE BỘ CÔNG AN (ministry_of_public_security) ===
+-- Constraints for Reference.Districts
+ALTER TABLE [Reference].[Districts]
+ADD CONSTRAINT FK_District_Province FOREIGN KEY ([province_id]) REFERENCES [Reference].[Provinces]([province_id]);
+GO
 
-\echo '[Bước 1] Thêm ràng buộc cho bảng tham chiếu trên database: ministry_of_public_security...'
-\connect ministry_of_public_security
+-- Constraints for Reference.Wards
+ALTER TABLE [Reference].[Wards]
+ADD CONSTRAINT FK_Ward_District FOREIGN KEY ([district_id]) REFERENCES [Reference].[Districts]([district_id]);
+GO
 
--- Ràng buộc cho bảng: provinces
-ALTER TABLE reference.provinces
-    ADD CONSTRAINT fk_province_region FOREIGN KEY (region_id) REFERENCES reference.regions(region_id);
--- (Thêm CHECK constraint nếu cần, ví dụ kiểm tra tính hợp lệ của administrative_unit_id/administrative_region_id)
--- ALTER TABLE reference.provinces ADD CONSTRAINT ck_province_admin_unit CHECK (administrative_unit_id IN (1, 2));
+-- Constraints for Reference.Authorities
+ALTER TABLE [Reference].[Authorities]
+ADD CONSTRAINT FK_Authority_Ward FOREIGN KEY ([ward_id]) REFERENCES [Reference].[Wards]([ward_id]);
+GO
+ALTER TABLE [Reference].[Authorities]
+ADD CONSTRAINT FK_Authority_District FOREIGN KEY ([district_id]) REFERENCES [Reference].[Districts]([district_id]);
+GO
+ALTER TABLE [Reference].[Authorities]
+ADD CONSTRAINT FK_Authority_Province FOREIGN KEY ([province_id]) REFERENCES [Reference].[Provinces]([province_id]);
+GO
+ALTER TABLE [Reference].[Authorities]
+ADD CONSTRAINT FK_Authority_Parent FOREIGN KEY ([parent_authority_id]) REFERENCES [Reference].[Authorities]([authority_id]);
+GO
 
--- Ràng buộc cho bảng: districts
-ALTER TABLE reference.districts
-    ADD CONSTRAINT fk_district_province FOREIGN KEY (province_id) REFERENCES reference.provinces(province_id);
--- ALTER TABLE reference.districts ADD CONSTRAINT ck_district_admin_unit CHECK (administrative_unit_id IN (1, 2, 3, 4));
+-- Constraints for Reference.RelationshipTypes
+-- Note: SQL Server does not support DEFERRABLE constraints directly.
+-- This FK implies insertion order matters or NULLs must be used initially.
+ALTER TABLE [Reference].[RelationshipTypes]
+ADD CONSTRAINT FK_Inverse_Relationship FOREIGN KEY ([inverse_relationship_type_id]) REFERENCES [Reference].[RelationshipTypes]([relationship_type_id]);
+GO
 
--- Ràng buộc cho bảng: wards
-ALTER TABLE reference.wards
-    ADD CONSTRAINT fk_ward_district FOREIGN KEY (district_id) REFERENCES reference.districts(district_id);
--- ALTER TABLE reference.wards ADD CONSTRAINT ck_ward_admin_unit CHECK (administrative_unit_id IN (5, 6, 7));
-
--- Ràng buộc cho bảng: authorities
-ALTER TABLE reference.authorities
-    ADD CONSTRAINT fk_authority_ward FOREIGN KEY (ward_id) REFERENCES reference.wards(ward_id),
-    ADD CONSTRAINT fk_authority_district FOREIGN KEY (district_id) REFERENCES reference.districts(district_id),
-    ADD CONSTRAINT fk_authority_province FOREIGN KEY (province_id) REFERENCES reference.provinces(province_id),
-    ADD CONSTRAINT fk_authority_parent FOREIGN KEY (parent_authority_id) REFERENCES reference.authorities(authority_id);
-
--- Ràng buộc cho bảng: relationship_types (Tự tham chiếu)
-ALTER TABLE reference.relationship_types
-    ADD CONSTRAINT fk_inverse_relationship FOREIGN KEY (inverse_relationship_type_id)
-    REFERENCES reference.relationship_types(relationship_type_id) DEFERRABLE INITIALLY DEFERRED;
-    -- DEFERRABLE INITIALLY DEFERRED cho phép chèn dữ liệu có tham chiếu vòng tròn
-
--- Ràng buộc cho bảng: prison_facilities
-ALTER TABLE reference.prison_facilities
-    ADD CONSTRAINT fk_prison_ward FOREIGN KEY (ward_id) REFERENCES reference.wards(ward_id),
-    ADD CONSTRAINT fk_prison_district FOREIGN KEY (district_id) REFERENCES reference.districts(district_id),
-    ADD CONSTRAINT fk_prison_province FOREIGN KEY (province_id) REFERENCES reference.provinces(province_id),
-    ADD CONSTRAINT fk_prison_managing_authority FOREIGN KEY (managing_authority_id) REFERENCES reference.authorities(authority_id);
-
-\echo '   -> Hoàn thành thêm ràng buộc cho ministry_of_public_security.'
+-- Constraints for Reference.PrisonFacilities
+ALTER TABLE [Reference].[PrisonFacilities]
+ADD CONSTRAINT FK_Prison_Ward FOREIGN KEY ([ward_id]) REFERENCES [Reference].[Wards]([ward_id]);
+GO
+ALTER TABLE [Reference].[PrisonFacilities]
+ADD CONSTRAINT FK_Prison_District FOREIGN KEY ([district_id]) REFERENCES [Reference].[Districts]([district_id]);
+GO
+ALTER TABLE [Reference].[PrisonFacilities]
+ADD CONSTRAINT FK_Prison_Province FOREIGN KEY ([province_id]) REFERENCES [Reference].[Provinces]([province_id]);
+GO
+ALTER TABLE [Reference].[PrisonFacilities]
+ADD CONSTRAINT FK_Prison_Managing_Authority FOREIGN KEY ([managing_authority_id]) REFERENCES [Reference].[Authorities]([authority_id]);
+GO
 
 
--- === 2. THỰC THI TRÊN DATABASE BỘ TƯ PHÁP (ministry_of_justice) ===
+-- Add constraints for reference tables in DB_BTP
+USE [DB_BTP];
+GO
 
-\echo '[Bước 2] Thêm ràng buộc cho bảng tham chiếu trên database: ministry_of_justice...'
-\connect ministry_of_justice
+-- Constraints for Reference.Provinces
+ALTER TABLE [Reference].[Provinces]
+ADD CONSTRAINT FK_Province_Region FOREIGN KEY ([region_id]) REFERENCES [Reference].[Regions]([region_id]);
+GO
 
--- (Lặp lại các lệnh ALTER TABLE ... ADD CONSTRAINT ... như trên)
-ALTER TABLE reference.provinces ADD CONSTRAINT fk_province_region FOREIGN KEY (region_id) REFERENCES reference.regions(region_id);
-ALTER TABLE reference.districts ADD CONSTRAINT fk_district_province FOREIGN KEY (province_id) REFERENCES reference.provinces(province_id);
-ALTER TABLE reference.wards ADD CONSTRAINT fk_ward_district FOREIGN KEY (district_id) REFERENCES reference.districts(district_id);
-ALTER TABLE reference.authorities ADD CONSTRAINT fk_authority_ward FOREIGN KEY (ward_id) REFERENCES reference.wards(ward_id);
-ALTER TABLE reference.authorities ADD CONSTRAINT fk_authority_district FOREIGN KEY (district_id) REFERENCES reference.districts(district_id);
-ALTER TABLE reference.authorities ADD CONSTRAINT fk_authority_province FOREIGN KEY (province_id) REFERENCES reference.provinces(province_id);
-ALTER TABLE reference.authorities ADD CONSTRAINT fk_authority_parent FOREIGN KEY (parent_authority_id) REFERENCES reference.authorities(authority_id);
-ALTER TABLE reference.relationship_types ADD CONSTRAINT fk_inverse_relationship FOREIGN KEY (inverse_relationship_type_id) REFERENCES reference.relationship_types(relationship_type_id) DEFERRABLE INITIALLY DEFERRED;
-ALTER TABLE reference.prison_facilities ADD CONSTRAINT fk_prison_ward FOREIGN KEY (ward_id) REFERENCES reference.wards(ward_id);
-ALTER TABLE reference.prison_facilities ADD CONSTRAINT fk_prison_district FOREIGN KEY (district_id) REFERENCES reference.districts(district_id);
-ALTER TABLE reference.prison_facilities ADD CONSTRAINT fk_prison_province FOREIGN KEY (province_id) REFERENCES reference.provinces(province_id);
-ALTER TABLE reference.prison_facilities ADD CONSTRAINT fk_prison_managing_authority FOREIGN KEY (managing_authority_id) REFERENCES reference.authorities(authority_id);
+-- Constraints for Reference.Districts
+ALTER TABLE [Reference].[Districts]
+ADD CONSTRAINT FK_District_Province FOREIGN KEY ([province_id]) REFERENCES [Reference].[Provinces]([province_id]);
+GO
 
-\echo '   -> Hoàn thành thêm ràng buộc cho ministry_of_justice.'
+-- Constraints for Reference.Wards
+ALTER TABLE [Reference].[Wards]
+ADD CONSTRAINT FK_Ward_District FOREIGN KEY ([district_id]) REFERENCES [Reference].[Districts]([district_id]);
+GO
 
+-- Constraints for Reference.Authorities
+ALTER TABLE [Reference].[Authorities]
+ADD CONSTRAINT FK_Authority_Ward FOREIGN KEY ([ward_id]) REFERENCES [Reference].[Wards]([ward_id]);
+GO
+ALTER TABLE [Reference].[Authorities]
+ADD CONSTRAINT FK_Authority_District FOREIGN KEY ([district_id]) REFERENCES [Reference].[Districts]([district_id]);
+GO
+ALTER TABLE [Reference].[Authorities]
+ADD CONSTRAINT FK_Authority_Province FOREIGN KEY ([province_id]) REFERENCES [Reference].[Provinces]([province_id]);
+GO
+ALTER TABLE [Reference].[Authorities]
+ADD CONSTRAINT FK_Authority_Parent FOREIGN KEY ([parent_authority_id]) REFERENCES [Reference].[Authorities]([authority_id]);
+GO
 
--- === 3. THỰC THI TRÊN DATABASE MÁY CHỦ TRUNG TÂM (national_citizen_central_server) ===
+-- Constraints for Reference.RelationshipTypes
+ALTER TABLE [Reference].[RelationshipTypes]
+ADD CONSTRAINT FK_Inverse_Relationship FOREIGN KEY ([inverse_relationship_type_id]) REFERENCES [Reference].[RelationshipTypes]([relationship_type_id]);
+GO
 
-\echo '[Bước 3] Thêm ràng buộc cho bảng tham chiếu trên database: national_citizen_central_server...'
-\connect national_citizen_central_server
-
--- (Lặp lại các lệnh ALTER TABLE ... ADD CONSTRAINT ... như trên)
-ALTER TABLE reference.provinces ADD CONSTRAINT fk_province_region FOREIGN KEY (region_id) REFERENCES reference.regions(region_id);
-ALTER TABLE reference.districts ADD CONSTRAINT fk_district_province FOREIGN KEY (province_id) REFERENCES reference.provinces(province_id);
-ALTER TABLE reference.wards ADD CONSTRAINT fk_ward_district FOREIGN KEY (district_id) REFERENCES reference.districts(district_id);
-ALTER TABLE reference.authorities ADD CONSTRAINT fk_authority_ward FOREIGN KEY (ward_id) REFERENCES reference.wards(ward_id);
-ALTER TABLE reference.authorities ADD CONSTRAINT fk_authority_district FOREIGN KEY (district_id) REFERENCES reference.districts(district_id);
-ALTER TABLE reference.authorities ADD CONSTRAINT fk_authority_province FOREIGN KEY (province_id) REFERENCES reference.provinces(province_id);
-ALTER TABLE reference.authorities ADD CONSTRAINT fk_authority_parent FOREIGN KEY (parent_authority_id) REFERENCES reference.authorities(authority_id);
-ALTER TABLE reference.relationship_types ADD CONSTRAINT fk_inverse_relationship FOREIGN KEY (inverse_relationship_type_id) REFERENCES reference.relationship_types(relationship_type_id) DEFERRABLE INITIALLY DEFERRED;
-ALTER TABLE reference.prison_facilities ADD CONSTRAINT fk_prison_ward FOREIGN KEY (ward_id) REFERENCES reference.wards(ward_id);
-ALTER TABLE reference.prison_facilities ADD CONSTRAINT fk_prison_district FOREIGN KEY (district_id) REFERENCES reference.districts(district_id);
-ALTER TABLE reference.prison_facilities ADD CONSTRAINT fk_prison_province FOREIGN KEY (province_id) REFERENCES reference.provinces(province_id);
-ALTER TABLE reference.prison_facilities ADD CONSTRAINT fk_prison_managing_authority FOREIGN KEY (managing_authority_id) REFERENCES reference.authorities(authority_id);
-
-\echo '   -> Hoàn thành thêm ràng buộc cho national_citizen_central_server.'
-
--- === KẾT THÚC ===
-
-\echo '*** HOÀN THÀNH THÊM RÀNG BUỘC CHO BẢNG THAM CHIẾU ***'
-\echo '-> Đã thêm các ràng buộc FOREIGN KEY và CHECK cần thiết cho schema "reference" trên cả 3 database.'
-\echo '-> Bước tiếp theo: Chạy các script tạo cấu trúc bảng nghiệp vụ cho từng database ([db_name]/01_tables_structure.sql).'
+-- Constraints for Reference.PrisonFacilities
+ALTER TABLE [Reference].[PrisonFacilities]
+ADD CONSTRAINT FK_Prison_Ward FOREIGN KEY ([ward_id]) REFERENCES [Reference].[Wards]([ward_id]);
+GO
+ALTER TABLE [Reference].[PrisonFacilities]
+ADD CONSTRAINT FK_Prison_District FOREIGN KEY ([district_id]) REFERENCES [Reference].[Districts]([district_id]);
+GO
+ALTER TABLE [Reference].[PrisonFacilities]
+ADD CONSTRAINT FK_Prison_Province FOREIGN KEY ([province_id]) REFERENCES [Reference].[Provinces]([province_id]);
+GO
+ALTER TABLE [Reference].[PrisonFacilities]
+ADD CONSTRAINT FK_Prison_Managing_Authority FOREIGN KEY ([managing_authority_id]) REFERENCES [Reference].[Authorities]([authority_id]);
+GO
 

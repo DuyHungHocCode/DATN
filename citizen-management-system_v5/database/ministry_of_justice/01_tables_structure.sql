@@ -1,415 +1,228 @@
--- =============================================================================
--- File: ministry_of_justice/01_tables_structure.sql
--- Description: Tạo cấu trúc cơ bản (CREATE TABLE) cho TẤT CẢ các bảng
---              trong database Bộ Tư pháp (ministry_of_justice).
--- =============================================================================
+USE [DB_BTP];
+GO
 
-\echo '*** BẮT ĐẦU TẠO CẤU TRÚC BẢNG CHO DATABASE BỘ TƯ PHÁP ***'
-\connect ministry_of_justice
+-- Schema: BTP
 
--- === Schema: justice ===
-
-\echo '[1] Tạo cấu trúc bảng trong schema: justice...'
-
--- Bảng: birth_certificate (Giấy khai sinh) - Phân vùng theo địa lý
-DROP TABLE IF EXISTS justice.birth_certificate CASCADE;
-CREATE TABLE justice.birth_certificate (
-    birth_certificate_id BIGSERIAL NOT NULL,
-    citizen_id VARCHAR(12) NOT NULL, -- UNIQUE sẽ thêm sau
-    birth_certificate_no VARCHAR(20) NOT NULL, -- UNIQUE sẽ thêm sau
-    registration_date DATE NOT NULL,
-    book_id VARCHAR(20),
-    page_no VARCHAR(10),
-    issuing_authority_id SMALLINT NOT NULL,
-    place_of_birth TEXT NOT NULL,
-    date_of_birth DATE NOT NULL,
-    gender_at_birth gender_type NOT NULL,
-    -- Thông tin cha
-    father_full_name VARCHAR(100),
-    father_citizen_id VARCHAR(12),
-    father_date_of_birth DATE,
-    father_nationality_id SMALLINT,
-    -- Thông tin mẹ
-    mother_full_name VARCHAR(100),
-    mother_citizen_id VARCHAR(12),
-    mother_date_of_birth DATE,
-    mother_nationality_id SMALLINT,
-    -- Người khai
-    declarant_name VARCHAR(100) NOT NULL,
-    declarant_citizen_id VARCHAR(12),
-    declarant_relationship VARCHAR(50),
-    -- Khác
-    witness1_name VARCHAR(100),
-    witness2_name VARCHAR(100),
-    birth_notification_no VARCHAR(50),
-    status BOOLEAN DEFAULT TRUE,
-    notes TEXT,
-    -- Phân vùng
-    region_id SMALLINT NOT NULL,
-    province_id INT NOT NULL,
-    district_id INT NOT NULL,
-    geographical_region VARCHAR(20) NOT NULL,
-    -- Metadata
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_by VARCHAR(50),
-    -- Khóa chính bao gồm cột phân vùng
-    CONSTRAINT pk_birth_certificate PRIMARY KEY (birth_certificate_id, geographical_region, province_id, district_id)
-) PARTITION BY LIST (geographical_region);
-COMMENT ON TABLE justice.birth_certificate IS '[BTP] Lưu thông tin đăng ký khai sinh.';
-COMMENT ON COLUMN justice.birth_certificate.citizen_id IS 'Số định danh của người được khai sinh (Logic liên kết).';
-COMMENT ON COLUMN justice.birth_certificate.birth_certificate_no IS 'Số giấy khai sinh (Cần kiểm tra unique).';
-COMMENT ON COLUMN justice.birth_certificate.geographical_region IS 'Vùng địa lý - Khóa phân vùng cấp 1.';
-COMMENT ON COLUMN justice.birth_certificate.province_id IS 'ID Tỉnh/Thành phố - Khóa phân vùng cấp 2.';
-COMMENT ON COLUMN justice.birth_certificate.district_id IS 'ID Quận/Huyện - Khóa phân vùng cấp 3.';
-
--- Bảng: death_certificate (Giấy khai tử) - Phân vùng theo địa lý
-DROP TABLE IF EXISTS justice.death_certificate CASCADE;
-CREATE TABLE justice.death_certificate (
-    death_certificate_id BIGSERIAL NOT NULL,
-    citizen_id VARCHAR(12) NOT NULL, -- UNIQUE sẽ thêm sau
-    death_certificate_no VARCHAR(20) NOT NULL, -- UNIQUE sẽ thêm sau
-    book_id VARCHAR(20),
-    page_no VARCHAR(10),
-    date_of_death DATE NOT NULL,
-    time_of_death TIME,
-    place_of_death TEXT NOT NULL,
-    cause_of_death TEXT,
-    declarant_name VARCHAR(100) NOT NULL,
-    declarant_citizen_id VARCHAR(12),
-    declarant_relationship VARCHAR(50),
-    registration_date DATE NOT NULL,
-    issuing_authority_id SMALLINT,
-    death_notification_no VARCHAR(50),
-    witness1_name VARCHAR(100),
-    witness2_name VARCHAR(100),
-    status BOOLEAN DEFAULT TRUE,
-    notes TEXT,
-    -- Phân vùng
-    region_id SMALLINT NOT NULL,
-    province_id INT NOT NULL,
-    district_id INT NOT NULL,
-    geographical_region VARCHAR(20) NOT NULL,
-    -- Metadata
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_by VARCHAR(50),
-    -- Khóa chính bao gồm cột phân vùng
-    CONSTRAINT pk_death_certificate PRIMARY KEY (death_certificate_id, geographical_region, province_id, district_id)
-) PARTITION BY LIST (geographical_region);
-COMMENT ON TABLE justice.death_certificate IS '[BTP] Lưu thông tin đăng ký khai tử.';
-COMMENT ON COLUMN justice.death_certificate.citizen_id IS 'Số định danh của người được khai tử (Logic liên kết).';
-COMMENT ON COLUMN justice.death_certificate.death_certificate_no IS 'Số giấy khai tử (Cần kiểm tra unique).';
-COMMENT ON COLUMN justice.death_certificate.geographical_region IS 'Vùng địa lý - Khóa phân vùng cấp 1.';
-COMMENT ON COLUMN justice.death_certificate.province_id IS 'ID Tỉnh/Thành phố - Khóa phân vùng cấp 2.';
-COMMENT ON COLUMN justice.death_certificate.district_id IS 'ID Quận/Huyện - Khóa phân vùng cấp 3.';
-
--- Bảng: marriage (Đăng ký kết hôn) - Phân vùng theo địa lý
-DROP TABLE IF EXISTS justice.marriage CASCADE;
-CREATE TABLE justice.marriage (
-    marriage_id BIGSERIAL NOT NULL,
-    marriage_certificate_no VARCHAR(20) NOT NULL, -- UNIQUE sẽ thêm sau
-    book_id VARCHAR(20),
-    page_no VARCHAR(10),
-    -- Chồng
-    husband_id VARCHAR(12) NOT NULL,
-    husband_full_name VARCHAR(100) NOT NULL,
-    husband_date_of_birth DATE NOT NULL,
-    husband_nationality_id SMALLINT NOT NULL,
-    husband_previous_marriage_status VARCHAR(50),
-    -- Vợ
-    wife_id VARCHAR(12) NOT NULL,
-    wife_full_name VARCHAR(100) NOT NULL,
-    wife_date_of_birth DATE NOT NULL,
-    wife_nationality_id SMALLINT NOT NULL,
-    wife_previous_marriage_status VARCHAR(50),
-    -- Đăng ký
-    marriage_date DATE NOT NULL,
-    registration_date DATE NOT NULL,
-    issuing_authority_id SMALLINT NOT NULL,
-    issuing_place TEXT NOT NULL,
-    witness1_name VARCHAR(100),
-    witness2_name VARCHAR(100),
-    status BOOLEAN DEFAULT TRUE, -- Trạng thái hôn nhân (còn hiệu lực?)
-    notes TEXT,
-    -- Phân vùng
-    region_id SMALLINT NOT NULL,
-    province_id INT NOT NULL,
-    district_id INT NOT NULL,
-    geographical_region VARCHAR(20) NOT NULL,
-    -- Metadata
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_by VARCHAR(50),
-    -- Khóa chính bao gồm cột phân vùng
-    CONSTRAINT pk_marriage PRIMARY KEY (marriage_id, geographical_region, province_id, district_id)
-) PARTITION BY LIST (geographical_region);
-COMMENT ON TABLE justice.marriage IS '[BTP] Lưu thông tin đăng ký kết hôn.';
-COMMENT ON COLUMN justice.marriage.marriage_certificate_no IS 'Số giấy đăng ký kết hôn (Cần kiểm tra unique).';
-COMMENT ON COLUMN justice.marriage.status IS 'Trạng thái hôn nhân (TRUE = còn hiệu lực, FALSE = đã ly hôn/hủy bỏ).';
-COMMENT ON COLUMN justice.marriage.geographical_region IS 'Vùng địa lý - Khóa phân vùng cấp 1.';
-COMMENT ON COLUMN justice.marriage.province_id IS 'ID Tỉnh/Thành phố - Khóa phân vùng cấp 2.';
-COMMENT ON COLUMN justice.marriage.district_id IS 'ID Quận/Huyện - Khóa phân vùng cấp 3.';
-
--- Bảng: divorce (Ghi chú ly hôn) - Phân vùng theo địa lý (Miền -> Tỉnh)
-DROP TABLE IF EXISTS justice.divorce CASCADE;
-CREATE TABLE justice.divorce (
-    divorce_id BIGSERIAL NOT NULL,
-    divorce_certificate_no VARCHAR(20) NOT NULL, -- UNIQUE sẽ thêm sau
-    book_id VARCHAR(20),
-    page_no VARCHAR(10),
-    marriage_id INT NOT NULL, -- UNIQUE sẽ thêm sau
-    divorce_date DATE NOT NULL,
-    registration_date DATE NOT NULL,
-    court_name VARCHAR(200) NOT NULL,
-    judgment_no VARCHAR(50) NOT NULL, -- UNIQUE sẽ thêm sau
-    judgment_date DATE NOT NULL,
-    issuing_authority_id SMALLINT,
-    reason TEXT,
-    child_custody TEXT,
-    property_division TEXT,
-    status BOOLEAN DEFAULT TRUE,
-    notes TEXT,
-    -- Phân vùng
-    region_id SMALLINT NOT NULL,
-    province_id INT NOT NULL,
-    geographical_region VARCHAR(20) NOT NULL,
-    -- Metadata
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_by VARCHAR(50),
-    -- Khóa chính bao gồm cột phân vùng
-    CONSTRAINT pk_divorce PRIMARY KEY (divorce_id, geographical_region, province_id)
-) PARTITION BY LIST (geographical_region);
-COMMENT ON TABLE justice.divorce IS '[BTP] Lưu thông tin ghi chú ly hôn dựa trên bản án/quyết định của Tòa án.';
-COMMENT ON COLUMN justice.divorce.marriage_id IS 'ID của cuộc hôn nhân đã ly hôn (Cần kiểm tra unique).';
-COMMENT ON COLUMN justice.divorce.judgment_no IS 'Số bản án/quyết định ly hôn của Tòa án (Cần kiểm tra unique).';
-COMMENT ON COLUMN justice.divorce.geographical_region IS 'Vùng địa lý - Khóa phân vùng cấp 1.';
-COMMENT ON COLUMN justice.divorce.province_id IS 'ID Tỉnh/Thành phố - Khóa phân vùng cấp 2.';
-
--- Bảng: household (Sổ hộ khẩu) - Phân vùng theo địa lý
-DROP TABLE IF EXISTS justice.household CASCADE;
-CREATE TABLE justice.household (
-    household_id BIGSERIAL NOT NULL,
-    household_book_no VARCHAR(20) NOT NULL, -- UNIQUE sẽ thêm sau
-    head_of_household_id VARCHAR(12) NOT NULL,
-    address_id INT NOT NULL,
-    registration_date DATE NOT NULL,
-    issuing_authority_id SMALLINT,
-    area_code VARCHAR(10),
-    household_type household_type NOT NULL,
-    status household_status DEFAULT 'Đang hoạt động',
-    notes TEXT,
-    -- Phân vùng
-    region_id SMALLINT NOT NULL,
-    province_id INT NOT NULL,
-    district_id INT NOT NULL,
-    geographical_region VARCHAR(20) NOT NULL,
-    -- Metadata
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_by VARCHAR(50),
-    -- Khóa chính bao gồm cột phân vùng
-    CONSTRAINT pk_household PRIMARY KEY (household_id, geographical_region, province_id, district_id)
-) PARTITION BY LIST (geographical_region);
-COMMENT ON TABLE justice.household IS '[BTP] Lưu thông tin về Sổ hộ khẩu.';
-COMMENT ON COLUMN justice.household.household_book_no IS 'Số sổ hộ khẩu (Cần kiểm tra unique).';
-COMMENT ON COLUMN justice.household.head_of_household_id IS 'ID Công dân của chủ hộ (Logic liên kết).';
-COMMENT ON COLUMN justice.household.address_id IS 'ID Địa chỉ đăng ký của hộ khẩu (Logic liên kết).';
-COMMENT ON COLUMN justice.household.geographical_region IS 'Vùng địa lý - Khóa phân vùng cấp 1.';
-COMMENT ON COLUMN justice.household.province_id IS 'ID Tỉnh/Thành phố - Khóa phân vùng cấp 2.';
-COMMENT ON COLUMN justice.household.district_id IS 'ID Quận/Huyện - Khóa phân vùng cấp 3.';
-
--- Bảng: household_member (Thành viên hộ khẩu) - Phân vùng theo địa lý (Miền -> Tỉnh)
-DROP TABLE IF EXISTS justice.household_member CASCADE;
-CREATE TABLE justice.household_member (
-    household_member_id BIGSERIAL NOT NULL,
-    household_id INT NOT NULL,
-    citizen_id VARCHAR(12) NOT NULL,
-    relationship_with_head household_relationship NOT NULL,
-    join_date DATE NOT NULL,
-    leave_date DATE,
-    leave_reason TEXT,
-    previous_household_id INT,
-    status VARCHAR(50) DEFAULT 'Active', -- CHECK constraint sẽ thêm sau
-    order_in_household SMALLINT,
-    -- Phân vùng
-    region_id SMALLINT NOT NULL,
-    province_id INT NOT NULL,
-    geographical_region VARCHAR(20) NOT NULL,
-    -- Metadata
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_by VARCHAR(50),
-    -- Khóa chính bao gồm cột phân vùng
-    CONSTRAINT pk_household_member PRIMARY KEY (household_member_id, geographical_region, province_id),
-    -- Ràng buộc UNIQUE cơ bản (sẽ kiểm tra lại với partitioning)
-    CONSTRAINT uq_household_member_join UNIQUE (household_id, citizen_id, join_date)
-) PARTITION BY LIST (geographical_region);
-COMMENT ON TABLE justice.household_member IS '[BTP] Lưu thông tin các thành viên thuộc một hộ khẩu.';
-COMMENT ON COLUMN justice.household_member.citizen_id IS 'ID của công dân là thành viên (Logic liên kết).';
-COMMENT ON COLUMN justice.household_member.geographical_region IS 'Vùng địa lý - Khóa phân vùng cấp 1.';
-COMMENT ON COLUMN justice.household_member.province_id IS 'ID Tỉnh/Thành phố - Khóa phân vùng cấp 2.';
-
--- Bảng: family_relationship (Quan hệ gia đình) - Phân vùng theo địa lý (Miền -> Tỉnh)
-DROP TABLE IF EXISTS justice.family_relationship CASCADE;
-CREATE TABLE justice.family_relationship (
-    relationship_id BIGSERIAL NOT NULL,
-    citizen_id VARCHAR(12) NOT NULL,
-    related_citizen_id VARCHAR(12) NOT NULL,
-    relationship_type family_relationship_type NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    status record_status DEFAULT 'Đang xử lý',
-    document_proof TEXT,
-    document_no VARCHAR(50),
-    issuing_authority_id SMALLINT,
-    notes TEXT,
-    -- Phân vùng
-    region_id SMALLINT,
-    province_id INT NOT NULL,
-    geographical_region VARCHAR(20) NOT NULL,
-    -- Metadata
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_by VARCHAR(50),
-    -- Khóa chính bao gồm cột phân vùng
-    CONSTRAINT pk_family_relationship PRIMARY KEY (relationship_id, geographical_region, province_id)
-) PARTITION BY LIST (geographical_region);
-COMMENT ON TABLE justice.family_relationship IS '[BTP] Ghi nhận các mối quan hệ gia đình đã được xác thực.';
-COMMENT ON COLUMN justice.family_relationship.citizen_id IS 'ID công dân thứ nhất (Logic liên kết).';
-COMMENT ON COLUMN justice.family_relationship.related_citizen_id IS 'ID công dân thứ hai có quan hệ (Logic liên kết).';
-COMMENT ON COLUMN justice.family_relationship.geographical_region IS 'Vùng địa lý - Khóa phân vùng cấp 1.';
-COMMENT ON COLUMN justice.family_relationship.province_id IS 'ID Tỉnh/Thành phố - Khóa phân vùng cấp 2.';
-
--- Bảng: population_change (Biến động dân số) - Phân vùng theo địa lý (Miền -> Tỉnh)
-DROP TABLE IF EXISTS justice.population_change CASCADE;
-CREATE TABLE justice.population_change (
-    change_id BIGSERIAL NOT NULL,
-    citizen_id VARCHAR(12) NOT NULL,
-    change_type population_change_type NOT NULL,
-    change_date DATE NOT NULL,
-    source_location_id INT,
-    destination_location_id INT,
-    reason TEXT,
-    related_document_no VARCHAR(50),
-    processing_authority_id SMALLINT,
-    status BOOLEAN DEFAULT TRUE,
-    notes TEXT,
-    -- Phân vùng
-    region_id SMALLINT,
-    province_id INT NOT NULL,
-    geographical_region VARCHAR(20) NOT NULL,
-    -- Metadata
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_by VARCHAR(50),
-    -- Khóa chính bao gồm cột phân vùng
-    CONSTRAINT pk_population_change PRIMARY KEY (change_id, geographical_region, province_id)
-) PARTITION BY LIST (geographical_region);
-COMMENT ON TABLE justice.population_change IS '[BTP] Ghi nhận lịch sử các sự kiện biến động dân số, hộ tịch, cư trú.';
-COMMENT ON COLUMN justice.population_change.citizen_id IS 'ID công dân có biến động (Logic liên kết).';
-COMMENT ON COLUMN justice.population_change.geographical_region IS 'Vùng địa lý - Khóa phân vùng cấp 1.';
-COMMENT ON COLUMN justice.population_change.province_id IS 'ID Tỉnh/Thành phố - Khóa phân vùng cấp 2.';
-
-\echo '   -> Hoàn thành tạo cấu trúc bảng schema justice.'
-
--- === Schema: audit ===
-
-\echo '[2] Tạo cấu trúc bảng trong schema: audit...'
-
--- Bảng: audit_log (Nhật ký thay đổi) - Phân vùng theo thời gian
-DROP TABLE IF EXISTS audit.audit_log CASCADE;
-CREATE TABLE audit.audit_log (
-    log_id BIGSERIAL NOT NULL,
-    action_tstamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT clock_timestamp(), -- Cột phân vùng
-    schema_name TEXT NOT NULL,
-    table_name TEXT NOT NULL,
-    operation cdc_operation_type NOT NULL,
-    session_user_name TEXT DEFAULT current_user,
-    application_name TEXT DEFAULT current_setting('application_name'),
-    client_addr INET DEFAULT inet_client_addr(),
-    client_port INTEGER DEFAULT inet_client_port(),
-    transaction_id BIGINT DEFAULT txid_current(),
-    statement_only BOOLEAN NOT NULL DEFAULT FALSE,
-    row_data JSONB,
-    changed_fields JSONB,
-    query TEXT,
-    -- Khóa chính bao gồm cột phân vùng
-    CONSTRAINT pk_audit_log PRIMARY KEY (log_id, action_tstamp)
-) PARTITION BY RANGE (action_tstamp);
-COMMENT ON TABLE audit.audit_log IS '[BTP] Bảng ghi nhật ký chi tiết các thay đổi dữ liệu.';
-COMMENT ON COLUMN audit.audit_log.action_tstamp IS 'Thời điểm thay đổi (Cột phân vùng RANGE).';
-
-\echo '   -> Hoàn thành tạo cấu trúc bảng schema audit.'
-
--- === Schema: partitioning ===
-
-\echo '[3] Tạo cấu trúc bảng trong schema: partitioning...'
-
--- Bảng: config (Cấu hình phân vùng) - Không phân vùng
-DROP TABLE IF EXISTS partitioning.config CASCADE;
-CREATE TABLE partitioning.config (
-    config_id SERIAL PRIMARY KEY,
-    schema_name VARCHAR(100) NOT NULL,
-    table_name VARCHAR(100) NOT NULL,
-    partition_type VARCHAR(20) NOT NULL, -- CHECK sẽ thêm sau
-    partition_columns TEXT NOT NULL,
-    partition_interval VARCHAR(100),
-    retention_period VARCHAR(100),
-    premake INTEGER DEFAULT 4,
-    is_active BOOLEAN DEFAULT TRUE,
-    use_pg_partman BOOLEAN DEFAULT FALSE,
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_partition_config UNIQUE (schema_name, table_name)
+-- Table: BTP.BirthCertificate
+IF OBJECT_ID('BTP.BirthCertificate', 'U') IS NOT NULL DROP TABLE [BTP].[BirthCertificate];
+GO
+CREATE TABLE [BTP].[BirthCertificate] (
+    [birth_certificate_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [citizen_id] VARCHAR(12) NOT NULL, -- Logical link, unique constraint added later if needed
+    [birth_certificate_no] VARCHAR(20) NOT NULL, -- Unique constraint added later if needed
+    [registration_date] DATE NOT NULL,
+    [book_id] VARCHAR(20) NULL,
+    [page_no] VARCHAR(10) NULL,
+    [issuing_authority_id] INT NOT NULL, -- FK added later
+    [place_of_birth] NVARCHAR(MAX) NOT NULL,
+    [date_of_birth] DATE NOT NULL,
+    [gender_at_birth] NVARCHAR(10) NOT NULL CHECK ([gender_at_birth] IN (N'Nam', N'Nữ', N'Khác')),
+    [father_full_name] NVARCHAR(100) NULL,
+    [father_citizen_id] VARCHAR(12) NULL,
+    [father_date_of_birth] DATE NULL,
+    [father_nationality_id] SMALLINT NULL, -- FK added later
+    [mother_full_name] NVARCHAR(100) NULL,
+    [mother_citizen_id] VARCHAR(12) NULL,
+    [mother_date_of_birth] DATE NULL,
+    [mother_nationality_id] SMALLINT NULL, -- FK added later
+    [declarant_name] NVARCHAR(100) NOT NULL,
+    [declarant_citizen_id] VARCHAR(12) NULL,
+    [declarant_relationship] NVARCHAR(50) NULL,
+    [witness1_name] NVARCHAR(100) NULL,
+    [witness2_name] NVARCHAR(100) NULL,
+    [birth_notification_no] VARCHAR(50) NULL,
+    [status] BIT DEFAULT 1, -- Active/Inactive
+    [notes] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
 );
-COMMENT ON TABLE partitioning.config IS '[BTP] Lưu trữ cấu hình phân vùng cho các bảng trong database này.';
+GO
 
--- Bảng: history (Lịch sử phân vùng) - Không phân vùng
-DROP TABLE IF EXISTS partitioning.history CASCADE;
-CREATE TABLE partitioning.history (
-    history_id BIGSERIAL PRIMARY KEY,
-    schema_name VARCHAR(100) NOT NULL,
-    table_name VARCHAR(100) NOT NULL,
-    partition_name VARCHAR(200) NOT NULL,
-    action VARCHAR(50) NOT NULL, -- CHECK sẽ thêm sau
-    action_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'Success', -- CHECK sẽ thêm sau
-    affected_rows BIGINT,
-    duration_ms BIGINT,
-    performed_by VARCHAR(100) DEFAULT CURRENT_USER,
-    details TEXT
-    -- FK đến config sẽ thêm sau
+-- Table: BTP.DeathCertificate
+IF OBJECT_ID('BTP.DeathCertificate', 'U') IS NOT NULL DROP TABLE [BTP].[DeathCertificate];
+GO
+CREATE TABLE [BTP].[DeathCertificate] (
+    [death_certificate_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [citizen_id] VARCHAR(12) NOT NULL, -- Logical link, unique constraint added later if needed
+    [death_certificate_no] VARCHAR(20) NOT NULL, -- Unique constraint added later if needed
+    [book_id] VARCHAR(20) NULL,
+    [page_no] VARCHAR(10) NULL,
+    [date_of_death] DATE NOT NULL,
+    [time_of_death] TIME NULL,
+    [place_of_death_detail] NVARCHAR(MAX) NOT NULL,
+    [place_of_death_ward_id] INT NULL, -- FK added later
+    [place_of_death_district_id] INT NULL, -- Derived/FK added later
+    [place_of_death_province_id] INT NULL, -- Derived/FK added later
+    [cause_of_death] NVARCHAR(MAX) NULL,
+    [declarant_name] NVARCHAR(100) NOT NULL,
+    [declarant_citizen_id] VARCHAR(12) NULL,
+    [declarant_relationship] NVARCHAR(50) NULL,
+    [registration_date] DATE NOT NULL,
+    [issuing_authority_id] INT NULL, -- FK added later
+    [death_notification_no] VARCHAR(50) NULL,
+    [witness1_name] NVARCHAR(100) NULL,
+    [witness2_name] NVARCHAR(100) NULL,
+    [status] BIT DEFAULT 1, -- Active/Cancelled
+    [notes] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
 );
-COMMENT ON TABLE partitioning.history IS '[BTP] Ghi lại lịch sử các hành động liên quan đến phân vùng.';
+GO
 
-\echo '   -> Hoàn thành tạo cấu trúc bảng schema partitioning.'
+-- Table: BTP.MarriageCertificate
+IF OBJECT_ID('BTP.MarriageCertificate', 'U') IS NOT NULL DROP TABLE [BTP].[MarriageCertificate];
+GO
+CREATE TABLE [BTP].[MarriageCertificate] (
+    [marriage_certificate_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [marriage_certificate_no] VARCHAR(20) NOT NULL, -- Unique constraint added later if needed
+    [book_id] VARCHAR(20) NULL,
+    [page_no] VARCHAR(10) NULL,
+    [husband_id] VARCHAR(12) NOT NULL, -- Logical link
+    [husband_full_name] NVARCHAR(100) NOT NULL,
+    [husband_date_of_birth] DATE NOT NULL,
+    [husband_nationality_id] SMALLINT NOT NULL, -- FK added later
+    [husband_previous_marriage_status] NVARCHAR(50) NULL,
+    [wife_id] VARCHAR(12) NOT NULL, -- Logical link
+    [wife_full_name] NVARCHAR(100) NOT NULL,
+    [wife_date_of_birth] DATE NOT NULL,
+    [wife_nationality_id] SMALLINT NOT NULL, -- FK added later
+    [wife_previous_marriage_status] NVARCHAR(50) NULL,
+    [marriage_date] DATE NOT NULL,
+    [registration_date] DATE NOT NULL,
+    [issuing_authority_id] INT NOT NULL, -- FK added later
+    [issuing_place] NVARCHAR(MAX) NOT NULL,
+    [witness1_name] NVARCHAR(100) NULL,
+    [witness2_name] NVARCHAR(100) NULL,
+    [status] BIT DEFAULT 1, -- Marriage status (1=Valid, 0=Dissolved/Annulled)
+    [notes] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
+);
+GO
 
--- === KẾT THÚC ===
+-- Table: BTP.DivorceRecord
+IF OBJECT_ID('BTP.DivorceRecord', 'U') IS NOT NULL DROP TABLE [BTP].[DivorceRecord];
+GO
+CREATE TABLE [BTP].[DivorceRecord] (
+    [divorce_record_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [divorce_certificate_no] VARCHAR(20) NULL, -- May not always have a separate certificate number
+    [book_id] VARCHAR(20) NULL,
+    [page_no] VARCHAR(10) NULL,
+    [marriage_certificate_id] BIGINT NOT NULL, -- FK added later
+    [divorce_date] DATE NOT NULL,
+    [registration_date] DATE NOT NULL, -- Date the divorce was officially recorded
+    [court_name] NVARCHAR(200) NOT NULL,
+    [judgment_no] VARCHAR(50) NOT NULL, -- Unique constraint added later if needed
+    [judgment_date] DATE NOT NULL,
+    [issuing_authority_id] INT NULL, -- FK added later (Court or Justice Dept.)
+    [reason] NVARCHAR(MAX) NULL,
+    [child_custody] NVARCHAR(MAX) NULL,
+    [property_division] NVARCHAR(MAX) NULL,
+    [status] BIT DEFAULT 1, -- Record status (Valid/Cancelled)
+    [notes] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
+);
+GO
 
-\echo '*** HOÀN THÀNH TẠO CẤU TRÚC BẢNG CHO DATABASE BỘ TƯ PHÁP ***'
-\echo '-> Đã tạo cấu trúc cơ bản cho các bảng trong các schema: justice, audit, partitioning.'
-\echo '-> Bước tiếp theo: Chạy script 02_tables_constraints.sql để thêm các ràng buộc (FK, CHECK, UNIQUE...).'
+-- Table: BTP.Household
+IF OBJECT_ID('BTP.Household', 'U') IS NOT NULL DROP TABLE [BTP].[Household];
+GO
+CREATE TABLE [BTP].[Household] (
+    [household_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [household_book_no] VARCHAR(20) NOT NULL, -- Unique constraint added later if needed
+    [head_of_household_id] VARCHAR(12) NOT NULL, -- Logical link to BCA.Citizen
+    [address_id] BIGINT NOT NULL, -- Logical link to BCA.Address
+    [registration_date] DATE NOT NULL,
+    [issuing_authority_id] INT NULL, -- FK added later
+    [area_code] VARCHAR(10) NULL,
+    [household_type] NVARCHAR(20) NOT NULL CHECK ([household_type] IN (N'Hộ gia đình', N'Hộ tập thể', N'Hộ tạm trú')),
+    [status] NVARCHAR(30) DEFAULT N'Đang hoạt động' CHECK ([status] IN (N'Đang hoạt động', N'Tách hộ', N'Đã chuyển đi', N'Đã xóa', N'Đang cập nhật', N'Lưu trữ')),
+    [notes] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
+);
+GO
 
-```
+-- Table: BTP.HouseholdMember
+IF OBJECT_ID('BTP.HouseholdMember', 'U') IS NOT NULL DROP TABLE [BTP].[HouseholdMember];
+GO
+CREATE TABLE [BTP].[HouseholdMember] (
+    [household_member_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [household_id] BIGINT NOT NULL, -- FK added later
+    [citizen_id] VARCHAR(12) NOT NULL, -- Logical link to BCA.Citizen
+    [relationship_with_head] NVARCHAR(50) NOT NULL CHECK ([relationship_with_head] IN (N'Chủ hộ', N'Vợ', N'Chồng', N'Con đẻ', N'Con nuôi', N'Bố đẻ', N'Mẹ đẻ', N'Bố nuôi', N'Mẹ nuôi', N'Ông nội', N'Bà nội', N'Ông ngoại', N'Bà ngoại', N'Anh ruột', N'Chị ruột', N'Em ruột', N'Cháu ruột', N'Chắt ruột', N'Cô ruột', N'Dì ruột', N'Chú ruột', N'Bác ruột', N'Người giám hộ', N'Người ở nhờ', N'Người làm thuê', N'Khác')),
+    [join_date] DATE NOT NULL,
+    [leave_date] DATE NULL,
+    [leave_reason] NVARCHAR(MAX) NULL,
+    [previous_household_id] BIGINT NULL, -- FK added later
+    [status] NVARCHAR(20) DEFAULT N'Active' CHECK ([status] IN (N'Active', N'Left', N'Moved', N'Deceased', N'Cancelled')),
+    [order_in_household] SMALLINT NULL,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
+);
+GO
 
-**Những điểm chính:**
+-- Table: BTP.FamilyRelationship
+IF OBJECT_ID('BTP.FamilyRelationship', 'U') IS NOT NULL DROP TABLE [BTP].[FamilyRelationship];
+GO
+CREATE TABLE [BTP].[FamilyRelationship] (
+    [relationship_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [citizen_id] VARCHAR(12) NOT NULL, -- Logical link
+    [related_citizen_id] VARCHAR(12) NOT NULL, -- Logical link
+    [relationship_type] NVARCHAR(50) NOT NULL CHECK ([relationship_type] IN (N'Vợ-Chồng', N'Cha đẻ-Con đẻ', N'Mẹ đẻ-Con đẻ', N'Cha nuôi-Con nuôi', N'Mẹ nuôi-Con nuôi', N'Ông nội-Cháu nội', N'Bà nội-Cháu nội', N'Ông ngoại-Cháu ngoại', N'Bà ngoại-Cháu ngoại', N'Anh ruột-Em ruột', N'Chị ruột-Em ruột', N'Giám hộ-Được giám hộ', N'Khác')),
+    [start_date] DATE NOT NULL,
+    [end_date] DATE NULL,
+    [status] NVARCHAR(20) DEFAULT N'Active' CHECK ([status] IN (N'Active', N'Inactive', N'Pending Verification')),
+    [document_proof] NVARCHAR(MAX) NULL,
+    [document_no] VARCHAR(50) NULL,
+    [issuing_authority_id] INT NULL, -- FK added later
+    [notes] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
+);
+GO
 
-* **Chỉ `CREATE TABLE`:** File chỉ chứa các lệnh `DROP TABLE IF EXISTS ... CASCADE;` và `CREATE TABLE ...` cơ bản.
-* **Ràng buộc cơ bản:** Giữ lại `NOT NULL`, `DEFAULT`, `PRIMARY KEY` (bao gồm cả cột phân vùng khi cần thiết), và `UNIQUE` đơn giản (như `uq_household_member_join`).
-* **Loại bỏ FK, CHECK phức tạp, Index:** Các ràng buộc này và các index truy vấn đã được loại bỏ, sẽ được thêm trong file `02_tables_constraints.sql` hoặc `partitioning_setup.sql`. Các ràng buộc UNIQUE phức tạp hoặc có thể gây lỗi trên bảng phân vùng (như `birth_certificate_no`, `citizen_id` trong `birth_certificate`) được đánh dấu bằng comment.
-* **`PARTITION BY`:** Khai báo phân vùng cấp 1 (`LIST` hoặc `RANGE`) cho các bảng cần thiết.
-* **Comment chuẩn:** Sử dụng `COMMENT ON TABLE` và `COMMENT ON COLUMN` để ghi chú thích.
-* **Cấu trúc:** Phân chia rõ ràng theo từng schema (`justice`, `audit`, `partitioning`).
+-- Table: BTP.PopulationChange
+IF OBJECT_ID('BTP.PopulationChange', 'U') IS NOT NULL DROP TABLE [BTP].[PopulationChange];
+GO
+CREATE TABLE [BTP].[PopulationChange] (
+    [change_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [citizen_id] VARCHAR(12) NOT NULL, -- Logical link
+    [change_type] NVARCHAR(100) NOT NULL CHECK ([change_type] IN (N'Đăng ký khai sinh', N'Đăng ký khai tử', N'Đăng ký kết hôn', N'Đăng ký ly hôn', N'Đăng ký giám hộ', N'Chấm dứt giám hộ', N'Đăng ký nhận cha mẹ con', N'Đăng ký thay đổi/cải chính/bổ sung hộ tịch', N'Xác định lại dân tộc', N'Xác định lại giới tính', N'Đăng ký thường trú', N'Xóa đăng ký thường trú', N'Đăng ký tạm trú', N'Xóa đăng ký tạm trú', N'Tạm vắng', N'Nhập quốc tịch', N'Thôi quốc tịch', N'Trở lại quốc tịch', N'Khác')),
+    [change_date] DATE NOT NULL,
+    [source_location_id] INT NULL, -- Logical link (e.g., Ward ID)
+    [destination_location_id] INT NULL, -- Logical link (e.g., Ward ID)
+    [reason] NVARCHAR(MAX) NULL,
+    [related_document_no] VARCHAR(50) NULL,
+    [processing_authority_id] INT NULL, -- FK added later
+    [status] BIT DEFAULT 1, -- Change processed successfully?
+    [notes] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
+);
+GO
 
-File này cung cấp cấu trúc khung cho tất cả các bảng cần thiết trong CSDL Bộ Tư pháp, sẵn sàng cho việc thêm các ràng buộc và dữ li
+
+-- Schema: Audit
+
+-- Table: Audit.AuditLog
+IF OBJECT_ID('Audit.AuditLog', 'U') IS NOT NULL DROP TABLE [Audit].[AuditLog];
+GO
+CREATE TABLE [Audit].[AuditLog] (
+    [log_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [action_tstamp] DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
+    [schema_name] VARCHAR(100) NOT NULL,
+    [table_name] VARCHAR(100) NOT NULL,
+    [operation] VARCHAR(10) NOT NULL CHECK ([operation] IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE')),
+    [session_user_name] NVARCHAR(128) DEFAULT SUSER_SNAME(),
+    [application_name] NVARCHAR(128) DEFAULT APP_NAME(),
+    [client_net_address] VARCHAR(48) NULL, -- Retrieved via trigger context if needed
+    [host_name] NVARCHAR(128) DEFAULT HOST_NAME(),
+    [transaction_id] BIGINT NULL, -- Retrieved via trigger context if needed
+    [statement_only] BIT NOT NULL DEFAULT 0,
+    [row_data] NVARCHAR(MAX) NULL, -- Store as JSON or XML
+    [changed_fields] NVARCHAR(MAX) NULL, -- Store as JSON or XML
+    [query_text] NVARCHAR(MAX) NULL -- Retrieved via trigger context if needed
+);
+GO
