@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.db.citizen_repo import CitizenRepository
 from app.schemas.citizen import CitizenSearch, CitizenResponse
+from app.schemas.residence import ResidenceHistoryResponse, ContactInfoResponse
 
 router = APIRouter()
 
@@ -43,3 +44,53 @@ def search_citizens(
     citizens = repo.search_citizens(full_name, date_of_birth, limit, offset)
     
     return citizens
+
+@router.get("/citizens/{citizen_id}/residence-history", response_model=List[ResidenceHistoryResponse])
+def get_citizen_residence_history(
+    citizen_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy lịch sử cư trú của một công dân theo ID CCCD/CMND
+    """
+    repo = CitizenRepository(db)
+    
+    # Kiểm tra công dân tồn tại
+    citizen = repo.find_by_id(citizen_id)
+    if not citizen:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Không tìm thấy công dân với ID {citizen_id}"
+        )
+    
+    # Lấy lịch sử cư trú
+    residence_history = repo.get_residence_history(citizen_id)
+    return residence_history
+
+@router.get("/citizens/{citizen_id}/contact-info", response_model=ContactInfoResponse)
+def get_citizen_contact_info(
+    citizen_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy thông tin liên hệ của một công dân theo ID CCCD/CMND
+    """
+    repo = CitizenRepository(db)
+    
+    # Kiểm tra công dân tồn tại
+    citizen = repo.find_by_id(citizen_id)
+    if not citizen:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Không tìm thấy công dân với ID {citizen_id}"
+        )
+    
+    # Lấy thông tin liên hệ
+    contact_info = repo.get_contact_info(citizen_id)
+    if not contact_info:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Không tìm thấy thông tin liên hệ cho công dân với ID {citizen_id}"
+        )
+    
+    return contact_info

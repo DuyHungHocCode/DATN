@@ -83,3 +83,39 @@ class CitizenRepository:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail=f"Database error: {str(e)}"
             )
+        
+    def get_residence_history(self, citizen_id: str) -> List[Dict[str, Any]]:
+        """Lấy lịch sử cư trú của công dân theo ID."""
+        try:
+            query = text("SELECT * FROM [API_Internal].[GetResidenceHistory](:citizen_id)")
+            result = self.db.execute(query, {"citizen_id": citizen_id}).fetchall()
+            
+            if not result:
+                return []
+                
+            # Chuyển đổi từ Row sang dict
+            return [dict(row._mapping) for row in result]
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                detail=f"Lỗi cơ sở dữ liệu: {str(e)}"
+            )
+
+    def get_contact_info(self, citizen_id: str) -> Dict[str, Any]:
+        """Lấy thông tin liên hệ của công dân theo ID."""
+        try:
+            query = text("SELECT * FROM [API_Internal].[GetCitizenContactInfo](:citizen_id)")
+            result = self.db.execute(query, {"citizen_id": citizen_id}).fetchone()
+            
+            if not result:
+                return None
+                
+            # Chuyển đổi từ Row sang dict
+            return {key: value for key, value in result._mapping.items()}
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                detail=f"Lỗi cơ sở dữ liệu: {str(e)}"
+            )
