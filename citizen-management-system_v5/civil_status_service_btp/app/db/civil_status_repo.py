@@ -1,0 +1,103 @@
+# civil_status_service_btp/app/db/civil_status_repo.py
+from sqlalchemy.orm import Session
+from sqlalchemy import text, select
+from sqlalchemy.exc import SQLAlchemyError
+from fastapi import HTTPException, status
+import logging
+
+from app.schemas.death_certificate import DeathCertificateCreate, DeathCertificateResponse
+
+logger = logging.getLogger(__name__)
+
+class CivilStatusRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def create_death_certificate(self, certificate: DeathCertificateCreate) -> int | None:
+        """
+        Gọi stored procedure API_Internal.InsertDeathCertificate để thêm bản ghi.
+        Trả về ID của bản ghi mới được tạo hoặc None nếu thất bại.
+        """
+        try:
+            # Chuẩn bị các tham số cho stored procedure
+            params = certificate.model_dump() # Chuyển Pydantic model thành dict
+            params['new_death_certificate_id'] = None # Tham số output
+
+            # Tạo câu lệnh SQL để thực thi procedure
+            # Lưu ý: Cần kiểm tra cú pháp EXEC và truyền tham số OUTPUT cho SQL Server
+            sql = text("""
+                DECLARE @output_id BIGINT;
+                EXEC [API_Internal].[InsertDeathCertificate]
+                    @citizen_id = :citizen_id,
+                    @death_certificate_no = :death_certificate_no,
+                    @book_id = :book_id,
+                    @page_no = :page_no,
+                    @date_of_death = :date_of_death,
+                    @time_of_death = :time_of_death,
+                    @place_of_death_detail = :place_of_death_detail,
+                    @place_of_death_ward_id = :place_of_death_ward_id,
+                    @cause_of_death = :cause_of_death,
+                    @declarant_name = :declarant_name,
+                    @declarant_citizen_id = :declarant_citizen_id,
+                    @declarant_relationship = :declarant_relationship,
+                    @registration_date = :registration_date,
+                    @issuing_authority_id = :issuing_authority_id,
+                    @death_notification_no = :death_notification_no,
+                    @witness1_name = :witness1_name,
+                    @witness2_name = :witness2_name,
+                    @notes = :notes,
+                    @new_death_certificate_id = @output_id OUTPUT;
+                SELECT @output_id AS new_id;
+            """)
+
+            # Thực thi procedure và lấy kết quả (ID mới)
+            result = self.db.execute(sql, params)
+            new_id_row = result.fetchone()
+
+            if new_id_row and new_id_row.new_id:
+                self.db.commit() # Commit transaction nếu procedure chạy thành công (trong procedure có transaction riêng)
+                return new_id_row.new_id
+            else:
+                # Trường hợp procedure không trả về ID (có thể do lỗi logic trong procedure)
+                logger.error("Stored procedure InsertDeathCertificate did not return a new ID.")
+                self.db.rollback()
+                return None
+
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(f"Database error calling InsertDeathCertificate: {e}", exc_info=True)
+            # Ném lỗi cụ thể hơn nếu cần phân biệt lỗi ràng buộc, kết nối,...
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Lỗi cơ sở dữ liệu khi đăng ký khai tử: {e}"
+            )
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Unexpected error calling InsertDeathCertificate: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Lỗi không xác định khi đăng ký khai tử: {str(e)}"
+            )
+
+    def get_death_certificate_by_id(self, certificate_id: int) -> DeathCertificateResponse | None:
+        """Lấy thông tin giấy chứng tử theo ID (ví dụ để trả về sau khi tạo)"""
+        try:
+            # Cần tạo bảng hoặc view trong DB BTP để lấy dữ liệu này,
+            # hoặc join các bảng nếu cần (DeathCertificate, Reference.*)
+            # Giả sử có một bảng/view tên là V_DeathCertificateDetails
+            # stmt = select(...).where(V_DeathCertificateDetails.c.death_certificate_id == certificate_id)
+            # result = self.db.execute(stmt).first()
+            # if result:
+            #     return DeathCertificateResponse.model_validate(result._mapping) # Validate với Pydantic
+            # return None
+
+            # Tạm thời trả về None vì chưa có cách lấy chi tiết
+            logger.warning("get_death_certificate_by_id is not fully implemented.")
+            return None
+
+        except SQLAlchemyError as e:
+            logger.error(f"Database error getting death certificate by ID {certificate_id}: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Lỗi cơ sở dữ liệu khi lấy thông tin giấy chứng tử."
+            )

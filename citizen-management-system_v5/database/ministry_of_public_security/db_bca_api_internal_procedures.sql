@@ -308,3 +308,38 @@ RETURN
     WHERE c.[citizen_id] = @citizen_id
 )
 GO
+
+USE [DB_BCA];
+GO
+
+-- Kiểm tra và xóa function nếu đã tồn tại
+IF OBJECT_ID('[API_Internal].[ValidateCitizenStatus]', 'IF') IS NOT NULL
+    DROP FUNCTION [API_Internal].[ValidateCitizenStatus];
+GO
+
+-- Tạo Inline Table-Valued Function để xác thực trạng thái công dân
+CREATE FUNCTION [API_Internal].[ValidateCitizenStatus] (
+    @citizen_id VARCHAR(12) -- Input: Citizen ID (CCCD)
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    -- Chọn citizen_id và death_status từ bảng Citizen
+    -- Hàm sẽ trả về một dòng nếu citizen_id tồn tại, và không trả về dòng nào nếu không tồn tại.
+    SELECT
+        c.[citizen_id],
+        c.[death_status] -- Trạng thái: 'Còn sống', 'Đã mất', 'Mất tích'
+    FROM
+        [BCA].[Citizen] c
+    WHERE
+        c.[citizen_id] = @citizen_id
+);
+GO
+
+-- Cấp quyền thực thi cho user/role của API service (ví dụ: api_service_user)
+-- Quyền này đã được cấp trên toàn schema API_Internal trong file 01_roles_permission.sql
+-- GRANT SELECT ON OBJECT::[API_Internal].[ValidateCitizenStatus] TO [api_service_user]; -- iTVF dùng quyền SELECT
+-- GO
+
+PRINT 'Function [API_Internal].[ValidateCitizenStatus] đã được tạo thành công.';
