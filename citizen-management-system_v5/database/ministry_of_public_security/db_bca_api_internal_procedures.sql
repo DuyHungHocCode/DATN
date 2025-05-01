@@ -343,3 +343,91 @@ GO
 -- GO
 
 PRINT 'Function [API_Internal].[ValidateCitizenStatus] đã được tạo thành công.';
+
+
+USE [DB_BCA];
+GO
+
+-- Kiểm tra và xóa procedure nếu đã tồn tại
+IF OBJECT_ID('[API_Internal].[UpdateCitizenDeathStatus]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[UpdateCitizenDeathStatus];
+GO
+
+-- Tạo Stored Procedure để cập nhật trạng thái công dân khi mất
+CREATE PROCEDURE [API_Internal].[UpdateCitizenDeathStatus]
+    @citizen_id VARCHAR(12),           -- ID CCCD/CMND của công dân
+    @date_of_death DATE,               -- Ngày mất
+    @updated_by VARCHAR(50) = 'SYSTEM' -- Người/hệ thống cập nhật (mặc định là SYSTEM)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Biến để lưu số dòng bị ảnh hưởng
+    DECLARE @affected_rows INT;
+    
+    -- Cập nhật trạng thái của công dân (chỉ nếu hiện tại là "Còn sống")
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        -- Cập nhật bảng Citizen
+        UPDATE [BCA].[Citizen]
+        SET [death_status] = N'Đã mất',
+            [date_of_death] = @date_of_death,
+            [updated_at] = GETDATE(),
+            [updated_by] = @updated_by
+        WHERE [citizen_id] = @citizen_id
+        AND [death_status] = N'Còn sống';
+        
+        -- Lấy số dòng bị ảnh hưởng
+        SET @affected_rows = @@ROWCOUNT;
+        
+        -- Nếu có cập nhật thành công
+        IF @affected_rows > 0
+        BEGIN
+            -- 1. Cập nhật trạng thái hiện tại thành không còn là hiện tại
+            UPDATE [BCA].[CitizenStatus]
+            SET [is_current] = 0,
+                [updated_at] = GETDATE(),
+                [updated_by] = @updated_by
+            WHERE [citizen_id] = @citizen_id
+            AND [is_current] = 1;
+            
+            -- 2. Thêm mới bản ghi trạng thái "Đã mất"
+            INSERT INTO [BCA].[CitizenStatus]
+            ([citizen_id], [status_type], [status_date], 
+             [description], [cause], [is_current], 
+             [created_by], [updated_by])
+            VALUES
+            (@citizen_id, N'Đã mất', @date_of_death, 
+             N'Cập nhật từ thông tin khai tử của Bộ Tư pháp', N'Thông báo từ BTP', 1, 
+             @updated_by, @updated_by);
+             
+            -- 3. Cập nhật trạng thái tất cả thẻ CCCD/CMND đang sử dụng của công dân thành "Thu hồi"
+            UPDATE [BCA].[IdentificationCard]
+            SET [card_status] = N'Thu hồi',
+                [updated_at] = GETDATE(),
+                [updated_by] = @updated_by,
+                [notes] = ISNULL([notes] + N' | ', N'') + N'Thu hồi do công dân đã mất ngày ' + 
+                          CONVERT(NVARCHAR, @date_of_death, 103)
+            WHERE [citizen_id] = @citizen_id
+            AND [card_status] = N'Đang sử dụng';
+        END
+        
+        COMMIT TRANSACTION;
+        
+        -- Trả về số dòng bị ảnh hưởng (0 hoặc 1)
+        SELECT @affected_rows AS affected_rows;
+        
+    END TRY
+    BEGIN CATCH
+        -- Nếu có lỗi, rollback transaction
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        -- Ném lại lỗi
+        THROW;
+    END CATCH
+END;
+GO
+
+PRINT 'Stored procedure [API_Internal].[UpdateCitizenDeathStatus] đã được tạo thành công.';

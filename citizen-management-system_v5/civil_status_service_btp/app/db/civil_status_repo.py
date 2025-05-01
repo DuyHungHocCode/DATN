@@ -80,24 +80,52 @@ class CivilStatusRepository:
             )
 
     def get_death_certificate_by_id(self, certificate_id: int) -> DeathCertificateResponse | None:
-        """Lấy thông tin giấy chứng tử theo ID (ví dụ để trả về sau khi tạo)"""
+        """Lấy thông tin giấy chứng tử theo ID."""
         try:
-            # Cần tạo bảng hoặc view trong DB BTP để lấy dữ liệu này,
-            # hoặc join các bảng nếu cần (DeathCertificate, Reference.*)
-            # Giả sử có một bảng/view tên là V_DeathCertificateDetails
-            # stmt = select(...).where(V_DeathCertificateDetails.c.death_certificate_id == certificate_id)
-            # result = self.db.execute(stmt).first()
-            # if result:
-            #     return DeathCertificateResponse.model_validate(result._mapping) # Validate với Pydantic
-            # return None
-
-            # Tạm thời trả về None vì chưa có cách lấy chi tiết
-            logger.warning("get_death_certificate_by_id is not fully implemented.")
-            return None
-
+            # Query trực tiếp từ bảng DeathCertificate và các bảng Reference cần thiết
+            query = text("""
+                SELECT 
+                    dc.*,
+                    w.ward_name AS place_of_death_ward_name,
+                    d.district_name AS place_of_death_district_name,
+                    p.province_name AS place_of_death_province_name,
+                    a.authority_name AS issuing_authority_name
+                FROM 
+                    [BTP].[DeathCertificate] dc
+                    LEFT JOIN [Reference].[Wards] w ON dc.place_of_death_ward_id = w.ward_id
+                    LEFT JOIN [Reference].[Districts] d ON dc.place_of_death_district_id = d.district_id
+                    LEFT JOIN [Reference].[Provinces] p ON dc.place_of_death_province_id = p.province_id
+                    LEFT JOIN [Reference].[Authorities] a ON dc.issuing_authority_id = a.authority_id
+                WHERE 
+                    dc.death_certificate_id = :certificate_id
+            """)
+            
+            result = self.db.execute(query, {"certificate_id": certificate_id}).fetchone()
+            
+            if not result:
+                return None
+                
+            # Chuyển đổi Row thành dict
+            data = {key: value for key, value in result._mapping.items()}
+            
+            # Tạo response object
+            return DeathCertificateResponse.model_validate(data)
+            
         except SQLAlchemyError as e:
             logger.error(f"Database error getting death certificate by ID {certificate_id}: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Lỗi cơ sở dữ liệu khi lấy thông tin giấy chứng tử."
+                detail=f"Lỗi cơ sở dữ liệu khi lấy thông tin giấy chứng tử: {str(e)}"
+            )
+    def check_existing_death_certificate(self, citizen_id: str) -> bool:
+        """Kiểm tra xem công dân đã có giấy chứng tử chưa."""
+        try:
+            query = text("SELECT COUNT(*) FROM [BTP].[DeathCertificate] WHERE [citizen_id] = :citizen_id")
+            result = self.db.execute(query, {"citizen_id": citizen_id}).scalar()
+            return result > 0
+        except SQLAlchemyError as e:
+            logger.error(f"Database error when checking existing death certificate: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Lỗi cơ sở dữ liệu khi kiểm tra giấy chứng tử: {str(e)}"
             )

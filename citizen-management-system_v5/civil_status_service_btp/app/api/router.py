@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from app.db.database import get_btp_db
 from app.db.civil_status_repo import CivilStatusRepository
 from app.schemas.death_certificate import DeathCertificateCreate, DeathCertificateResponse
@@ -14,19 +14,30 @@ logger = logging.getLogger(__name__)
 
 @router.post(
     "/death-certificates",
-    response_model=DeathCertificateResponse, # Hoặc chỉ trả về ID/message thành công
+    response_model=DeathCertificateResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Đăng ký Giấy chứng tử mới",
     description="Tiếp nhận thông tin, xác thực công dân với BCA, ghi vào DB BTP và gửi sự kiện Kafka.",
 )
 async def register_death_certificate(
     certificate_data: DeathCertificateCreate,
-    background_tasks: BackgroundTasks, # Để gửi Kafka ở background
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_btp_db),
     bca_client: BCAClient = Depends(get_bca_client),
     kafka_producer: KafkaEventProducer = Depends(get_kafka_producer)
 ):
     logger.info(f"Received request to register death certificate for citizen: {certificate_data.citizen_id}")
+
+    # Khởi tạo repository trước khi sử dụng
+    repo = CivilStatusRepository(db)
+    
+    # Kiểm tra xem công dân đã có giấy chứng tử chưa
+    if repo.check_existing_death_certificate(certificate_data.citizen_id):
+        logger.warning(f"Citizen already has death certificate: {certificate_data.citizen_id}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Công dân với ID {certificate_data.citizen_id} đã có giấy chứng tử trong hệ thống."
+        )
 
     # 1. Validate citizen status with BCA Service
     try:
@@ -53,7 +64,6 @@ async def register_death_certificate(
     logger.info(f"Citizen {certificate_data.citizen_id} validation successful (status: {validation_result.death_status}). Proceeding with registration.")
 
     # 2. Create death certificate record in DB BTP using stored procedure
-    repo = CivilStatusRepository(db)
     try:
         new_certificate_id = repo.create_death_certificate(certificate_data)
         if new_certificate_id is None:
@@ -74,6 +84,9 @@ async def register_death_certificate(
              detail=f"Lỗi không xác định khi tạo bản ghi khai tử: {str(e)}"
          )
 
+    # Phần còn lại của hàm không thay đổi
+    # ...
+
     # 3. (Optional) Get the full created record to return and send to Kafka
     #    Hiện tại repo chưa hỗ trợ lấy chi tiết, nên ta tự tạo response tạm
     # created_certificate = repo.get_death_certificate_by_id(new_certificate_id)
@@ -85,8 +98,8 @@ async def register_death_certificate(
          **certificate_data.model_dump(),
          death_certificate_id=new_certificate_id,
          status=True, # Giả định status là active khi mới tạo
-         created_at=datetime.utcnow(), # Thời gian gần đúng
-         updated_at=datetime.utcnow()  # Thời gian gần đúng
+         created_at=datetime.now(timezone.utc).isoformat(), # Thời gian gần đúng
+         updated_at=datetime.now(timezone.utc).isoformat()  # Thời gian gần đúng
      )
 
     # 4. Send event to Kafka in the background
@@ -96,3 +109,27 @@ async def register_death_certificate(
 
     # 5. Return success response
     return created_certificate_response
+
+
+@router.get(
+    "/death-certificates/{certificate_id}",
+    response_model=DeathCertificateResponse,
+    summary="Tra cứu Giấy chứng tử theo ID",
+    description="Lấy thông tin chi tiết của Giấy chứng tử theo ID."
+)
+async def get_death_certificate(
+    certificate_id: int,
+    db: Session = Depends(get_btp_db)
+):
+    logger.info(f"Request to get death certificate with ID: {certificate_id}")
+    
+    repo = CivilStatusRepository(db)
+    certificate = repo.get_death_certificate_by_id(certificate_id)
+    
+    if not certificate:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Không tìm thấy giấy chứng tử với ID {certificate_id}"
+        )
+    
+    return certificate

@@ -3,6 +3,10 @@ from sqlalchemy import text
 from typing import Optional, List, Dict, Any
 from datetime import date
 from fastapi import HTTPException, status
+import logging
+# Configure logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 class CitizenRepository:
     def __init__(self, db: Session):
@@ -118,4 +122,39 @@ class CitizenRepository:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail=f"Lỗi cơ sở dữ liệu: {str(e)}"
+            )
+        
+    def update_citizen_death_status(self, citizen_id: str, date_of_death: date) -> bool:
+        """Cập nhật trạng thái và ngày mất của công dân sử dụng stored procedure."""
+        try:
+            # Gọi stored procedure API_Internal.UpdateCitizenDeathStatus
+            query = text("""
+                EXEC [API_Internal].[UpdateCitizenDeathStatus] 
+                    @citizen_id = :citizen_id, 
+                    @date_of_death = :date_of_death, 
+                    @updated_by = 'KAFKA_CONSUMER'
+            """)
+            
+            result = self.db.execute(query, {
+                "citizen_id": citizen_id, 
+                "date_of_death": date_of_death
+            })
+            
+            # Lấy kết quả trả về (affected_rows)
+            row = result.fetchone()
+            affected_rows = row[0] if row else 0
+            
+            if affected_rows == 0:
+                # Công dân không tồn tại hoặc đã được đánh dấu là đã mất
+                return False
+            
+            self.db.commit()
+            return True
+            
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Database error when updating citizen death status: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                detail=f"Database error when updating citizen death status: {str(e)}"
             )

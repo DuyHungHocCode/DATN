@@ -104,6 +104,15 @@ BEGIN
         -- Lấy ID của bản ghi vừa được chèn
         SET @new_death_certificate_id = SCOPE_IDENTITY();
 
+        -- Thêm bản ghi vào PopulationChange
+        INSERT INTO [BTP].[PopulationChange]
+            ([citizen_id], [change_type], [change_date], [reason], 
+            [related_document_no], [processing_authority_id])
+        VALUES
+            (@citizen_id, N'Đăng ký khai tử', @registration_date, 
+            N'Khai tử theo giấy chứng tử ' + @death_certificate_no, 
+            @death_certificate_no, @issuing_authority_id);
+
         -- Commit transaction nếu thành công
         COMMIT TRANSACTION;
 

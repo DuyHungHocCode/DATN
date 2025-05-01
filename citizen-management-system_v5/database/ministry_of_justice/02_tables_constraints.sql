@@ -115,3 +115,27 @@ GO
 ALTER TABLE [BTP].[PopulationChange] ADD CONSTRAINT CK_PopulationChange_Date CHECK ([change_date] <= GETDATE());
 GO
 
+USE [DB_BTP];
+GO
+
+-- Thêm ràng buộc UNIQUE cho citizen_id trong bảng DeathCertificate
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_DeathCertificate_CitizenID')
+    DROP INDEX [UQ_DeathCertificate_CitizenID] ON [BTP].[DeathCertificate];
+GO
+
+CREATE UNIQUE NONCLUSTERED INDEX [UQ_DeathCertificate_CitizenID]
+ON [BTP].[DeathCertificate] ([citizen_id])
+WHERE ([status] = 1); -- Chỉ áp dụng cho giấy chứng tử còn hiệu lực
+GO
+
+-- Thêm ràng buộc UNIQUE cho death_certificate_no
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_DeathCertificate_Number')
+    DROP INDEX [UQ_DeathCertificate_Number] ON [BTP].[DeathCertificate];
+GO
+
+CREATE UNIQUE NONCLUSTERED INDEX [UQ_DeathCertificate_Number]
+ON [BTP].[DeathCertificate] ([death_certificate_no])
+WHERE ([status] = 1);
+GO
+
+PRINT 'Added constraints to DeathCertificate table.';

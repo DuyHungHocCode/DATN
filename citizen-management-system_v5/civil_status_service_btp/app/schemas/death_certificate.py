@@ -54,3 +54,12 @@ class CitizenValidationResponse(BaseModel):
     """Schema đơn giản để nhận phản hồi từ BCA Service"""
     citizen_id: str
     death_status: Optional[str] = None
+
+class DeathCertificateSearch(BaseModel):
+    citizen_id: Optional[str] = None
+    declarant_citizen_id: Optional[str] = None
+    date_of_death_from: Optional[date] = None
+    date_of_death_to: Optional[date] = None
+    registration_date_from: Optional[date] = None
+    registration_date_to: Optional[date] = None
+    death_certificate_no: Optional[str] = None

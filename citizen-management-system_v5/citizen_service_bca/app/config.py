@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     DB_NAME: str = os.getenv("DB_NAME", "DB_BCA")
     DB_USER: str = os.getenv("DB_USER", "sa")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "")
+
+    KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:29092")
+    KAFKA_TOPIC_BTP_EVENTS: str = os.getenv("KAFKA_TOPIC_BTP_EVENTS", "btp_events")
+    KAFKA_GROUP_ID: str = os.getenv("KAFKA_GROUP_ID", "bca_consumer_group")
     
     class Config:
         env_file = ".env"
