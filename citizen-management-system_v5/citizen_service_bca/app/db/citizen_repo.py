@@ -125,16 +125,16 @@ class CitizenRepository:
             )
         
     def update_citizen_death_status(self, citizen_id: str, date_of_death: date) -> bool:
-        """Cập nhật trạng thái và ngày mất của công dân sử dụng stored procedure."""
+        """Cập nhật trạng thái và ngày mất của công dân."""
         try:
             logger.info(f"Calling stored procedure to update death status for citizen {citizen_id} with date {date_of_death}")
             
-            # Gọi stored procedure API_Internal.UpdateCitizenDeathStatus
+            # Gọi stored procedure đơn giản
             query = text("""
                 EXEC [API_Internal].[UpdateCitizenDeathStatus] 
                     @citizen_id = :citizen_id, 
                     @date_of_death = :date_of_death, 
-                    @updated_by = 'KAFKA_CONSUMER'
+                    @updated_by = 'SYSTEM'
             """)
             
             result = self.db.execute(query, {
@@ -147,20 +147,14 @@ class CitizenRepository:
             affected_rows = row[0] if row else 0
             logger.info(f"Stored procedure returned affected_rows: {affected_rows}")
             
-            if affected_rows == 0:
-                # Kiểm tra tại sao affected_rows = 0
-                check_query = text("SELECT death_status FROM [BCA].[Citizen] WHERE citizen_id = :citizen_id")
-                check_result = self.db.execute(check_query, {"citizen_id": citizen_id}).fetchone()
-                
-                if not check_result:
-                    logger.warning(f"Citizen {citizen_id} does not exist in database")
-                else:
-                    logger.warning(f"Citizen {citizen_id} has current death_status: {check_result[0]}")
+            # Commit transaction nếu có cập nhật
+            if affected_rows > 0:
+                self.db.commit()
+                logger.info(f"Successfully committed update for citizen {citizen_id}")
+                return True
+            else:
+                logger.warning(f"No update performed for citizen {citizen_id}. Citizen may not exist.")
                 return False
-            
-            self.db.commit()
-            logger.info(f"Successfully committed update for citizen {citizen_id}")
-            return True
             
         except Exception as e:
             self.db.rollback()

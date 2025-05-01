@@ -3,7 +3,8 @@
 import json
 import logging
 import asyncio
-from datetime import datetime, date
+import os
+from datetime import datetime, timezone
 from aiokafka import AIOKafkaConsumer
 from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
@@ -130,13 +131,22 @@ class KafkaEventConsumer:
             
             # Chuyển đổi chuỗi ngày thành đối tượng date
             try:
-                date_of_death = datetime.fromisoformat(date_of_death_str).date()
+                # Thử nhiều định dạng khác nhau
+                try:
+                    # Định dạng ISO 8601
+                    date_of_death = datetime.fromisoformat(date_of_death_str).date()
+                except ValueError:
+                    # Thử định dạng ISO chuẩn (YYYY-MM-DD)
+                    if 'T' in date_of_death_str:
+                        date_of_death_str = date_of_death_str.split('T')[0]
+                    date_of_death = datetime.strptime(date_of_death_str, "%Y-%m-%d").date()
+                
                 logger.info(f"Parsed date of death: {date_of_death}")
-            except ValueError:
-                logger.error(f"Invalid date format: {date_of_death_str}")
+            except Exception as e:
+                logger.error(f"Invalid date format: {date_of_death_str}, error: {e}")
                 return
             
-            # Cập nhật trạng thái công dân trong database
+            # Cập nhật trạng thái công dân trong database - không cần kiểm tra tồn tại
             logger.info(f"Updating death status for citizen {citizen_id}")
             
             # Tạo session database
@@ -148,12 +158,84 @@ class KafkaEventConsumer:
                 if updated:
                     logger.info(f"Successfully updated death status for citizen {citizen_id}")
                 else:
-                    logger.warning(f"Failed to update death status for citizen {citizen_id}. Citizen may not exist or already marked as deceased.")
+                    logger.warning(f"Failed to update death status for citizen {citizen_id}")
             finally:
                 db.close()
             
         except Exception as e:
             logger.error(f"Error processing citizen_died event: {e}", exc_info=True)
+
+    def _store_failed_event(self, payload, error_msg=None):
+        """Lưu event thất bại để xử lý sau."""
+        try:
+            # Tạo tên file với timestamp
+            filename = f"failed_events/{datetime.now().strftime('%Y%m%d')}_failed_events.jsonl"
+            os.makedirs("failed_events", exist_ok=True)
+            
+            # Lưu thông tin sự kiện và lỗi
+            failed_event = {
+                "payload": payload,
+                "error": error_msg,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            
+            # Ghi vào file
+            with open(filename, "a") as f:
+                f.write(json.dumps(failed_event) + "\n")
+                
+            logger.info(f"Stored failed event for later processing: {error_msg}")
+        except Exception as e:
+            logger.error(f"Failed to store failed event: {e}")
+
+    # Thêm phương thức để xử lý lại các sự kiện lỗi (chạy theo lịch)
+    async def process_failed_events(self):
+        """Xử lý lại các sự kiện bị lỗi."""
+        try:
+            failed_dir = "failed_events"
+            if not os.path.exists(failed_dir):
+                return
+                
+            for filename in os.listdir(failed_dir):
+                if not filename.endswith('.jsonl'):
+                    continue
+                    
+                file_path = os.path.join(failed_dir, filename)
+                temp_path = file_path + ".processing"
+                processed = []
+                
+                # Đổi tên file để không xử lý nhiều lần
+                os.rename(file_path, temp_path)
+                
+                with open(temp_path, 'r') as f:
+                    for line in f:
+                        try:
+                            event = json.loads(line.strip())
+                            # Xử lý sự kiện
+                            await self._process_message(event['payload'])
+                            processed.append(event)
+                        except Exception as e:
+                            logger.error(f"Error reprocessing event: {e}")
+                            # Vẫn giữ lại sự kiện trong file lỗi
+                
+                # Xóa các sự kiện đã xử lý thành công
+                if processed:
+                    remaining_events = []
+                    with open(temp_path, 'r') as f:
+                        for line in f:
+                            event = json.loads(line.strip())
+                            if event not in processed:
+                                remaining_events.append(event)
+                    
+                    if remaining_events:
+                        with open(file_path, 'w') as f:
+                            for event in remaining_events:
+                                f.write(json.dumps(event) + "\n")
+                        os.remove(temp_path)
+                    else:
+                        os.remove(temp_path)  # Không còn sự kiện lỗi
+                
+        except Exception as e:
+            logger.error(f"Error in process_failed_events: {e}")
 
 # Tạo instance singleton
 kafka_consumer_instance = KafkaEventConsumer()
