@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+from logging.handlers import RotatingFileHandler
+import os
 from contextlib import asynccontextmanager
 from app.api.router import router
 from app.config import get_settings
@@ -9,9 +11,25 @@ from sqlalchemy import text
 from datetime import datetime, timezone
 from app.db.database import SessionLocal
 
+log_dir = "logs"
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, f"bca_service_{datetime.now().strftime('%Y%m%d')}.txt")
+
+
 settings = get_settings()
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        # Handler ghi ra console
+        logging.StreamHandler(),
+        # Handler ghi ra file, tối đa 10MB, backup 5 file
+        RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)
+    ]
+)
+
 logger = logging.getLogger(__name__)
+logger.info("BCA Citizen Service starting, logs will be saved to: %s", log_file)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

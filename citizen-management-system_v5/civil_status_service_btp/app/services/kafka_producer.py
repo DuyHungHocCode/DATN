@@ -15,17 +15,19 @@ class KafkaEventProducer:
     def __init__(self):
         self.producer = None
         try:
+            logger.info(f"Initializing Kafka producer with bootstrap servers: {settings.KAFKA_BOOTSTRAP_SERVERS}")
             self.producer = KafkaProducer(
-                bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS.split(','), # Cho phép nhiều server
+                bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS.split(','), 
                 value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-                # Thêm các cấu hình khác nếu cần: retries, acks, security_protocol, etc.
                 retries=3,
-                # api_version=(0, 11, 5) # Chỉ định version nếu cần
+                # Bỏ các tùy chọn không cần thiết có thể gây lỗi
+                # api_version=(0, 11, 5) # Dòng này có thể gây lỗi
             )
             logger.info("Kafka producer initialized successfully.")
         except KafkaError as e:
-            logger.error(f"Failed to initialize Kafka producer: {e}")
-            # Có thể raise lỗi hoặc để service tiếp tục chạy nhưng không gửi được event
+            logger.error(f"Failed to initialize Kafka producer: {e}", exc_info=True)
+        except Exception as e:
+            logger.error(f"Unexpected error initializing Kafka producer: {e}", exc_info=True)
 
     # def send_citizen_died_event(self, certificate_data: DeathCertificateResponse):
     #     """Gửi sự kiện citizen_died lên Kafka."""
@@ -84,8 +86,8 @@ class KafkaEventProducer:
         """Gửi sự kiện citizen_died lên Kafka."""
         if not self.producer:
             logger.error("Kafka producer is not available. Cannot send event.")
-            self._store_failed_event(certificate_data)  # Lưu event thất bại
-            return
+            self._store_failed_event(certificate_data)
+            return False
         
         event_payload = {
             "eventType": "citizen_died",
@@ -99,24 +101,34 @@ class KafkaEventProducer:
                 "death_certificate_id": certificate_data.death_certificate_id,
                 "cause_of_death": certificate_data.cause_of_death
             },
-            "timestamp": datetime.now(timezone.utc).isoformat() + "Z"
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
         try:
             logger.info(f"Sending event to Kafka topic: {settings.KAFKA_TOPIC_BTP_EVENTS}")
+            logger.info(f"Event payload: {event_payload}")
+            
+            # Gửi message với timeout để đảm bảo được gửi
             future = self.producer.send(settings.KAFKA_TOPIC_BTP_EVENTS, value=event_payload)
             
-            # Thêm timeout và xử lý lỗi đồng bộ (nên tránh trong production)
-            # record_metadata = future.get(timeout=5)
-            # logger.info(f"Event sent successfully: {record_metadata}")
+            # Đợi kết quả đồng bộ để đảm bảo message được gửi đi
+            record_metadata = future.get(timeout=10)
+            logger.info(f"Event sent successfully to topic: {record_metadata.topic}, partition: {record_metadata.partition}, offset: {record_metadata.offset}")
             
-            # Xử lý bất đồng bộ
-            future.add_callback(self.on_send_success)
-            future.add_errback(self.on_send_error)
+            # Gọi flush để đảm bảo message được gửi
+            self.producer.flush(timeout=5)
+            logger.info("Producer flush completed")
+            
+            return True
             
         except KafkaError as e:
-            logger.error(f"Failed to send event to Kafka: {e}")
+            logger.error(f"Failed to send event to Kafka: {e}", exc_info=True)
             self._store_failed_event(certificate_data, str(e))
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error sending Kafka event: {e}", exc_info=True)
+            self._store_failed_event(certificate_data, str(e))
+            return False
 
     def _store_failed_event(self, certificate_data, error_msg=None):
         """Lưu event thất bại để xử lý sau (Dead Letter Queue)."""

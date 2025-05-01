@@ -34,3 +34,20 @@ https://go.microsoft.com/fwlink/?LinkId=853010&clcid=0x409
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 lt --port 8000 --subdomain
+
+{
+    "citizen_id": "123456789012",
+    "death_certificate_no": "DC20240501-001",
+    "book_id": "DC2024",
+    "page_no": "001",
+    "date_of_death": "2024-05-01",
+    "time_of_death": "08:30:00",
+    "place_of_death_detail": "Bệnh viện Bạch Mai, Hà Nội",
+    "place_of_death_ward_id": 10101,
+    "cause_of_death": "Đột quỵ",
+    "declarant_name": "Trần Thị Bình",
+    "declarant_citizen_id": "234567890123", 
+    "declarant_relationship": "Vợ",
+    "registration_date": "2024-05-01",
+    "issuing_authority_id": 150
+  }

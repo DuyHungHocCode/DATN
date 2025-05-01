@@ -27,19 +27,28 @@ class KafkaEventConsumer:
     async def start(self):
         """Khởi động Kafka consumer."""
         if self.is_running:
+            logger.info("Kafka consumer already running")
             return
         
         try:
-            logger.info(f"Starting Kafka consumer for topic {self.topic}")
+            logger.info(f"Starting Kafka consumer for topic {self.topic} with bootstrap servers: {self.bootstrap_servers}")
+            
+            # Tách bootstrap_servers nếu có nhiều server
+            bootstrap_servers_list = self.bootstrap_servers.split(',')
+            logger.info(f"Using bootstrap servers: {bootstrap_servers_list}")
+            
             self.consumer = AIOKafkaConsumer(
                 self.topic,
-                bootstrap_servers=self.bootstrap_servers,
+                bootstrap_servers=bootstrap_servers_list,
                 group_id=self.group_id,
                 value_deserializer=lambda m: json.loads(m.decode('utf-8')),
                 auto_offset_reset='earliest'
             )
             
+            logger.info("Consumer created, attempting to start...")
             await self.consumer.start()
+            logger.info("Consumer start() completed successfully")
+            
             self.is_running = True
             self.should_stop = False
             
@@ -49,6 +58,9 @@ class KafkaEventConsumer:
             
         except Exception as e:
             logger.error(f"Failed to start Kafka consumer: {e}", exc_info=True)
+            # Đảm bảo state được duy trì chính xác nếu khởi động thất bại  
+            self.is_running = False
+            self.consumer = None
     
     async def stop(self):
         """Dừng Kafka consumer."""
@@ -107,6 +119,8 @@ class KafkaEventConsumer:
     async def _process_citizen_died_event(self, payload: Dict[str, Any]):
         """Xử lý sự kiện khi công dân qua đời."""
         try:
+            logger.info(f"Processing citizen_died event with payload: {payload}")
+            
             citizen_id = payload.get('citizen_id')
             date_of_death_str = payload.get('date_of_death')
             
@@ -117,6 +131,7 @@ class KafkaEventConsumer:
             # Chuyển đổi chuỗi ngày thành đối tượng date
             try:
                 date_of_death = datetime.fromisoformat(date_of_death_str).date()
+                logger.info(f"Parsed date of death: {date_of_death}")
             except ValueError:
                 logger.error(f"Invalid date format: {date_of_death_str}")
                 return
