@@ -30,6 +30,11 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 logger.info("BCA Citizen Service starting, logs will be saved to: %s", log_file)
+# At the end of logging configuration
+logger.debug("Debug message - testing logging")
+logger.info("Info message - testing logging")
+logger.warning("Warning message - testing logging")
+logger.error("Error message - testing logging")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -49,6 +54,7 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     description="API để tìm kiếm và truy vấn thông tin công dân",
     version="0.1.0",
+    lifespan=lifespan
 )
 
 # CORS middleware

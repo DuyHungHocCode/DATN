@@ -6,7 +6,6 @@ from fastapi import HTTPException, status
 import logging
 # Configure logger
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 class CitizenRepository:
     def __init__(self, db: Session):

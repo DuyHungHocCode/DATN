@@ -8,7 +8,6 @@ from app.config import get_settings
 from app.schemas.death_certificate import DeathCertificateResponse # Hoặc schema sự kiện riêng
 
 settings = get_settings()
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class KafkaEventProducer:
