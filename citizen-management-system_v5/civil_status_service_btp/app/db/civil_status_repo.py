@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 import logging
 
 from app.schemas.death_certificate import DeathCertificateCreate, DeathCertificateResponse
-
+from app.schemas.marriage_certificate import MarriageCertificateCreate
 logger = logging.getLogger(__name__)
 
 class CivilStatusRepository:
@@ -128,4 +128,61 @@ class CivilStatusRepository:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Lỗi cơ sở dữ liệu khi kiểm tra giấy chứng tử: {str(e)}"
+            )
+        
+    def create_marriage_certificate(self, certificate: MarriageCertificateCreate) -> int | None:
+        """
+        Gọi stored procedure API_Internal.InsertMarriageCertificate để đăng ký kết hôn.
+        """
+        try:
+            # Chuẩn bị các tham số cho stored procedure
+            params = certificate.model_dump()
+            params['new_marriage_certificate_id'] = None # Tham số output
+
+            # Tạo câu lệnh SQL để thực thi procedure
+            sql = text("""
+                DECLARE @output_id BIGINT;
+                EXEC [API_Internal].[InsertMarriageCertificate]
+                    @marriage_certificate_no = :marriage_certificate_no,
+                    @book_id = :book_id,
+                    @page_no = :page_no,
+                    @husband_id = :husband_id,
+                    @husband_full_name = :husband_full_name,
+                    @husband_date_of_birth = :husband_date_of_birth,
+                    @husband_nationality_id = :husband_nationality_id,
+                    @husband_previous_marriage_status = :husband_previous_marriage_status,
+                    @wife_id = :wife_id,
+                    @wife_full_name = :wife_full_name,
+                    @wife_date_of_birth = :wife_date_of_birth,
+                    @wife_nationality_id = :wife_nationality_id,
+                    @wife_previous_marriage_status = :wife_previous_marriage_status,
+                    @marriage_date = :marriage_date,
+                    @registration_date = :registration_date,
+                    @issuing_authority_id = :issuing_authority_id,
+                    @issuing_place = :issuing_place,
+                    @witness1_name = :witness1_name,
+                    @witness2_name = :witness2_name,
+                    @notes = :notes,
+                    @new_marriage_certificate_id = @output_id OUTPUT;
+                SELECT @output_id AS new_id;
+            """)
+
+            # Thực thi procedure và lấy kết quả
+            result = self.db.execute(sql, params)
+            new_id_row = result.fetchone()
+
+            if new_id_row and new_id_row.new_id:
+                self.db.commit()
+                return new_id_row.new_id
+            else:
+                logger.error("Stored procedure InsertMarriageCertificate did not return a new ID")
+                self.db.rollback()
+                return None
+
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(f"Database error calling InsertMarriageCertificate: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Lỗi cơ sở dữ liệu khi đăng ký kết hôn: {e}"
             )

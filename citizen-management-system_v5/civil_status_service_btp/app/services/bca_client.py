@@ -1,5 +1,6 @@
 # civil_status_service_btp/app/services/bca_client.py
 import httpx
+from typing import Dict, Any, Optional
 from fastapi import HTTPException, status
 from app.config import get_settings
 from app.schemas.death_certificate import CitizenValidationResponse # Import schema đơn giản
@@ -61,6 +62,37 @@ class BCAClient:
                  status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                  detail=f"Lỗi không xác định khi gọi dịch vụ BCA: {str(e)}"
              )
+    async def get_citizen_family_tree(self, citizen_id: str) -> Dict[str, Any] | None:
+        """
+        Gọi API của CitizenService (BCA) để lấy thông tin phả hệ 3 đời của công dân.
+        """
+        try:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=15.0) as client:
+                response = await client.get(f"/api/v1/citizens/{citizen_id}/family-tree")
+
+            if response.status_code == status.HTTP_404_NOT_FOUND:
+                return None
+            elif response.status_code == status.HTTP_200_OK:
+                return response.json()
+            else:
+                response.raise_for_status()
+
+        except httpx.TimeoutException:
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail="Gọi dịch vụ BCA bị timeout khi truy vấn phả hệ."
+            )
+        except httpx.RequestError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"Lỗi kết nối đến dịch vụ BCA: {exc}"
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Lỗi khi truy vấn phả hệ từ dịch vụ BCA: {str(e)}"
+            )
+        
 
 # Dependency function để inject client
 # Singleton pattern để tránh tạo nhiều client không cần thiết

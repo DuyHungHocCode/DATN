@@ -1,0 +1,194 @@
+2025-05-02 14:31:33,284 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250502.txt
+2025-05-02 14:31:33,284 - app.main - INFO - Info message - testing logging
+2025-05-02 14:31:33,284 - app.main - WARNING - Warning message - testing logging
+2025-05-02 14:31:33,284 - app.main - ERROR - Error message - testing logging
+2025-05-02 14:31:33,290 - app.main - INFO - Citizen Service starting up...
+2025-05-02 14:31:33,290 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-02 14:31:33,290 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-02 14:31:33,290 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-02 14:31:33,290 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-02 14:31:33,293 - aiokafka - ERROR - Unable connect to "localhost:29092": [Errno 111] Connection refused
+2025-05-02 14:31:33,293 - app.services.kafka_consumer - ERROR - Failed to start Kafka consumer: KafkaConnectionError: Unable to bootstrap from [('localhost', 29092, <AddressFamily.AF_UNSPEC: 0>)]
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/citizen_service_bca/app/services/kafka_consumer.py", line 50, in start
+    await self.consumer.start()
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/aiokafka/consumer/consumer.py", line 371, in start
+    await self._client.bootstrap()
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/aiokafka/client.py", line 266, in bootstrap
+    raise KafkaConnectionError(f"Unable to bootstrap from {self.hosts}")
+aiokafka.errors.KafkaConnectionError: KafkaConnectionError: Unable to bootstrap from [('localhost', 29092, <AddressFamily.AF_UNSPEC: 0>)]
+2025-05-02 14:31:33,295 - asyncio - ERROR - Unclosed AIOKafkaConsumer
+consumer: <aiokafka.consumer.consumer.AIOKafkaConsumer object at 0x73c332461670>
+2025-05-02 14:31:42,116 - app.main - INFO - Citizen Service shutting down...
+2025-05-02 14:34:23,174 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250502.txt
+2025-05-02 14:34:23,175 - app.main - INFO - Info message - testing logging
+2025-05-02 14:34:23,175 - app.main - WARNING - Warning message - testing logging
+2025-05-02 14:34:23,175 - app.main - ERROR - Error message - testing logging
+2025-05-02 14:34:23,178 - app.main - INFO - Citizen Service starting up...
+2025-05-02 14:34:23,178 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-02 14:34:23,178 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-02 14:34:23,178 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-02 14:34:23,179 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-02 14:34:23,204 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-02 14:34:23,205 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-02 14:34:23,205 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-02 14:34:23,223 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 7) with member_id aiokafka-0.12.0-29291821-3398-4ed0-a2bc-cc4eef0e939e
+2025-05-02 14:34:23,223 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-02 14:34:23,235 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 7
+2025-05-02 14:34:23,236 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-02 14:34:23,236 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-02 14:34:23,236 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-02 15:21:01,479 - app.main - INFO - Citizen Service shutting down...
+2025-05-02 15:21:01,479 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-02 15:21:01,497 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-02 15:21:01,498 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-02 15:21:01,951 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250502.txt
+2025-05-02 15:21:01,951 - app.main - INFO - Info message - testing logging
+2025-05-02 15:21:01,951 - app.main - WARNING - Warning message - testing logging
+2025-05-02 15:21:01,951 - app.main - ERROR - Error message - testing logging
+2025-05-02 15:21:01,955 - app.main - INFO - Citizen Service starting up...
+2025-05-02 15:21:01,955 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-02 15:21:01,955 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-02 15:21:01,955 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-02 15:21:01,955 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-02 15:21:01,972 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-02 15:21:01,972 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-02 15:21:01,972 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-02 15:21:01,976 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 9) with member_id aiokafka-0.12.0-934d522c-030c-443e-bdba-014e2117f0ae
+2025-05-02 15:21:01,977 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-02 15:21:01,979 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 9
+2025-05-02 15:21:01,979 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-02 15:21:01,980 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-02 15:21:01,980 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-02 15:21:59,408 - app.main - INFO - Citizen Service shutting down...
+2025-05-02 15:21:59,408 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-02 15:21:59,412 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-02 15:21:59,412 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-02 15:21:59,850 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250502.txt
+2025-05-02 15:21:59,850 - app.main - INFO - Info message - testing logging
+2025-05-02 15:21:59,850 - app.main - WARNING - Warning message - testing logging
+2025-05-02 15:21:59,850 - app.main - ERROR - Error message - testing logging
+2025-05-02 15:21:59,854 - app.main - INFO - Citizen Service starting up...
+2025-05-02 15:21:59,854 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-02 15:21:59,854 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-02 15:21:59,854 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-02 15:21:59,854 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-02 15:21:59,867 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-02 15:21:59,867 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-02 15:21:59,867 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-02 15:21:59,870 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 11) with member_id aiokafka-0.12.0-93ca18fc-8fe8-4d2b-b84b-59879dee2af5
+2025-05-02 15:21:59,870 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-02 15:21:59,872 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 11
+2025-05-02 15:21:59,872 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-02 15:21:59,872 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-02 15:21:59,872 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-02 15:22:10,004 - app.main - INFO - Citizen Service shutting down...
+2025-05-02 15:22:10,004 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-02 15:22:10,008 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-02 15:22:10,008 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-02 15:22:10,690 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250502.txt
+2025-05-02 15:22:10,690 - app.main - INFO - Info message - testing logging
+2025-05-02 15:22:10,690 - app.main - WARNING - Warning message - testing logging
+2025-05-02 15:22:10,690 - app.main - ERROR - Error message - testing logging
+2025-05-02 15:22:10,694 - app.main - INFO - Citizen Service starting up...
+2025-05-02 15:22:10,695 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-02 15:22:10,695 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-02 15:22:10,695 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-02 15:22:10,695 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-02 15:22:10,709 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-02 15:22:10,709 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-02 15:22:10,709 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-02 15:22:10,713 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 13) with member_id aiokafka-0.12.0-1110c158-5196-405f-a24b-53391f49449f
+2025-05-02 15:22:10,713 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-02 15:22:10,717 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 13
+2025-05-02 15:22:10,717 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-02 15:22:10,717 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-02 15:22:10,718 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-02 15:24:19,494 - app.main - INFO - Citizen Service shutting down...
+2025-05-02 15:24:19,494 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-02 15:24:19,498 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-02 15:24:19,498 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-02 15:24:53,696 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250502.txt
+2025-05-02 15:24:53,696 - app.main - INFO - Info message - testing logging
+2025-05-02 15:24:53,696 - app.main - WARNING - Warning message - testing logging
+2025-05-02 15:24:53,697 - app.main - ERROR - Error message - testing logging
+2025-05-02 15:24:53,700 - app.main - INFO - Citizen Service starting up...
+2025-05-02 15:24:53,700 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-02 15:24:53,700 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-02 15:24:53,700 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-02 15:24:53,700 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-02 15:24:53,711 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-02 15:24:53,711 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-02 15:24:53,711 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-02 15:24:53,714 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 15) with member_id aiokafka-0.12.0-6bdfb708-a101-4e4e-ae53-9ed47315dae0
+2025-05-02 15:24:53,714 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-02 15:24:53,715 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 15
+2025-05-02 15:24:53,715 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-02 15:24:53,715 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-02 15:24:53,715 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-02 15:49:11,933 - app.main - INFO - Citizen Service shutting down...
+2025-05-02 15:49:11,934 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-02 15:49:11,938 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-02 15:49:11,939 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-02 15:49:12,378 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250502.txt
+2025-05-02 15:49:12,378 - app.main - INFO - Info message - testing logging
+2025-05-02 15:49:12,378 - app.main - WARNING - Warning message - testing logging
+2025-05-02 15:49:12,378 - app.main - ERROR - Error message - testing logging
+2025-05-02 15:49:12,382 - app.main - INFO - Citizen Service starting up...
+2025-05-02 15:49:12,382 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-02 15:49:12,382 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-02 15:49:12,382 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-02 15:49:12,382 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-02 15:49:12,390 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-02 15:49:12,390 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-02 15:49:12,390 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-02 15:49:12,392 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 17) with member_id aiokafka-0.12.0-2523c307-8b68-4b26-a6bc-c71c3f2a32b3
+2025-05-02 15:49:12,392 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-02 15:49:12,393 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 17
+2025-05-02 15:49:12,393 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-02 15:49:12,393 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-02 15:49:12,394 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-02 15:52:36,091 - app.main - INFO - Citizen Service shutting down...
+2025-05-02 15:52:36,091 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-02 15:52:36,094 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-02 15:52:36,094 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-02 15:52:36,517 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250502.txt
+2025-05-02 15:52:36,517 - app.main - INFO - Info message - testing logging
+2025-05-02 15:52:36,517 - app.main - WARNING - Warning message - testing logging
+2025-05-02 15:52:36,517 - app.main - ERROR - Error message - testing logging
+2025-05-02 15:52:36,521 - app.main - INFO - Citizen Service starting up...
+2025-05-02 15:52:36,521 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-02 15:52:36,521 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-02 15:52:36,521 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-02 15:52:36,521 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-02 15:52:36,528 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-02 15:52:36,528 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-02 15:52:36,529 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-02 15:52:36,530 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 19) with member_id aiokafka-0.12.0-cc1daf40-c3bb-4897-9ac1-63feeb4dc3e8
+2025-05-02 15:52:36,530 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-02 15:52:36,532 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 19
+2025-05-02 15:52:36,532 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-02 15:52:36,532 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-02 15:52:36,532 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-02 15:53:21,132 - app.main - INFO - Citizen Service shutting down...
+2025-05-02 15:53:21,132 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-02 15:53:21,137 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-02 15:53:21,137 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-02 15:53:21,624 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250502.txt
+2025-05-02 15:53:21,624 - app.main - INFO - Info message - testing logging
+2025-05-02 15:53:21,624 - app.main - WARNING - Warning message - testing logging
+2025-05-02 15:53:21,624 - app.main - ERROR - Error message - testing logging
+2025-05-02 15:53:21,628 - app.main - INFO - Citizen Service starting up...
+2025-05-02 15:53:21,628 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-02 15:53:21,628 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-02 15:53:21,628 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-02 15:53:21,628 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-02 15:53:21,637 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-02 15:53:21,637 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-02 15:53:21,637 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-02 15:53:21,639 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 21) with member_id aiokafka-0.12.0-c288a396-241c-4dcb-baab-02e658b3acc0
+2025-05-02 15:53:21,639 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-02 15:53:21,640 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 21
+2025-05-02 15:53:21,640 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-02 15:53:21,640 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-02 15:53:21,640 - app.services.kafka_consumer - INFO - Kafka consumer started successfully

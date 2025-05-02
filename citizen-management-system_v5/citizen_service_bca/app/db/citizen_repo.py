@@ -162,3 +162,22 @@ class CitizenRepository:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail=f"Database error when updating citizen death status: {str(e)}"
             )
+    
+    def get_family_tree(self, citizen_id: str) -> List[Dict[str, Any]]:
+        """Lấy cây phả hệ 3 đời của công dân theo ID."""
+        try:
+            query = text("SELECT * FROM [API_Internal].[GetCitizenFamilyTree](:citizen_id)")
+            result = self.db.execute(query, {"citizen_id": citizen_id}).fetchall()
+            
+            if not result:
+                return []
+                
+            # Chuyển đổi từ Row sang dict
+            return [dict(row._mapping) for row in result]
+            
+        except Exception as e:
+            logger.error(f"Database error when getting family tree: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                detail=f"Lỗi cơ sở dữ liệu khi truy vấn phả hệ: {str(e)}"
+            )

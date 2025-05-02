@@ -7,6 +7,7 @@ from app.db.database import get_db
 from app.db.citizen_repo import CitizenRepository
 from app.schemas.citizen import CitizenSearch, CitizenResponse
 from app.schemas.residence import ResidenceHistoryResponse, ContactInfoResponse
+from app.schemas.family_tree import FamilyTreeResponse
 
 router = APIRouter()
 
@@ -94,3 +95,29 @@ def get_citizen_contact_info(
         )
     
     return contact_info
+
+@router.get("/citizens/{citizen_id}/family-tree", response_model=FamilyTreeResponse)
+def get_citizen_family_tree(
+    citizen_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy cây phả hệ 3 đời của công dân theo ID CCCD/CMND
+    """
+    repo = CitizenRepository(db)
+    
+    # Kiểm tra công dân tồn tại
+    citizen = repo.find_by_id(citizen_id)
+    if not citizen:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Không tìm thấy công dân với ID {citizen_id}"
+        )
+    
+    # Lấy thông tin phả hệ
+    family_members = repo.get_family_tree(citizen_id)
+    
+    return {
+        "citizen_id": citizen_id,
+        "family_members": family_members
+    }

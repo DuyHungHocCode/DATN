@@ -8,6 +8,8 @@ from app.db.civil_status_repo import CivilStatusRepository
 from app.schemas.death_certificate import DeathCertificateCreate, DeathCertificateResponse
 from app.services.bca_client import BCAClient, get_bca_client
 from app.services.kafka_producer import KafkaEventProducer, get_kafka_producer
+from app.services.marriage_validator import MarriageValidator
+from app.schemas.marriage_certificate import MarriageCertificateCreate, MarriageCertificateResponse
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -133,3 +135,103 @@ async def get_death_certificate(
         )
     
     return certificate
+
+@router.post(
+    "/marriage-certificates",
+    response_model=MarriageCertificateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Đăng ký Giấy chứng nhận kết hôn mới",
+    description="Tiếp nhận thông tin, xác thực cả hai công dân với BCA, kiểm tra điều kiện kết hôn, ghi vào DB BTP và gửi sự kiện Kafka.",
+)
+async def register_marriage_certificate(
+    certificate_data: MarriageCertificateCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_btp_db),
+    bca_client: BCAClient = Depends(get_bca_client),
+    kafka_producer: KafkaEventProducer = Depends(get_kafka_producer)
+):
+    logger.info(f"Received request to register marriage between citizens: {certificate_data.husband_id} and {certificate_data.wife_id}")
+
+    repo = CivilStatusRepository(db)
+    
+    # 1. Validate citizens exist and are alive
+    try:
+        husband_validation = await bca_client.validate_citizen_status(certificate_data.husband_id)
+        if not husband_validation:
+            logger.warning(f"Husband validation failed: Citizen {certificate_data.husband_id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy công dân (chồng) với ID {certificate_data.husband_id} trong hệ thống BCA."
+            )
+        
+        if husband_validation.death_status in ('Đã mất', 'Mất tích'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Công dân (chồng) với ID {certificate_data.husband_id} không thể kết hôn (trạng thái: {husband_validation.death_status})"
+            )
+            
+        wife_validation = await bca_client.validate_citizen_status(certificate_data.wife_id)
+        if not wife_validation:
+            logger.warning(f"Wife validation failed: Citizen {certificate_data.wife_id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy công dân (vợ) với ID {certificate_data.wife_id} trong hệ thống BCA."
+            )
+            
+        if wife_validation.death_status in ('Đã mất', 'Mất tích'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Công dân (vợ) với ID {certificate_data.wife_id} không thể kết hôn (trạng thái: {wife_validation.death_status})"
+            )
+    except HTTPException as e:
+        logger.error(f"Error validating citizens: {e.detail}")
+        raise e
+
+    # 2. Validate marriage requirements
+    validator = MarriageValidator()
+    is_valid, validation_error = await validator.validate_marriage(
+        bca_client,
+        certificate_data.husband_id,
+        certificate_data.wife_id,
+        certificate_data.husband_date_of_birth,
+        certificate_data.wife_date_of_birth
+    )
+    
+    if not is_valid:
+        logger.warning(f"Marriage validation failed: {validation_error}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Không thỏa mãn điều kiện kết hôn: {validation_error}"
+        )
+
+    logger.info("Marriage validation passed. Proceeding with registration.")
+
+    # 3. Create marriage certificate record in DB BTP
+    try:
+        new_certificate_id = repo.create_marriage_certificate(certificate_data)
+        if new_certificate_id is None:
+            logger.error("Failed to create marriage certificate record")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Không thể tạo bản ghi giấy chứng nhận kết hôn trong cơ sở dữ liệu."
+            )
+        logger.info(f"Successfully created marriage certificate with ID: {new_certificate_id}")
+    except HTTPException as e:
+        logger.error(f"Database error during marriage certificate creation: {e.detail}")
+        raise e
+
+    # 4. Create response object
+    created_certificate_response = MarriageCertificateResponse(
+        **certificate_data.model_dump(),
+        marriage_certificate_id=new_certificate_id,
+        status=True,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
+    )
+
+    # 5. Send event to Kafka in the background
+    background_tasks.add_task(kafka_producer.send_marriage_event, created_certificate_response)
+    logger.info(f"Added Kafka event sending task to background for certificate ID: {new_certificate_id}")
+
+    # 6. Return success response
+    return created_certificate_response

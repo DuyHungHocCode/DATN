@@ -4,6 +4,7 @@ import json
 import logging
 import asyncio
 import os
+from sqlalchemy import text
 from datetime import datetime, timezone
 from aiokafka import AIOKafkaConsumer
 from typing import Dict, Any, Optional
@@ -111,12 +112,14 @@ class KafkaEventConsumer:
             # Xử lý các loại sự kiện
             if event_type == 'citizen_died':
                 await self._process_citizen_died_event(payload)
+            elif event_type == 'citizen_married':
+                await self._process_citizen_married_event(payload)
             else:
                 logger.info(f"Ignoring unsupported event type: {event_type}")
-                
+                    
         except Exception as e:
             logger.error(f"Error processing message: {e}", exc_info=True)
-    
+        
     async def _process_citizen_died_event(self, payload: Dict[str, Any]):
         """Xử lý sự kiện khi công dân qua đời."""
         try:
@@ -236,6 +239,79 @@ class KafkaEventConsumer:
                 
         except Exception as e:
             logger.error(f"Error in process_failed_events: {e}")
+
+    async def _process_citizen_married_event(self, payload: Dict[str, Any]):
+        """Xử lý sự kiện khi công dân kết hôn."""
+        try:
+            logger.info(f"Processing citizen_married event with payload: {payload}")
+            
+            husband_id = payload.get('husband_id')
+            wife_id = payload.get('wife_id')
+            marriage_date_str = payload.get('marriage_date')
+            certificate_id = payload.get('marriage_certificate_id')
+            
+            if not husband_id or not wife_id or not marriage_date_str:
+                logger.warning(f"Missing required fields in citizen_married event: {payload}")
+                return
+            
+            # Chuyển đổi chuỗi ngày thành đối tượng date
+            try:
+                if 'T' in marriage_date_str:
+                    marriage_date_str = marriage_date_str.split('T')[0]
+                marriage_date = datetime.strptime(marriage_date_str, "%Y-%m-%d").date()
+                logger.info(f"Parsed marriage date: {marriage_date}")
+            except Exception as e:
+                logger.error(f"Invalid date format: {marriage_date_str}, error: {e}")
+                return
+            
+            # Cập nhật trạng thái kết hôn cho cả hai công dân
+            db = SessionLocal()
+            try:
+                # Cập nhật trạng thái cho chồng
+                husband_updated = self._update_citizen_marriage_status(db, husband_id, wife_id)
+                logger.info(f"Updated marital status for husband {husband_id}: {husband_updated}")
+                
+                # Cập nhật trạng thái cho vợ
+                wife_updated = self._update_citizen_marriage_status(db, wife_id, husband_id)
+                logger.info(f"Updated marital status for wife {wife_id}: {wife_updated}")
+                
+            finally:
+                db.close()
+                
+        except Exception as e:
+            logger.error(f"Error processing citizen_married event: {e}", exc_info=True)
+
+    def _update_citizen_marriage_status(self, db: Session, citizen_id: str, spouse_id: str) -> bool:
+        """Cập nhật trạng thái hôn nhân của công dân."""
+        try:
+            # Cập nhật thông tin hôn nhân
+            query = text("""
+                UPDATE [BCA].[Citizen]
+                SET [marital_status] = N'Đã kết hôn',
+                    [spouse_citizen_id] = :spouse_id,
+                    [updated_at] = GETDATE(),
+                    [updated_by] = 'SYSTEM'
+                WHERE [citizen_id] = :citizen_id
+            """)
+            
+            result = db.execute(query, {
+                "citizen_id": citizen_id,
+                "spouse_id": spouse_id
+            })
+            
+            affected_rows = result.rowcount
+            
+            if affected_rows > 0:
+                db.commit()
+                return True
+            else:
+                logger.warning(f"No rows updated when updating marital status for citizen {citizen_id}")
+                return False
+                
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Database error when updating marriage status: {e}", exc_info=True)
+            raise e
 
 # Tạo instance singleton
 kafka_consumer_instance = KafkaEventConsumer()

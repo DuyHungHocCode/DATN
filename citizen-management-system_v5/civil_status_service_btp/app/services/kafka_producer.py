@@ -6,6 +6,7 @@ import logging
 from datetime import datetime, timezone
 from app.config import get_settings
 from app.schemas.death_certificate import DeathCertificateResponse # Hoặc schema sự kiện riêng
+from app.schemas.marriage_certificate import MarriageCertificateResponse # Hoặc schema sự kiện riêng
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -108,6 +109,49 @@ class KafkaEventProducer:
         except Exception as e:
             logger.error(f"Failed to store failed event: {e}")
     
+    def send_marriage_event(self, certificate_data: MarriageCertificateResponse):
+        """Gửi sự kiện citizen_married lên Kafka."""
+        if not self.producer:
+            logger.error("Kafka producer is not available. Cannot send event.")
+            self._store_failed_event(certificate_data)
+            return False
+        
+        # Đảm bảo định dạng ngày tháng chuẩn ISO 8601
+        marriage_date_iso = certificate_data.marriage_date.strftime("%Y-%m-%d")
+        registration_date_iso = certificate_data.registration_date.strftime("%Y-%m-%d")
+        
+        event_payload = {
+            "eventType": "citizen_married",
+            "payload": {
+                "marriage_certificate_id": certificate_data.marriage_certificate_id,
+                "marriage_certificate_no": certificate_data.marriage_certificate_no,
+                "husband_id": certificate_data.husband_id,
+                "wife_id": certificate_data.wife_id,
+                "marriage_date": marriage_date_iso,
+                "registration_date": registration_date_iso,
+                "issuing_authority_id": certificate_data.issuing_authority_id,
+                "status": certificate_data.status
+            },
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        }
+
+        try:
+            logger.info(f"Sending marriage event to Kafka topic: {settings.KAFKA_TOPIC_BTP_EVENTS}")
+            
+            # Gửi message và đợi kết quả
+            future = self.producer.send(settings.KAFKA_TOPIC_BTP_EVENTS, value=event_payload)
+            record_metadata = future.get(timeout=10)
+            
+            logger.info(f"Event sent successfully to topic: {record_metadata.topic}, partition: {record_metadata.partition}, offset: {record_metadata.offset}")
+            
+            # Flush để đảm bảo message được gửi
+            self.producer.flush(timeout=5)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to send event to Kafka: {e}", exc_info=True)
+            self._store_failed_event(certificate_data, str(e))
+            return False
 # Singleton pattern
 kafka_producer_instance = KafkaEventProducer()
 def get_kafka_producer():
