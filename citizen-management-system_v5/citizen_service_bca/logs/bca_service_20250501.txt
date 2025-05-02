@@ -154,3 +154,11 @@
 2025-05-01 19:56:04,033 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
 2025-05-01 19:56:04,036 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 3
 2025-05-01 19:56:04,036 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-02 10:12:43,937 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-02 10:12:44,700 - aiokafka.consumer.group_coordinator - WARNING - Heartbeat failed: local member_id was not recognized; resetting and re-joining group
+2025-05-02 10:12:44,706 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions frozenset({TopicPartition(topic='btp_events', partition=0)}) for group bca_consumer_group
+2025-05-02 10:12:44,707 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-02 10:12:44,714 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 5) with member_id aiokafka-0.12.0-b312960f-f9a4-40bf-922e-9a229395af50
+2025-05-02 10:12:44,714 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-02 10:12:44,716 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 5
+2025-05-02 10:12:44,716 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group

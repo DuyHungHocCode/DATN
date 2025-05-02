@@ -430,3 +430,151 @@ BEGIN
     END CATCH
 END;
 GO
+
+-----------------------------------------------------
+-----------------------------------------------------
+
+-- hàm GetCitizenFamilyTree sử dụng CTE đệ quy để lấy thông tin phả hệ 3 đời của công dân
+-- Cây phả hệ sẽ bao gồm thông tin về bố, mẹ, ông bà nội, ông bà ngoại, cụ nội, cụ ngoại
+
+-- hàm này sẽ trả về cây gia đình của công dân 
+USE [DB_BCA];
+GO
+
+-- Kiểm tra và xóa function nếu đã tồn tại
+IF OBJECT_ID('[API_Internal].[GetCitizenFamilyTree]', 'TF') IS NOT NULL
+    DROP FUNCTION [API_Internal].[GetCitizenFamilyTree];
+GO
+
+-- Tạo Table-Valued Function để lấy thông tin phả hệ 3 đời của công dân sử dụng CTE đệ quy
+CREATE FUNCTION [API_Internal].[GetCitizenFamilyTree] (
+    @citizen_id VARCHAR(12) -- CCCD/CMND của công dân cần tra cứu
+)
+RETURNS @FamilyTree TABLE (
+    level_id INT,                    -- Cấp bậc trong phả hệ
+    relationship_path NVARCHAR(100), -- Đường dẫn quan hệ
+    citizen_id VARCHAR(12),          -- ID CCCD/CMND
+    full_name NVARCHAR(100),         -- Họ tên đầy đủ
+    date_of_birth DATE,              -- Ngày sinh
+    gender NVARCHAR(10),             -- Giới tính
+    id_card_number VARCHAR(12),      -- Số CCCD/CMND hiện tại
+    id_card_type NVARCHAR(20),       -- Loại giấy tờ
+    id_card_issue_date DATE,         -- Ngày cấp
+    id_card_expiry_date DATE,        -- Ngày hết hạn
+    id_card_issuing_authority NVARCHAR(255), -- Nơi cấp
+    id_card_status NVARCHAR(20),     -- Trạng thái thẻ
+    nationality_name NVARCHAR(100),  -- Quốc tịch
+    ethnicity_name NVARCHAR(100),    -- Dân tộc
+    religion_name NVARCHAR(100),     -- Tôn giáo
+    marital_status NVARCHAR(20)      -- Tình trạng hôn nhân
+)
+AS
+BEGIN
+    -- Sử dụng CTE đệ quy để duyệt qua cây phả hệ
+    WITH FamilyTreeCTE AS (
+        -- Trường hợp cơ sở: công dân gốc (level 1)
+        SELECT 
+            1 AS level_id,
+            N'Công dân' AS relationship_path,
+            c.citizen_id,
+            c.full_name,
+            c.date_of_birth,
+            c.gender,
+            c.father_citizen_id,
+            c.mother_citizen_id
+        FROM [BCA].[Citizen] c
+        WHERE c.citizen_id = @citizen_id
+        
+        UNION ALL
+        
+        -- Trường hợp đệ quy: tìm bố
+        SELECT 
+            ft.level_id + 1,
+            CASE 
+                WHEN ft.relationship_path = N'Công dân' THEN N'Bố'
+                WHEN ft.relationship_path = N'Bố' THEN N'Ông Nội (Bố của Bố)'
+                WHEN ft.relationship_path = N'Mẹ' THEN N'Ông Ngoại (Bố của Mẹ)'
+                WHEN ft.relationship_path = N'Ông Nội (Bố của Bố)' THEN N'Cụ Nội (Bố của Ông Nội)'
+                WHEN ft.relationship_path = N'Bà Nội (Mẹ của Bố)' THEN N'Cụ Ông Nội (Bố của Bà Nội)'
+                WHEN ft.relationship_path = N'Ông Ngoại (Bố của Mẹ)' THEN N'Cụ Ngoại (Bố của Ông Ngoại)'
+                WHEN ft.relationship_path = N'Bà Ngoại (Mẹ của Mẹ)' THEN N'Cụ Ông Ngoại (Bố của Bà Ngoại)'
+            END,
+            c.citizen_id,
+            c.full_name,
+            c.date_of_birth,
+            c.gender,
+            c.father_citizen_id,
+            c.mother_citizen_id
+        FROM FamilyTreeCTE ft
+        JOIN [BCA].[Citizen] c ON c.citizen_id = ft.father_citizen_id
+        WHERE ft.level_id < 3  -- Giới hạn đến 3 đời (level 1, 2, 3)
+        
+        UNION ALL
+        
+        -- Trường hợp đệ quy: tìm mẹ
+        SELECT 
+            ft.level_id + 1,
+            CASE 
+                WHEN ft.relationship_path = N'Công dân' THEN N'Mẹ'
+                WHEN ft.relationship_path = N'Bố' THEN N'Bà Nội (Mẹ của Bố)'
+                WHEN ft.relationship_path = N'Mẹ' THEN N'Bà Ngoại (Mẹ của Mẹ)'
+                WHEN ft.relationship_path = N'Ông Nội (Bố của Bố)' THEN N'Cụ Bà Nội (Mẹ của Ông Nội)'
+                WHEN ft.relationship_path = N'Bà Nội (Mẹ của Bố)' THEN N'Cụ Bà Nội (Mẹ của Bà Nội)'
+                WHEN ft.relationship_path = N'Ông Ngoại (Bố của Mẹ)' THEN N'Cụ Bà Ngoại (Mẹ của Ông Ngoại)'
+                WHEN ft.relationship_path = N'Bà Ngoại (Mẹ của Mẹ)' THEN N'Cụ Bà Ngoại (Mẹ của Bà Ngoại)'
+            END,
+            c.citizen_id,
+            c.full_name,
+            c.date_of_birth,
+            c.gender,
+            c.father_citizen_id,
+            c.mother_citizen_id
+        FROM FamilyTreeCTE ft
+        JOIN [BCA].[Citizen] c ON c.citizen_id = ft.mother_citizen_id
+        WHERE ft.level_id < 3  -- Giới hạn đến 3 đời (level 1, 2, 3)
+    )
+    
+    -- Chèn kết quả từ CTE vào bảng trả về, kết hợp với thông tin ID và dữ liệu từ bảng khác
+    INSERT INTO @FamilyTree
+    SELECT 
+        cte.level_id,
+        cte.relationship_path,
+        cte.citizen_id,
+        cte.full_name,
+        cte.date_of_birth,
+        cte.gender,
+        ic.card_number AS id_card_number,
+        ic.card_type AS id_card_type,
+        ic.issue_date AS id_card_issue_date,
+        ic.expiry_date AS id_card_expiry_date,
+        auth.authority_name AS id_card_issuing_authority,
+        ic.card_status AS id_card_status,
+        nat.nationality_name,
+        eth.ethnicity_name,
+        rel.religion_name,
+        c.marital_status
+    FROM FamilyTreeCTE cte
+    JOIN [BCA].[Citizen] c ON cte.citizen_id = c.citizen_id
+    LEFT JOIN (
+        -- Lấy thẻ CCCD/CMND mới nhất hoặc đang sử dụng
+        SELECT ic1.* FROM [BCA].[IdentificationCard] ic1
+        INNER JOIN (
+            SELECT citizen_id, MAX(issue_date) AS latest_date
+            FROM [BCA].[IdentificationCard]
+            GROUP BY citizen_id
+        ) ic2 ON ic1.citizen_id = ic2.citizen_id AND ic1.issue_date = ic2.latest_date
+    ) ic ON c.citizen_id = ic.citizen_id
+    LEFT JOIN [Reference].[Authorities] auth ON ic.issuing_authority_id = auth.authority_id
+    LEFT JOIN [Reference].[Nationalities] nat ON c.nationality_id = nat.nationality_id
+    LEFT JOIN [Reference].[Ethnicities] eth ON c.ethnicity_id = eth.ethnicity_id
+    LEFT JOIN [Reference].[Religions] rel ON c.religion_id = rel.religion_id;
+    
+    RETURN;
+END;
+GO
+
+-- Cấp quyền thực thi
+GRANT SELECT ON [API_Internal].[GetCitizenFamilyTree] TO [api_service_user];
+GO
+
+PRINT 'Function [API_Internal].[GetCitizenFamilyTree] đã được tối ưu bằng đệ quy.';

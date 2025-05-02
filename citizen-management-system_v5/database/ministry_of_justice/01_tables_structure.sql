@@ -77,16 +77,19 @@ CREATE TABLE [BTP].[MarriageCertificate] (
     [marriage_certificate_no] VARCHAR(20) NOT NULL, -- Unique constraint added later if needed
     [book_id] VARCHAR(20) NULL,
     [page_no] VARCHAR(10) NULL,
+
     [husband_id] VARCHAR(12) NOT NULL, -- Logical link
     [husband_full_name] NVARCHAR(100) NOT NULL,
     [husband_date_of_birth] DATE NOT NULL,
     [husband_nationality_id] SMALLINT NOT NULL, -- FK added later
     [husband_previous_marriage_status] NVARCHAR(50) NULL,
+
     [wife_id] VARCHAR(12) NOT NULL, -- Logical link
     [wife_full_name] NVARCHAR(100) NOT NULL,
     [wife_date_of_birth] DATE NOT NULL,
     [wife_nationality_id] SMALLINT NOT NULL, -- FK added later
     [wife_previous_marriage_status] NVARCHAR(50) NULL,
+    
     [marriage_date] DATE NOT NULL,
     [registration_date] DATE NOT NULL,
     [issuing_authority_id] INT NOT NULL, -- FK added later
