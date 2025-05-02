@@ -2,8 +2,9 @@
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
 import json
+import os
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.config import get_settings
 from app.schemas.death_certificate import DeathCertificateResponse # Hoặc schema sự kiện riêng
 from app.schemas.marriage_certificate import MarriageCertificateResponse # Hoặc schema sự kiện riêng
@@ -91,23 +92,30 @@ class KafkaEventProducer:
             self._store_failed_event(certificate_data, str(e))
             return False
         
-    def _store_failed_event(self, certificate_data, error_msg=None):
-        """Lưu event thất bại để xử lý sau (Dead Letter Queue)."""
+    def _store_failed_event(self, event_data, error_msg=None, retry_count=0):
+        """Store failed events with additional metadata for retry processing."""
         try:
-            # Trong thực tế, bạn có thể lưu vào DB hoặc file
+            # Create a structured event record with retry information
             failed_event = {
-                "certificate_data": certificate_data.model_dump(),
+                "event_data": event_data.model_dump() if hasattr(event_data, "model_dump") else event_data,
                 "error": error_msg,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "retry_count": retry_count,
+                "next_retry_time": (datetime.now(timezone.utc) + 
+                                timedelta(minutes=min(30, 2 ** retry_count))).isoformat(),
+                "event_type": event_data.__class__.__name__
             }
             
-            # Đơn giản lưu vào file (trong môi trường thực tế nên lưu vào DB)
-            with open("failed_events.jsonl", "a") as f:
+            # Save to structured storage - organized by date for easier processing
+            filename = f"failed_events/{datetime.now().strftime('%Y%m%d')}_failed_events.jsonl"
+            os.makedirs("failed_events", exist_ok=True)
+            
+            with open(filename, "a") as f:
                 f.write(json.dumps(failed_event) + "\n")
                 
-            logger.info(f"Stored failed event for certificate_id {certificate_data.death_certificate_id} for later processing")
+            logger.info(f"Stored failed event with ID: {getattr(event_data, 'marriage_certificate_id', None) or getattr(event_data, 'death_certificate_id', None)} for retry later. Next attempt: {failed_event['next_retry_time']}")
         except Exception as e:
-            logger.error(f"Failed to store failed event: {e}")
+            logger.error(f"Failed to store failed event: {e}", exc_info=True)
     
     def send_marriage_event(self, certificate_data: MarriageCertificateResponse):
         """Gửi sự kiện citizen_married lên Kafka."""

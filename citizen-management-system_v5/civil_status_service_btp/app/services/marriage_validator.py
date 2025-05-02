@@ -2,7 +2,7 @@
 import logging
 from datetime import date
 from typing import Dict, List, Tuple, Any, Set
-
+from fastapi import HTTPException, status
 from app.services.bca_client import BCAClient
 
 logger = logging.getLogger(__name__)
@@ -34,13 +34,12 @@ class MarriageValidator:
     
     def validate_marital_status(self, husband_status: str, wife_status: str) -> Tuple[bool, str]:
         """Xác thực cả hai người đều độc thân."""
-        valid_single_statuses = ["Độc thân", None, ""] # Các giá trị hợp lệ cho trạng thái độc thân
-        
-        if husband_status not in valid_single_statuses:
-            return False, f"Người chồng không ở trạng thái độc thân (hiện tại: {husband_status})"
+            # Only block if already married
+        if husband_status == "Đã kết hôn":
+            return False, f"Người chồng đã kết hôn (hiện tại: {husband_status})"
             
-        if wife_status not in valid_single_statuses:
-            return False, f"Người vợ không ở trạng thái độc thân (hiện tại: {wife_status})"
+        if wife_status == "Đã kết hôn":
+            return False, f"Người vợ đã kết hôn (hiện tại: {wife_status})"
             
         return True, ""
     
@@ -144,41 +143,63 @@ class MarriageValidator:
             return False, f"Không thể xác định chính xác do lỗi dữ liệu: {str(e)}"
     
     async def validate_marriage(self, bca_client: BCAClient, husband_id: str, wife_id: str, 
-                               husband_dob: date, wife_dob: date) -> Tuple[bool, str]:
+                           husband_dob: date, wife_dob: date) -> Tuple[bool, str]:
         """
-        Thực hiện xác thực toàn diện các điều kiện kết hôn.
+        Optimized validation using batch API call
         """
-        # 1. Kiểm tra tuổi tối thiểu
+        # 1. Age check remains the same (uses provided DOBs)
         age_valid, age_reason = self.validate_age_requirements(husband_dob, wife_dob)
         if not age_valid:
             return False, age_reason
         
-        # 2. Lấy thông tin chi tiết công dân để kiểm tra tình trạng hôn nhân
-        husband_details = await bca_client.validate_citizen_status(husband_id)
-        wife_details = await bca_client.validate_citizen_status(wife_id)
+        # 2. Get all needed data in a single API call
+        validation_data = await bca_client.batch_validate_citizens(
+            citizen_ids=[husband_id, wife_id],
+            include_family_tree=True
+        )
         
-        if not husband_details or not wife_details:
-            return False, "Không thể lấy thông tin chi tiết của công dân"
+        # 3. Process husband data
+        husband_data = validation_data.get(husband_id, {})
+        if not husband_data.get("found", False):
+            return False, f"Không tìm thấy công dân (chồng) với ID {husband_id}"
+            
+        husband_validation = husband_data.get("validation", {})
+        husband_tree = husband_data.get("family_tree", {})
         
-        # 3. Kiểm tra tình trạng hôn nhân hiện tại
+        # 4. Process wife data
+        wife_data = validation_data.get(wife_id, {})
+        if not wife_data.get("found", False):
+            return False, f"Không tìm thấy công dân (vợ) với ID {wife_id}"
+            
+        wife_validation = wife_data.get("validation", {})
+        wife_tree = wife_data.get("family_tree", {})
+        
+        # 5. Check death status
+        if husband_validation.get("death_status") in ('Đã mất', 'Mất tích'):
+            return False, f"Công dân (chồng) không thể kết hôn (trạng thái: {husband_validation.get('death_status')})"
+            
+        if wife_validation.get("death_status") in ('Đã mất', 'Mất tích'):
+            return False, f"Công dân (vợ) không thể kết hôn (trạng thái: {wife_validation.get('death_status')})"
+        
+        # 6. Check marital status
         status_valid, status_reason = self.validate_marital_status(
-            husband_details.get("marital_status"), 
-            wife_details.get("marital_status")
+            husband_validation.get("marital_status"),
+            wife_validation.get("marital_status")
         )
         if not status_valid:
             return False, status_reason
         
-        # 4. Lấy cây phả hệ
-        husband_tree = await bca_client.get_citizen_family_tree(husband_id)
-        wife_tree = await bca_client.get_citizen_family_tree(wife_id)
-        
-        if not husband_tree or not wife_tree:
-            return False, "Không thể lấy thông tin phả hệ của công dân"
-        
-        # 5. Kiểm tra quan hệ huyết thống
+        # 7. Blood relation check
         are_relatives, relative_reason = self.are_blood_relatives(husband_tree, wife_tree)
+        
+        if are_relatives is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Không thể xác định quan hệ huyết thống: {relative_reason}"
+            )
+        
         if are_relatives:
             return False, f"Không được phép kết hôn do quan hệ huyết thống: {relative_reason}"
         
-        # Tất cả kiểm tra đã thành công
+        # All checks passed
         return True, ""

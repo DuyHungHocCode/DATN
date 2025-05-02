@@ -213,12 +213,29 @@ class KafkaEventConsumer:
                     for line in f:
                         try:
                             event = json.loads(line.strip())
-                            # Xử lý sự kiện
-                            await self._process_message(event['payload'])
+                            
+                            # Check if this is a marriage event
+                            event_payload = event.get('payload', {})
+                            event_type = event_payload.get('eventType')
+                            
+                            if event_type == 'citizen_married':
+                                # Process with updated marriage logic
+                                citizen_married_payload = event_payload.get('payload', {})
+                                if 'marriage_certificate_no' not in citizen_married_payload:
+                                    # Add default certificate number if missing in older events
+                                    certificate_id = citizen_married_payload.get('marriage_certificate_id', 'UNKNOWN')
+                                    citizen_married_payload['marriage_certificate_no'] = f"AUTO-{certificate_id}"
+                                    
+                                # Process with the updated handler
+                                await self._process_citizen_married_event(citizen_married_payload)
+                            else:
+                                # Process other event types
+                                await self._process_message(event_payload)
+                                
                             processed.append(event)
                         except Exception as e:
                             logger.error(f"Error reprocessing event: {e}")
-                            # Vẫn giữ lại sự kiện trong file lỗi
+                            # Event remains in failed events file
                 
                 # Xóa các sự kiện đã xử lý thành công
                 if processed:
@@ -245,16 +262,19 @@ class KafkaEventConsumer:
         try:
             logger.info(f"Processing citizen_married event with payload: {payload}")
             
+            # Extract required data from payload
             husband_id = payload.get('husband_id')
             wife_id = payload.get('wife_id')
             marriage_date_str = payload.get('marriage_date')
-            certificate_id = payload.get('marriage_certificate_id')
+            marriage_certificate_no = payload.get('marriage_certificate_no')
             
-            if not husband_id or not wife_id or not marriage_date_str:
+            # Validate required fields
+            if not husband_id or not wife_id or not marriage_date_str or not marriage_certificate_no:
                 logger.warning(f"Missing required fields in citizen_married event: {payload}")
+                self._store_failed_event(payload, "Missing required fields")
                 return
             
-            # Chuyển đổi chuỗi ngày thành đối tượng date
+            # Parse date
             try:
                 if 'T' in marriage_date_str:
                     marriage_date_str = marriage_date_str.split('T')[0]
@@ -262,24 +282,43 @@ class KafkaEventConsumer:
                 logger.info(f"Parsed marriage date: {marriage_date}")
             except Exception as e:
                 logger.error(f"Invalid date format: {marriage_date_str}, error: {e}")
+                self._store_failed_event(payload, f"Invalid date format: {e}")
                 return
             
-            # Cập nhật trạng thái kết hôn cho cả hai công dân
+            # Use repository pattern for DB updates
             db = SessionLocal()
             try:
-                # Cập nhật trạng thái cho chồng
-                husband_updated = self._update_citizen_marriage_status(db, husband_id, wife_id)
+                repo = CitizenRepository(db)
+                
+                # Update husband's marital status
+                husband_updated = repo.update_marriage_status(
+                    husband_id, 
+                    wife_id, 
+                    marriage_date, 
+                    marriage_certificate_no
+                )
                 logger.info(f"Updated marital status for husband {husband_id}: {husband_updated}")
                 
-                # Cập nhật trạng thái cho vợ
-                wife_updated = self._update_citizen_marriage_status(db, wife_id, husband_id)
+                # Update wife's marital status
+                wife_updated = repo.update_marriage_status(
+                    wife_id, 
+                    husband_id, 
+                    marriage_date, 
+                    marriage_certificate_no
+                )
                 logger.info(f"Updated marital status for wife {wife_id}: {wife_updated}")
+                
+                # Check if any update failed
+                if not husband_updated and not wife_updated:
+                    logger.warning("Both husband and wife updates failed. Possible data issue.")
+                    self._store_failed_event(payload, "Both updates failed")
                 
             finally:
                 db.close()
-                
+                    
         except Exception as e:
             logger.error(f"Error processing citizen_married event: {e}", exc_info=True)
+            self._store_failed_event(payload, str(e))
 
     def _update_citizen_marriage_status(self, db: Session, citizen_id: str, spouse_id: str) -> bool:
         """Cập nhật trạng thái hôn nhân của công dân."""

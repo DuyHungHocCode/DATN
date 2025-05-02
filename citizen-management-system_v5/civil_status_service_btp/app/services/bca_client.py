@@ -1,6 +1,6 @@
 # civil_status_service_btp/app/services/bca_client.py
 import httpx
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from fastapi import HTTPException, status
 from app.config import get_settings
 from app.schemas.death_certificate import CitizenValidationResponse # Import schema đơn giản
@@ -22,17 +22,12 @@ class BCAClient:
         try:
             # Sử dụng AsyncClient nếu hàm này là async
             async with httpx.AsyncClient(base_url=self.base_url, timeout=10.0) as client:
-                response = await client.get(f"/api/v1/citizens/{citizen_id}")
+                response = await client.get(f"/api/v1/citizens/{citizen_id}/validation")
 
             if response.status_code == status.HTTP_404_NOT_FOUND:
                 return None # Công dân không tồn tại
             elif response.status_code == status.HTTP_200_OK:
-                # Chỉ lấy citizen_id và death_status
-                data = response.json()
-                return CitizenValidationResponse(
-                    citizen_id=data.get("citizen_id"),
-                    death_status=data.get("death_status")
-                )
+                return CitizenValidationResponse.model_validate(response.json())
             else:
                 # Xử lý các lỗi khác từ BCA service
                 response.raise_for_status() # Ném HTTP lỗi nếu status code là 4xx hoặc 5xx
@@ -92,7 +87,31 @@ class BCAClient:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Lỗi khi truy vấn phả hệ từ dịch vụ BCA: {str(e)}"
             )
+    
+    async def batch_validate_citizens(self, citizen_ids: List[str], include_family_tree: bool = False) -> Dict[str, Any]:
+        """
+        Batch validate multiple citizens in a single API call
+        """
+        try:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=15.0) as client:
+                response = await client.post(
+                    "/api/v1/citizens/batch-validate",
+                    json={"citizen_ids": citizen_ids, "include_family_tree": include_family_tree}
+                )
+                
+                if response.status_code == status.HTTP_200_OK:
+                    return response.json()
+                else:
+                    response.raise_for_status()
         
+        except Exception as e:
+            # Exception handling
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error in batch validation: {str(e)}"
+            )
+        
+    
 
 # Dependency function để inject client
 # Singleton pattern để tránh tạo nhiều client không cần thiết

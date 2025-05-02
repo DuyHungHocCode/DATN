@@ -9,6 +9,8 @@ from app.schemas.death_certificate import DeathCertificateCreate, DeathCertifica
 from app.services.bca_client import BCAClient, get_bca_client
 from app.services.kafka_producer import KafkaEventProducer, get_kafka_producer
 from app.services.marriage_validator import MarriageValidator
+from app.services.event_retry_worker import get_event_retry_worker  # Import the missing dependency
+from app.db.outbox_repo import OutboxRepository  # Import OutboxRepository
 from app.schemas.marriage_certificate import MarriageCertificateCreate, MarriageCertificateResponse
 
 router = APIRouter()
@@ -148,7 +150,7 @@ async def register_marriage_certificate(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_btp_db),
     bca_client: BCAClient = Depends(get_bca_client),
-    kafka_producer: KafkaEventProducer = Depends(get_kafka_producer)
+    #kafka_producer: KafkaEventProducer = Depends(get_kafka_producer)
 ):
     logger.info(f"Received request to register marriage between citizens: {certificate_data.husband_id} and {certificate_data.wife_id}")
 
@@ -208,30 +210,96 @@ async def register_marriage_certificate(
 
     # 3. Create marriage certificate record in DB BTP
     try:
-        new_certificate_id = repo.create_marriage_certificate(certificate_data)
-        if new_certificate_id is None:
-            logger.error("Failed to create marriage certificate record")
+        # Begin database transaction
+        transaction = db.begin_nested()  # Use nested transaction for finer control
+        
+        # 3. Create marriage certificate record in DB BTP
+        try:
+            new_certificate_id = repo.create_marriage_certificate(certificate_data)
+            if new_certificate_id is None:
+                logger.error("Failed to create marriage certificate record")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Không thể tạo bản ghi giấy chứng nhận kết hôn trong cơ sở dữ liệu."
+                )
+            logger.info(f"Successfully created marriage certificate with ID: {new_certificate_id}")
+        except HTTPException:
+            transaction.rollback()
+            raise  # Re-throw the HTTP exception
+        
+        # 4. Create response object
+        created_certificate_response = MarriageCertificateResponse(
+            **certificate_data.model_dump(),
+            marriage_certificate_id=new_certificate_id,
+            status=True,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+        
+        # 5. Create outbox message in the same transaction
+        try:
+            outbox_repo = OutboxRepository(db)
+            
+            # Prepare event payload
+            event_payload = {
+                "eventType": "citizen_married",
+                "payload": {
+                    "marriage_certificate_id": new_certificate_id,
+                    "marriage_certificate_no": certificate_data.marriage_certificate_no,
+                    "husband_id": certificate_data.husband_id,
+                    "wife_id": certificate_data.wife_id,
+                    "marriage_date": certificate_data.marriage_date.isoformat(),
+                    "registration_date": certificate_data.registration_date.isoformat(),
+                    "issuing_authority_id": certificate_data.issuing_authority_id,
+                    "status": True
+                },
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            
+            # Store in outbox
+            outbox_id = outbox_repo.create_outbox_message(
+                "MarriageCertificate",
+                new_certificate_id,
+                "citizen_married",
+                created_certificate_response.model_dump()
+            )
+            
+            logger.info(f"Created outbox message with ID: {outbox_id}")
+            
+            # Commit both certificate and outbox entries
+            transaction.commit()
+            db.commit()
+            
+        except Exception as e:
+            transaction.rollback()
+            logger.error(f"Error creating outbox message: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Không thể tạo bản ghi giấy chứng nhận kết hôn trong cơ sở dữ liệu."
+                detail="Lỗi lưu trữ sự kiện kết hôn. Vui lòng thử lại."
             )
-        logger.info(f"Successfully created marriage certificate with ID: {new_certificate_id}")
-    except HTTPException as e:
-        logger.error(f"Database error during marriage certificate creation: {e.detail}")
-        raise e
+        
+        # 6. Return success response
+        return created_certificate_response
+        
+    except Exception as e:
+        if 'transaction' in locals() and transaction.is_active:
+            transaction.rollback()
+        logger.error(f"Unexpected error during marriage registration: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi không xác định: {str(e)}"
+        )
 
-    # 4. Create response object
-    created_certificate_response = MarriageCertificateResponse(
-        **certificate_data.model_dump(),
-        marriage_certificate_id=new_certificate_id,
-        status=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
-    )
-
-    # 5. Send event to Kafka in the background
-    background_tasks.add_task(kafka_producer.send_marriage_event, created_certificate_response)
-    logger.info(f"Added Kafka event sending task to background for certificate ID: {new_certificate_id}")
-
-    # 6. Return success response
-    return created_certificate_response
+@router.post(
+    "/admin/retry-failed-events",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Manually trigger retry of failed events",
+    description="Admin endpoint to process failed events immediately rather than waiting for scheduled retry."
+)
+async def retry_failed_events(
+    background_tasks: BackgroundTasks,
+    retry_worker = Depends(get_event_retry_worker)
+):
+    # Run the retry processing in background
+    background_tasks.add_task(retry_worker._process_failed_events)
+    return {"message": "Event retry processing triggered"}

@@ -181,3 +181,42 @@ class CitizenRepository:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail=f"Lỗi cơ sở dữ liệu khi truy vấn phả hệ: {str(e)}"
             )
+        
+    def update_marriage_status(self, citizen_id: str, spouse_id: str, marriage_date: date, marriage_certificate_no: str) -> bool:
+        """Update citizen's marital status and spouse ID."""
+        try:
+            logger.info(f"Updating marriage status for citizen {citizen_id} to spouse {spouse_id}")
+            
+            # Call stored procedure instead of direct SQL
+            query = text("""
+                EXEC [API_Internal].[UpdateCitizenMarriageStatus]
+                    @citizen_id = :citizen_id,
+                    @spouse_citizen_id = :spouse_id,
+                    @marriage_date = :marriage_date,
+                    @marriage_certificate_no = :marriage_certificate_no,
+                    @updated_by = 'KAFKA_CONSUMER'
+            """)
+            
+            result = self.db.execute(query, {
+                "citizen_id": citizen_id,
+                "spouse_id": spouse_id,
+                "marriage_date": marriage_date,
+                "marriage_certificate_no": marriage_certificate_no
+            })
+            
+            # Get the affected_rows output parameter
+            row = result.fetchone()
+            affected_rows = row[0] if row else 0
+            
+            if affected_rows > 0:
+                self.db.commit()
+                logger.info(f"Successfully updated marriage status for citizen {citizen_id}")
+                return True
+            else:
+                logger.warning(f"No rows updated for citizen {citizen_id}. Citizen may already be married or doesn't exist.")
+                return False
+                
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Database error when updating marriage status: {e}", exc_info=True)
+            raise e

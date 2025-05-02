@@ -146,3 +146,77 @@
 2025-05-02 16:25:55,633 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=1 host=localhost:29092 <connecting> [IPv4 ('127.0.0.1', 29092)]>: connecting to localhost:29092 [('127.0.0.1', 29092) IPv4]
 2025-05-02 16:25:55,634 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=1 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Connection complete.
 2025-05-02 16:25:55,634 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Closing connection. 
+2025-05-02 17:57:45,396 - app.main - INFO - Civil Status Service shutting down...
+2025-05-02 17:57:45,396 - kafka.producer.kafka - INFO - Closing the Kafka producer with 9223372036.0 secs timeout.
+2025-05-02 17:57:45,396 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=1 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Closing connection. 
+2025-05-02 17:57:45,397 - app.services.kafka_producer - INFO - Kafka producer closed.
+2025-05-02 17:57:46,002 - app.main - INFO - BTP Civil Status Service starting, logs will be saved to: logs/btp_service_20250502.txt
+2025-05-02 17:57:46,002 - app.main - INFO - Info message - testing logging
+2025-05-02 17:57:46,002 - app.main - WARNING - Warning message - testing logging
+2025-05-02 17:57:46,002 - app.main - ERROR - Error message - testing logging
+2025-05-02 17:57:46,005 - app.main - INFO - Civil Status Service starting up...
+2025-05-02 17:57:46,005 - app.main - INFO - Testing Kafka connection...
+2025-05-02 17:59:16,244 - app.main - INFO - Civil Status Service shutting down...
+2025-05-02 17:59:16,245 - kafka.producer.kafka - INFO - Closing the Kafka producer with 9223372036.0 secs timeout.
+2025-05-02 17:59:16,246 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Closing connection. 
+2025-05-02 17:59:16,246 - app.services.kafka_producer - INFO - Kafka producer closed.
+2025-05-02 17:59:16,745 - app.main - INFO - BTP Civil Status Service starting, logs will be saved to: logs/btp_service_20250502.txt
+2025-05-02 17:59:16,746 - app.main - INFO - Info message - testing logging
+2025-05-02 17:59:16,746 - app.main - WARNING - Warning message - testing logging
+2025-05-02 17:59:16,746 - app.main - ERROR - Error message - testing logging
+2025-05-02 17:59:16,748 - app.main - INFO - Civil Status Service starting up...
+2025-05-02 17:59:16,748 - app.main - INFO - Testing Kafka connection...
+2025-05-02 18:00:37,982 - app.main - INFO - Civil Status Service shutting down...
+2025-05-02 18:00:37,982 - kafka.producer.kafka - INFO - Closing the Kafka producer with 9223372036.0 secs timeout.
+2025-05-02 18:00:37,983 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Closing connection. 
+2025-05-02 18:00:37,983 - app.services.kafka_producer - INFO - Kafka producer closed.
+2025-05-02 18:00:38,526 - app.main - INFO - BTP Civil Status Service starting, logs will be saved to: logs/btp_service_20250502.txt
+2025-05-02 18:00:38,526 - app.main - INFO - Info message - testing logging
+2025-05-02 18:00:38,526 - app.main - WARNING - Warning message - testing logging
+2025-05-02 18:00:38,526 - app.main - ERROR - Error message - testing logging
+2025-05-02 18:00:38,529 - app.main - INFO - Civil Status Service starting up...
+2025-05-02 18:00:38,530 - app.main - INFO - Testing Kafka connection...
+2025-05-02 18:00:44,748 - app.main - INFO - Civil Status Service shutting down...
+2025-05-02 18:00:44,749 - kafka.producer.kafka - INFO - Closing the Kafka producer with 9223372036.0 secs timeout.
+2025-05-02 18:00:44,749 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Closing connection. 
+2025-05-02 18:00:44,750 - app.services.kafka_producer - INFO - Kafka producer closed.
+2025-05-02 18:00:45,288 - app.main - INFO - BTP Civil Status Service starting, logs will be saved to: logs/btp_service_20250502.txt
+2025-05-02 18:00:45,288 - app.main - INFO - Info message - testing logging
+2025-05-02 18:00:45,288 - app.main - WARNING - Warning message - testing logging
+2025-05-02 18:00:45,288 - app.main - ERROR - Error message - testing logging
+2025-05-02 18:00:45,290 - app.main - INFO - Civil Status Service starting up...
+2025-05-02 18:00:45,290 - app.main - INFO - Testing Kafka connection...
+2025-05-02 18:01:59,383 - app.main - INFO - Civil Status Service shutting down...
+2025-05-02 18:01:59,383 - kafka.producer.kafka - INFO - Closing the Kafka producer with 9223372036.0 secs timeout.
+2025-05-02 18:01:59,384 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Closing connection. 
+2025-05-02 18:01:59,384 - app.services.kafka_producer - INFO - Kafka producer closed.
+2025-05-02 18:02:00,056 - app.main - INFO - BTP Civil Status Service starting, logs will be saved to: logs/btp_service_20250502.txt
+2025-05-02 18:02:00,057 - app.main - INFO - Info message - testing logging
+2025-05-02 18:02:00,057 - app.main - WARNING - Warning message - testing logging
+2025-05-02 18:02:00,057 - app.main - ERROR - Error message - testing logging
+2025-05-02 18:02:00,060 - app.main - INFO - Civil Status Service starting up...
+2025-05-02 18:02:00,060 - app.main - INFO - Testing Kafka connection...
+2025-05-02 18:03:32,020 - app.main - INFO - Civil Status Service shutting down...
+2025-05-02 18:03:32,021 - kafka.producer.kafka - INFO - Closing the Kafka producer with 9223372036.0 secs timeout.
+2025-05-02 18:03:32,022 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Closing connection. 
+2025-05-02 18:03:32,023 - app.services.kafka_producer - INFO - Kafka producer closed.
+2025-05-02 18:03:32,543 - app.main - INFO - BTP Civil Status Service starting, logs will be saved to: logs/btp_service_20250502.txt
+2025-05-02 18:03:32,543 - app.main - INFO - Info message - testing logging
+2025-05-02 18:03:32,543 - app.main - WARNING - Warning message - testing logging
+2025-05-02 18:03:32,543 - app.main - ERROR - Error message - testing logging
+2025-05-02 18:03:32,545 - app.main - INFO - Civil Status Service starting up...
+2025-05-02 18:03:32,545 - app.main - INFO - Testing Kafka connection...
+2025-05-02 18:06:13,506 - app.main - INFO - Civil Status Service shutting down...
+2025-05-02 18:06:13,507 - kafka.producer.kafka - INFO - Closing the Kafka producer with 9223372036.0 secs timeout.
+2025-05-02 18:06:13,507 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Closing connection. 
+2025-05-02 18:06:13,507 - app.services.kafka_producer - INFO - Kafka producer closed.
+2025-05-02 18:06:14,037 - app.main - INFO - BTP Civil Status Service starting, logs will be saved to: logs/btp_service_20250502.txt
+2025-05-02 18:06:14,037 - app.main - INFO - Info message - testing logging
+2025-05-02 18:06:14,037 - app.main - WARNING - Warning message - testing logging
+2025-05-02 18:06:14,037 - app.main - ERROR - Error message - testing logging
+2025-05-02 18:06:14,040 - app.main - INFO - Civil Status Service starting up...
+2025-05-02 18:06:14,040 - app.main - INFO - Testing Kafka connection...
+2025-05-02 18:11:02,439 - app.main - INFO - Civil Status Service shutting down...
+2025-05-02 18:11:02,439 - kafka.producer.kafka - INFO - Closing the Kafka producer with 9223372036.0 secs timeout.
+2025-05-02 18:11:02,439 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Closing connection. 
+2025-05-02 18:11:02,440 - app.services.kafka_producer - INFO - Kafka producer closed.

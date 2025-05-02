@@ -578,3 +578,136 @@ GRANT SELECT ON [API_Internal].[GetCitizenFamilyTree] TO [api_service_user];
 GO
 
 PRINT 'Function [API_Internal].[GetCitizenFamilyTree] đã được tối ưu bằng đệ quy.';
+
+
+
+
+--====================================================================================
+
+USE [DB_BCA];
+GO
+
+-- Kiểm tra và xóa procedure nếu đã tồn tại
+IF OBJECT_ID('[API_Internal].[UpdateCitizenMarriageStatus]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[UpdateCitizenMarriageStatus];
+GO
+
+-- Tạo Stored Procedure cập nhật trạng thái kết hôn
+CREATE PROCEDURE [API_Internal].[UpdateCitizenMarriageStatus]
+    @citizen_id VARCHAR(12),              -- ID CCCD/CMND của công dân cần cập nhật
+    @spouse_citizen_id VARCHAR(12),       -- ID CCCD/CMND của vợ/chồng
+    @marriage_date DATE,                  -- Ngày kết hôn
+    @marriage_certificate_no VARCHAR(20), -- Số giấy chứng nhận kết hôn
+    @updated_by VARCHAR(50) = 'SYSTEM'    -- Người/hệ thống cập nhật (mặc định là SYSTEM)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Biến để lưu số dòng bị ảnh hưởng
+    DECLARE @affected_rows INT;
+    
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        -- Cập nhật trạng thái kết hôn của công dân
+        UPDATE [BCA].[Citizen]
+        SET [marital_status] = N'Đã kết hôn',
+            [spouse_citizen_id] = @spouse_citizen_id,
+            [updated_at] = GETDATE(),
+            [updated_by] = @updated_by
+        WHERE [citizen_id] = @citizen_id
+        AND ([marital_status] IS NULL OR [marital_status] = N'Độc thân');
+        
+        SET @affected_rows = @@ROWCOUNT;
+        
+        -- Thêm vào bảng CitizenStatus nếu cần ghi lại lịch sử thay đổi
+        IF @affected_rows > 0
+        BEGIN
+            -- Ghi nhật ký thay đổi trạng thái
+            INSERT INTO [Audit].[AuditLog]
+            (
+                [action_tstamp],
+                [schema_name],
+                [table_name],
+                [operation],
+                [session_user_name],
+                [application_name],
+                [client_net_address],
+                [host_name],
+                [statement_only],
+                [row_data],
+                [changed_fields]
+            )
+            VALUES
+            (
+                GETDATE(),
+                'BCA',
+                'Citizen',
+                'UPDATE',
+                @updated_by,
+                'API_Internal.UpdateCitizenMarriageStatus',
+                NULL,
+                HOST_NAME(),
+                0,
+                (SELECT 'Citizen ID: ' + @citizen_id + ', Spouse ID: ' + @spouse_citizen_id),
+                (SELECT 'marital_status: Độc thân -> Đã kết hôn, spouse_citizen_id: NULL -> ' + @spouse_citizen_id)
+            );
+            
+            -- Tùy chọn: Thêm vào bảng PopulationChange nếu có
+            -- INSERT INTO [BCA].[PopulationChange] hoặc tương tự
+        END
+        ELSE
+        BEGIN
+            -- Không có cập nhật - công dân không tồn tại hoặc đã có trạng thái hôn nhân khác
+            -- Có thể ghi log hoặc báo lỗi nếu cần
+        END
+        
+        COMMIT TRANSACTION;
+        
+        -- Trả về số dòng bị ảnh hưởng
+        SELECT @affected_rows AS affected_rows;
+        
+    END TRY
+    BEGIN CATCH
+        -- Nếu có lỗi, rollback transaction
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        -- Lưu thông tin lỗi
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        
+        -- Ghi log lỗi
+        INSERT INTO [Audit].[AuditLog]
+        (
+            [action_tstamp],
+            [schema_name],
+            [table_name],
+            [operation],
+            [session_user_name],
+            [statement_only],
+            [row_data]
+        )
+        VALUES
+        (
+            GETDATE(),
+            'BCA',
+            'Citizen',
+            'ERROR',
+            @updated_by,
+            1,
+            'Error updating marriage status: ' + @ErrorMessage
+        );
+        
+        -- Ném lại lỗi cho ứng dụng
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END;
+GO
+
+-- Cấp quyền thực thi cho roles/users tương ứng
+GRANT EXECUTE ON [API_Internal].[UpdateCitizenMarriageStatus] TO [api_service_user];
+GO
+
+PRINT 'Stored procedure [API_Internal].[UpdateCitizenMarriageStatus] đã được tạo thành công.';

@@ -13,6 +13,9 @@ from app.services.kafka_producer import kafka_producer_instance # Import instanc
 from app.db.database import SessionLocal
 from logging.handlers import RotatingFileHandler
 import os
+from app.services.outbox_processor import outbox_processor
+from app.services.event_retry_worker import event_retry_worker
+from app.services.reconciliation import reconciliation_service
 
 settings = get_settings()
 
@@ -50,19 +53,18 @@ logger.error("Error message - testing logging")
 async def lifespan(app: FastAPI):
     # Startup code
     logger.info("Civil Status Service starting up...")
-    # Kiểm tra kết nối DB & Kafka
-    try:
-        # Kiểm tra Kafka connection (optional)
-        logger.info("Testing Kafka connection...")
-        if kafka_producer_instance.producer is None:
-            logger.warning("Kafka producer not available - events will not be sent")
-    except Exception as e:
-        logger.error(f"Error during startup: {e}")
+    # Start Kafka connections and retry worker
+    await outbox_processor.start()
+    await event_retry_worker.start()
+    await reconciliation_service.start()
     
     yield  # App runs here
     
     # Shutdown code
     logger.info("Civil Status Service shutting down...")
+    await reconciliation_service.stop()
+    await outbox_processor.stop()
+    await event_retry_worker.stop()
     kafka_producer_instance.close()
 
 app = FastAPI(
