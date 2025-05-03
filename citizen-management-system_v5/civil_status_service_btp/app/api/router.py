@@ -156,42 +156,9 @@ async def register_marriage_certificate(
 
     repo = CivilStatusRepository(db)
     
-    # 1. Validate citizens exist and are alive
-    try:
-        husband_validation = await bca_client.validate_citizen_status(certificate_data.husband_id)
-        if not husband_validation:
-            logger.warning(f"Husband validation failed: Citizen {certificate_data.husband_id} not found")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Không tìm thấy công dân (chồng) với ID {certificate_data.husband_id} trong hệ thống BCA."
-            )
-        
-        if husband_validation.death_status in ('Đã mất', 'Mất tích'):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Công dân (chồng) với ID {certificate_data.husband_id} không thể kết hôn (trạng thái: {husband_validation.death_status})"
-            )
-            
-        wife_validation = await bca_client.validate_citizen_status(certificate_data.wife_id)
-        if not wife_validation:
-            logger.warning(f"Wife validation failed: Citizen {certificate_data.wife_id} not found")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Không tìm thấy công dân (vợ) với ID {certificate_data.wife_id} trong hệ thống BCA."
-            )
-            
-        if wife_validation.death_status in ('Đã mất', 'Mất tích'):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Công dân (vợ) với ID {certificate_data.wife_id} không thể kết hôn (trạng thái: {wife_validation.death_status})"
-            )
-    except HTTPException as e:
-        logger.error(f"Error validating citizens: {e.detail}")
-        raise e
-
-    # 2. Validate marriage requirements
+    # Validate marriage requirements
     validator = MarriageValidator()
-    is_valid, validation_error = await validator.validate_marriage(
+    is_valid, validation_errors = await validator.validate_marriage(
         bca_client,
         certificate_data.husband_id,
         certificate_data.wife_id,
@@ -200,10 +167,10 @@ async def register_marriage_certificate(
     )
     
     if not is_valid:
-        logger.warning(f"Marriage validation failed: {validation_error}")
+        logger.warning(f"Marriage validation failed: {validation_errors}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Không thỏa mãn điều kiện kết hôn: {validation_error}"
+            detail=f"Không thỏa mãn điều kiện kết hôn: {validation_errors}"
         )
 
     logger.info("Marriage validation passed. Proceeding with registration.")
@@ -294,6 +261,7 @@ async def register_marriage_certificate(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Lỗi không xác định: {str(e)}"
         )
+        
 
 @router.post(
     "/admin/retry-failed-events",

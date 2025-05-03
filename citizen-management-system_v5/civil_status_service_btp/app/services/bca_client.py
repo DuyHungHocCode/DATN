@@ -4,8 +4,7 @@ from typing import Dict, Any, Optional, List
 import json
 from fastapi import HTTPException, status
 from app.config import get_settings
-from app.schemas.death_certificate import CitizenValidationResponse # Import schema đơn giản
-
+from app.schemas.validation import CitizenValidationResponse
 settings = get_settings()
 
 class BCAClient:

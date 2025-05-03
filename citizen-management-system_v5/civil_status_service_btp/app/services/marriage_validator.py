@@ -146,12 +146,16 @@ class MarriageValidator:
     async def validate_marriage(self, bca_client: BCAClient, husband_id: str, wife_id: str, 
                            husband_dob: date, wife_dob: date) -> Tuple[bool, str]:
         """
-        Optimized validation using batch API call
+        Optimized validation using batch API call. Checks all validation criteria
+        and returns all errors found.
         """
+        # Initialize a list to collect all validation errors
+        validation_errors = []
+        
         # 1. Age check remains the same (uses provided DOBs)
         age_valid, age_reason = self.validate_age_requirements(husband_dob, wife_dob)
         if not age_valid:
-            return False, age_reason
+            validation_errors.append(age_reason)
         
         print(f"DEBUG - Batch validating citizens: {husband_id}, {wife_id}")
 
@@ -165,46 +169,52 @@ class MarriageValidator:
 
         # 3. Process husband data
         husband_data = validation_data.get(husband_id, {})
-        if not husband_data.get("found", False):
-            return False, f"Không tìm thấy công dân (chồng) với ID {husband_id}"
-            
-        husband_validation = husband_data.get("validation", {})
-        husband_tree = husband_data.get("family_tree", {})
+        husband_exists = husband_data.get("found", False)
+        if not husband_exists:
+            validation_errors.append(f"Không tìm thấy công dân (chồng) với ID {husband_id}")
+                
+        husband_validation = husband_data.get("validation", {}) if husband_exists else {}
+        husband_tree = husband_data.get("family_tree", {}) if husband_exists else {}
         
         # 4. Process wife data
         wife_data = validation_data.get(wife_id, {})
-        if not wife_data.get("found", False):
-            return False, f"Không tìm thấy công dân (vợ) với ID {wife_id}"
+        wife_exists = wife_data.get("found", False)
+        if not wife_exists:
+            validation_errors.append(f"Không tìm thấy công dân (vợ) với ID {wife_id}")
+                
+        wife_validation = wife_data.get("validation", {}) if wife_exists else {}
+        wife_tree = wife_data.get("family_tree", {}) if wife_exists else {}
+        
+        # 5. Check death status - continue checking even if there are issues
+        if husband_exists and husband_validation.get("death_status") in ('Đã mất', 'Mất tích'):
+            validation_errors.append(f"Công dân (chồng) không thể kết hôn (trạng thái: {husband_validation.get('death_status')})")
             
-        wife_validation = wife_data.get("validation", {})
-        wife_tree = wife_data.get("family_tree", {})
+        if wife_exists and wife_validation.get("death_status") in ('Đã mất', 'Mất tích'):
+            validation_errors.append(f"Công dân (vợ) không thể kết hôn (trạng thái: {wife_validation.get('death_status')})")
         
-        # 5. Check death status
-        if husband_validation.get("death_status") in ('Đã mất', 'Mất tích'):
-            return False, f"Công dân (chồng) không thể kết hôn (trạng thái: {husband_validation.get('death_status')})"
-            
-        if wife_validation.get("death_status") in ('Đã mất', 'Mất tích'):
-            return False, f"Công dân (vợ) không thể kết hôn (trạng thái: {wife_validation.get('death_status')})"
-        
-        # 6. Check marital status
-        status_valid, status_reason = self.validate_marital_status(
-            husband_validation.get("marital_status"),
-            wife_validation.get("marital_status")
-        )
-        if not status_valid:
-            return False, status_reason
-        
-        # 7. Blood relation check
-        are_relatives, relative_reason = self.are_blood_relatives(husband_tree, wife_tree)
-        
-        if are_relatives is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Không thể xác định quan hệ huyết thống: {relative_reason}"
+        # 6. Check marital status if both citizens exist
+        if husband_exists and wife_exists:
+            status_valid, status_reason = self.validate_marital_status(
+                husband_validation.get("marital_status"),
+                wife_validation.get("marital_status")
             )
+            if not status_valid:
+                validation_errors.append(status_reason)
         
-        if are_relatives:
-            return False, f"Không được phép kết hôn do quan hệ huyết thống: {relative_reason}"
+        # 7. Blood relation check if both citizens exist and we have tree data
+        if husband_exists and wife_exists:
+            try:
+                are_relatives, relative_reason = self.are_blood_relatives(husband_tree, wife_tree)
+                
+                if are_relatives:
+                    validation_errors.append(f"Không được phép kết hôn do quan hệ huyết thống: {relative_reason}")
+            except Exception as e:
+                validation_errors.append(f"Không thể xác định quan hệ huyết thống: {str(e)}")
         
-        # All checks passed
-        return True, ""
+        # Return consolidated results
+        if validation_errors:
+            # Join all error messages
+            return False, "; ".join(validation_errors)
+        else:
+            # All checks passed
+            return True, ""
