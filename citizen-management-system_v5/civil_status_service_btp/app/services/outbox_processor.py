@@ -78,11 +78,11 @@ class OutboxProcessor:
             if event_type == "citizen_died":
                 # Recreate certificate from payload
                 certificate_data = DeathCertificateResponse.model_validate(payload)
-                success = await kafka_producer_instance.send_citizen_died_event(certificate_data)
+                success =  kafka_producer_instance.send_citizen_died_event(certificate_data)
             elif event_type == "citizen_married":
                 # Recreate certificate from payload
                 certificate_data = MarriageCertificateResponse.model_validate(payload)
-                success = await kafka_producer_instance.send_marriage_event(certificate_data)
+                success =  kafka_producer_instance.send_marriage_event(certificate_data)
             else:
                 logger.warning(f"Unknown event type: {event_type}")
                 success = False

@@ -437,7 +437,7 @@ GO
 -- hàm GetCitizenFamilyTree sử dụng CTE đệ quy để lấy thông tin phả hệ 3 đời của công dân
 -- Cây phả hệ sẽ bao gồm thông tin về bố, mẹ, ông bà nội, ông bà ngoại, cụ nội, cụ ngoại
 
--- hàm này sẽ trả về cây gia đình của công dân 
+-- hàm này sẽ trả về cây gia đình của công dân
 USE [DB_BCA];
 GO
 
@@ -473,9 +473,10 @@ BEGIN
     -- Sử dụng CTE đệ quy để duyệt qua cây phả hệ
     WITH FamilyTreeCTE AS (
         -- Trường hợp cơ sở: công dân gốc (level 1)
-        SELECT 
+        SELECT
             1 AS level_id,
-            N'Công dân' AS relationship_path,
+            -- SỬA LỖI: CAST cột relationship_path sang NVARCHAR với độ dài đủ lớn
+            CAST(N'Công dân' AS NVARCHAR(100)) AS relationship_path,
             c.citizen_id,
             c.full_name,
             c.date_of_birth,
@@ -484,21 +485,24 @@ BEGIN
             c.mother_citizen_id
         FROM [BCA].[Citizen] c
         WHERE c.citizen_id = @citizen_id
-        
+
         UNION ALL
-        
+
         -- Trường hợp đệ quy: tìm bố
-        SELECT 
+        SELECT
             ft.level_id + 1,
-            CASE 
-                WHEN ft.relationship_path = N'Công dân' THEN N'Bố'
-                WHEN ft.relationship_path = N'Bố' THEN N'Ông Nội (Bố của Bố)'
-                WHEN ft.relationship_path = N'Mẹ' THEN N'Ông Ngoại (Bố của Mẹ)'
-                WHEN ft.relationship_path = N'Ông Nội (Bố của Bố)' THEN N'Cụ Nội (Bố của Ông Nội)'
-                WHEN ft.relationship_path = N'Bà Nội (Mẹ của Bố)' THEN N'Cụ Ông Nội (Bố của Bà Nội)'
-                WHEN ft.relationship_path = N'Ông Ngoại (Bố của Mẹ)' THEN N'Cụ Ngoại (Bố của Ông Ngoại)'
-                WHEN ft.relationship_path = N'Bà Ngoại (Mẹ của Mẹ)' THEN N'Cụ Ông Ngoại (Bố của Bà Ngoại)'
-            END,
+            CAST( -- Đảm bảo kết quả CASE cũng là NVARCHAR(100)
+                CASE
+                    WHEN ft.relationship_path = N'Công dân' THEN N'Bố'
+                    WHEN ft.relationship_path = N'Bố' THEN N'Ông Nội (Bố của Bố)'
+                    WHEN ft.relationship_path = N'Mẹ' THEN N'Ông Ngoại (Bố của Mẹ)'
+                    WHEN ft.relationship_path = N'Ông Nội (Bố của Bố)' THEN N'Cụ Nội (Bố của Ông Nội)'
+                    WHEN ft.relationship_path = N'Bà Nội (Mẹ của Bố)' THEN N'Cụ Ông Nội (Bố của Bà Nội)'
+                    WHEN ft.relationship_path = N'Ông Ngoại (Bố của Mẹ)' THEN N'Cụ Ngoại (Bố của Ông Ngoại)'
+                    WHEN ft.relationship_path = N'Bà Ngoại (Mẹ của Mẹ)' THEN N'Cụ Ông Ngoại (Bố của Bà Ngoại)'
+                    ELSE N'Không xác định' -- Thêm một giá trị mặc định nếu cần
+                END AS NVARCHAR(100)
+            ),
             c.citizen_id,
             c.full_name,
             c.date_of_birth,
@@ -508,21 +512,24 @@ BEGIN
         FROM FamilyTreeCTE ft
         JOIN [BCA].[Citizen] c ON c.citizen_id = ft.father_citizen_id
         WHERE ft.level_id < 3  -- Giới hạn đến 3 đời (level 1, 2, 3)
-        
+
         UNION ALL
-        
+
         -- Trường hợp đệ quy: tìm mẹ
-        SELECT 
+        SELECT
             ft.level_id + 1,
-            CASE 
-                WHEN ft.relationship_path = N'Công dân' THEN N'Mẹ'
-                WHEN ft.relationship_path = N'Bố' THEN N'Bà Nội (Mẹ của Bố)'
-                WHEN ft.relationship_path = N'Mẹ' THEN N'Bà Ngoại (Mẹ của Mẹ)'
-                WHEN ft.relationship_path = N'Ông Nội (Bố của Bố)' THEN N'Cụ Bà Nội (Mẹ của Ông Nội)'
-                WHEN ft.relationship_path = N'Bà Nội (Mẹ của Bố)' THEN N'Cụ Bà Nội (Mẹ của Bà Nội)'
-                WHEN ft.relationship_path = N'Ông Ngoại (Bố của Mẹ)' THEN N'Cụ Bà Ngoại (Mẹ của Ông Ngoại)'
-                WHEN ft.relationship_path = N'Bà Ngoại (Mẹ của Mẹ)' THEN N'Cụ Bà Ngoại (Mẹ của Bà Ngoại)'
-            END,
+            CAST( -- Đảm bảo kết quả CASE cũng là NVARCHAR(100)
+                CASE
+                    WHEN ft.relationship_path = N'Công dân' THEN N'Mẹ'
+                    WHEN ft.relationship_path = N'Bố' THEN N'Bà Nội (Mẹ của Bố)'
+                    WHEN ft.relationship_path = N'Mẹ' THEN N'Bà Ngoại (Mẹ của Mẹ)'
+                    WHEN ft.relationship_path = N'Ông Nội (Bố của Bố)' THEN N'Cụ Bà Nội (Mẹ của Ông Nội)'
+                    WHEN ft.relationship_path = N'Bà Nội (Mẹ của Bố)' THEN N'Cụ Bà Nội (Mẹ của Bà Nội)'
+                    WHEN ft.relationship_path = N'Ông Ngoại (Bố của Mẹ)' THEN N'Cụ Bà Ngoại (Mẹ của Ông Ngoại)'
+                    WHEN ft.relationship_path = N'Bà Ngoại (Mẹ của Mẹ)' THEN N'Cụ Bà Ngoại (Mẹ của Bà Ngoại)'
+                    ELSE N'Không xác định' -- Thêm một giá trị mặc định nếu cần
+                END AS NVARCHAR(100)
+            ),
             c.citizen_id,
             c.full_name,
             c.date_of_birth,
@@ -533,10 +540,10 @@ BEGIN
         JOIN [BCA].[Citizen] c ON c.citizen_id = ft.mother_citizen_id
         WHERE ft.level_id < 3  -- Giới hạn đến 3 đời (level 1, 2, 3)
     )
-    
+
     -- Chèn kết quả từ CTE vào bảng trả về, kết hợp với thông tin ID và dữ liệu từ bảng khác
     INSERT INTO @FamilyTree
-    SELECT 
+    SELECT
         cte.level_id,
         cte.relationship_path,
         cte.citizen_id,
@@ -556,29 +563,25 @@ BEGIN
     FROM FamilyTreeCTE cte
     JOIN [BCA].[Citizen] c ON cte.citizen_id = c.citizen_id
     LEFT JOIN (
-        -- Lấy thẻ CCCD/CMND mới nhất hoặc đang sử dụng
-        SELECT ic1.* FROM [BCA].[IdentificationCard] ic1
-        INNER JOIN (
-            SELECT citizen_id, MAX(issue_date) AS latest_date
-            FROM [BCA].[IdentificationCard]
-            GROUP BY citizen_id
-        ) ic2 ON ic1.citizen_id = ic2.citizen_id AND ic1.issue_date = ic2.latest_date
-    ) ic ON c.citizen_id = ic.citizen_id
+        -- Lấy thẻ CCCD/CMND mới nhất hoặc đang sử dụng (cải thiện để xử lý trường hợp ngày cấp giống nhau)
+        SELECT ic1.*,
+               ROW_NUMBER() OVER(PARTITION BY ic1.citizen_id ORDER BY ic1.issue_date DESC, ic1.id_card_id DESC) as rn
+        FROM [BCA].[IdentificationCard] ic1
+    ) ic ON c.citizen_id = ic.citizen_id AND ic.rn = 1 -- Chỉ lấy thẻ mới nhất
     LEFT JOIN [Reference].[Authorities] auth ON ic.issuing_authority_id = auth.authority_id
     LEFT JOIN [Reference].[Nationalities] nat ON c.nationality_id = nat.nationality_id
     LEFT JOIN [Reference].[Ethnicities] eth ON c.ethnicity_id = eth.ethnicity_id
     LEFT JOIN [Reference].[Religions] rel ON c.religion_id = rel.religion_id;
-    
+
     RETURN;
 END;
 GO
 
--- Cấp quyền thực thi
-GRANT SELECT ON [API_Internal].[GetCitizenFamilyTree] TO [api_service_user];
-GO
+-- Cấp quyền thực thi nếu cần
+-- GRANT SELECT ON [API_Internal].[GetCitizenFamilyTree] TO [api_service_user];
+-- GO
 
-PRINT 'Function [API_Internal].[GetCitizenFamilyTree] đã được tối ưu bằng đệ quy.';
-
+PRINT 'Function [API_Internal].[GetCitizenFamilyTree] đã được sửa lỗi và tạo lại thành công.';
 
 
 
@@ -587,43 +590,41 @@ PRINT 'Function [API_Internal].[GetCitizenFamilyTree] đã được tối ưu b�
 USE [DB_BCA];
 GO
 
--- Kiểm tra và xóa procedure nếu đã tồn tại
+-- Xóa procedure nếu đã tồn tại
 IF OBJECT_ID('[API_Internal].[UpdateCitizenMarriageStatus]', 'P') IS NOT NULL
     DROP PROCEDURE [API_Internal].[UpdateCitizenMarriageStatus];
 GO
 
--- Tạo Stored Procedure cập nhật trạng thái kết hôn
 CREATE PROCEDURE [API_Internal].[UpdateCitizenMarriageStatus]
-    @citizen_id VARCHAR(12),              -- ID CCCD/CMND của công dân cần cập nhật
-    @spouse_citizen_id VARCHAR(12),       -- ID CCCD/CMND của vợ/chồng
-    @marriage_date DATE,                  -- Ngày kết hôn
-    @marriage_certificate_no VARCHAR(20), -- Số giấy chứng nhận kết hôn
-    @updated_by VARCHAR(50) = 'SYSTEM'    -- Người/hệ thống cập nhật (mặc định là SYSTEM)
+    @citizen_id VARCHAR(12),
+    @spouse_citizen_id VARCHAR(12),
+    @marriage_date DATE,
+    @marriage_certificate_no VARCHAR(20),
+    @updated_by VARCHAR(50) = 'SYSTEM'
 AS
 BEGIN
     SET NOCOUNT ON;
-    
-    -- Biến để lưu số dòng bị ảnh hưởng
+
     DECLARE @affected_rows INT;
-    
+
     BEGIN TRY
         BEGIN TRANSACTION;
-        
-        -- Cập nhật trạng thái kết hôn của công dân
+
+        -- Cập nhật trạng thái kết hôn
         UPDATE [BCA].[Citizen]
-        SET [marital_status] = N'Đã kết hôn',
+        SET 
+            [marital_status] = N'Đã kết hôn',
             [spouse_citizen_id] = @spouse_citizen_id,
             [updated_at] = GETDATE(),
             [updated_by] = @updated_by
-        WHERE [citizen_id] = @citizen_id
-        AND ([marital_status] IS NULL OR [marital_status] = N'Độc thân');
-        
+        WHERE 
+            [citizen_id] = @citizen_id
+            AND ([marital_status] IS NULL OR [marital_status] = N'Độc thân');
+
         SET @affected_rows = @@ROWCOUNT;
-        
-        -- Thêm vào bảng CitizenStatus nếu cần ghi lại lịch sử thay đổi
+
         IF @affected_rows > 0
         BEGIN
-            -- Ghi nhật ký thay đổi trạng thái
             INSERT INTO [Audit].[AuditLog]
             (
                 [action_tstamp],
@@ -649,36 +650,23 @@ BEGIN
                 NULL,
                 HOST_NAME(),
                 0,
-                (SELECT 'Citizen ID: ' + @citizen_id + ', Spouse ID: ' + @spouse_citizen_id),
-                (SELECT 'marital_status: Độc thân -> Đã kết hôn, spouse_citizen_id: NULL -> ' + @spouse_citizen_id)
+                'Citizen ID: ' + @citizen_id + ', Spouse ID: ' + @spouse_citizen_id,
+                'marital_status: Độc thân -> Đã kết hôn, spouse_citizen_id: NULL -> ' + @spouse_citizen_id
             );
-            
-            -- Tùy chọn: Thêm vào bảng PopulationChange nếu có
-            -- INSERT INTO [BCA].[PopulationChange] hoặc tương tự
         END
-        ELSE
-        BEGIN
-            -- Không có cập nhật - công dân không tồn tại hoặc đã có trạng thái hôn nhân khác
-            -- Có thể ghi log hoặc báo lỗi nếu cần
-        END
-        
+
         COMMIT TRANSACTION;
-        
-        -- Trả về số dòng bị ảnh hưởng
+
         SELECT @affected_rows AS affected_rows;
-        
     END TRY
     BEGIN CATCH
-        -- Nếu có lỗi, rollback transaction
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
-        
-        -- Lưu thông tin lỗi
+
         DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
         DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
         DECLARE @ErrorState INT = ERROR_STATE();
-        
-        -- Ghi log lỗi
+
         INSERT INTO [Audit].[AuditLog]
         (
             [action_tstamp],
@@ -699,14 +687,12 @@ BEGIN
             1,
             'Error updating marriage status: ' + @ErrorMessage
         );
-        
-        -- Ném lại lỗi cho ứng dụng
+
         RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
     END CATCH
 END;
 GO
 
--- Cấp quyền thực thi cho roles/users tương ứng
 GRANT EXECUTE ON [API_Internal].[UpdateCitizenMarriageStatus] TO [api_service_user];
 GO
 

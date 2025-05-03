@@ -2,6 +2,7 @@
 import logging
 from datetime import date
 from typing import Dict, List, Tuple, Any, Set
+import json
 from fastapi import HTTPException, status
 from app.services.bca_client import BCAClient
 
@@ -152,12 +153,16 @@ class MarriageValidator:
         if not age_valid:
             return False, age_reason
         
+        print(f"DEBUG - Batch validating citizens: {husband_id}, {wife_id}")
+
         # 2. Get all needed data in a single API call
         validation_data = await bca_client.batch_validate_citizens(
             citizen_ids=[husband_id, wife_id],
             include_family_tree=True
         )
-        
+
+        print(f"DEBUG - Validation data received: {json.dumps(validation_data)}")
+
         # 3. Process husband data
         husband_data = validation_data.get(husband_id, {})
         if not husband_data.get("found", False):

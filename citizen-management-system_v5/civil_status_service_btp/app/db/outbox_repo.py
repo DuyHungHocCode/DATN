@@ -1,9 +1,10 @@
 # civil_status_service_btp/app/db/outbox_repo.py
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 import json
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -11,40 +12,39 @@ class OutboxRepository:
     def __init__(self, db: Session):
         self.db = db
     
+    def _json_serializer(self, obj):
+        """Tùy chỉnh JSON serializer để hỗ trợ các kiểu dữ liệu đặc biệt."""
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        raise TypeError(f"Type {type(obj)} not serializable")
+    
     def create_outbox_message(self, aggregate_type, aggregate_id, event_type, payload):
         """
         Create a new outbox message for later processing.
-        
-        Args:
-            aggregate_type: Type of the entity (e.g., 'DeathCertificate', 'MarriageCertificate')
-            aggregate_id: ID of the entity
-            event_type: Type of event (e.g., 'citizen_died', 'citizen_married')
-            payload: Event payload as dictionary
-        
-        Returns:
-            ID of the created outbox message
         """
         try:
-            payload_json = json.dumps(payload)
+            # Serialize JSON với xử lý đặc biệt cho kiểu date/datetime
+            payload_json = json.dumps(payload, default=lambda obj: obj.isoformat() if isinstance(obj, (date, datetime)) else str(obj))
             
-            query = text("""
+            # 1. Thực hiện lệnh INSERT
+            insert_query = text("""
                 INSERT INTO [BTP].[EventOutbox]
                     ([aggregate_type], [aggregate_id], [event_type], [payload], [created_at])
                 VALUES
                     (:aggregate_type, :aggregate_id, :event_type, :payload, GETDATE());
-                
-                SELECT SCOPE_IDENTITY() AS outbox_id;
             """)
             
-            result = self.db.execute(query, {
+            self.db.execute(insert_query, {
                 "aggregate_type": aggregate_type,
                 "aggregate_id": aggregate_id,
                 "event_type": event_type,
                 "payload": payload_json
             })
             
+            # 2. Lấy ID vừa được tạo trong một truy vấn riêng biệt
+            identity_query = text("SELECT SCOPE_IDENTITY() AS outbox_id")
+            result = self.db.execute(identity_query)
             outbox_id = result.scalar()
-            
             
             return outbox_id
         except Exception as e:
@@ -60,15 +60,15 @@ class OutboxRepository:
         """
         try:
             query = text("""
-                SELECT TOP :batch_size
-                    [outbox_id], [aggregate_type], [aggregate_id], 
-                    [event_type], [payload], [retry_count]
-                FROM [BTP].[EventOutbox]
-                WHERE 
-                    [processed] = 0 AND
-                    ([next_retry_at] IS NULL OR [next_retry_at] <= GETDATE())
-                ORDER BY [created_at] ASC;
-            """)
+                    SELECT TOP (:batch_size)
+                        [outbox_id], [aggregate_type], [aggregate_id], 
+                        [event_type], [payload], [retry_count]
+                    FROM [BTP].[EventOutbox]
+                    WHERE 
+                        [processed] = 0 AND
+                        ([next_retry_at] IS NULL OR [next_retry_at] <= GETDATE())
+                    ORDER BY [created_at] ASC;
+                """)
             
             result = self.db.execute(query, {"batch_size": batch_size})
             

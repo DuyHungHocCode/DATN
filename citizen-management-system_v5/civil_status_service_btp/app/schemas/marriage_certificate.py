@@ -53,11 +53,43 @@ class MarriageCertificateBase(BaseModel):
 class MarriageCertificateCreate(MarriageCertificateBase):
     pass # Inherits all fields from base
 
-class MarriageCertificateResponse(MarriageCertificateBase):
-    marriage_certificate_id: int # Added after creation
+# class MarriageCertificateResponse(MarriageCertificateBase):
+#     marriage_certificate_id: int # Added after creation
+#     status: bool
+#     created_at: datetime
+#     updated_at: datetime
+    
+#     model_config = {
+#         "from_attributes": True
+#     }
+
+class MarriageCertificateResponse(BaseModel):
+    marriage_certificate_id: int
+    marriage_certificate_no: str
+    husband_id: str
+    wife_id: str
+    marriage_date: date
+    registration_date: date
+    issuing_authority_id: int
     status: bool
-    created_at: datetime
-    updated_at: datetime
+    
+    # Các trường không bắt buộc
+    book_id: Optional[str] = None
+    page_no: Optional[str] = None
+    husband_full_name: Optional[str] = None
+    husband_date_of_birth: Optional[date] = None
+    husband_nationality_id: Optional[int] = None
+    husband_previous_marriage_status: Optional[str] = None
+    wife_full_name: Optional[str] = None
+    wife_date_of_birth: Optional[date] = None
+    wife_nationality_id: Optional[int] = None
+    wife_previous_marriage_status: Optional[str] = None
+    issuing_place: Optional[str] = None
+    witness1_name: Optional[str] = None
+    witness2_name: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     
     model_config = {
         "from_attributes": True

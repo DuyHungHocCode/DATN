@@ -208,42 +208,37 @@ async def register_marriage_certificate(
 
     logger.info("Marriage validation passed. Proceeding with registration.")
 
-    # 3. Create marriage certificate record in DB BTP
     try:
         # Begin database transaction
-        transaction = db.begin_nested()  # Use nested transaction for finer control
+        transaction = db.begin_nested()  # Use nested transaction
         
         # 3. Create marriage certificate record in DB BTP
         try:
             new_certificate_id = repo.create_marriage_certificate(certificate_data)
             if new_certificate_id is None:
+                transaction.rollback()
                 logger.error("Failed to create marriage certificate record")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Không thể tạo bản ghi giấy chứng nhận kết hôn trong cơ sở dữ liệu."
                 )
             logger.info(f"Successfully created marriage certificate with ID: {new_certificate_id}")
-        except HTTPException:
-            transaction.rollback()
-            raise  # Re-throw the HTTP exception
         
-        # 4. Create response object
-        created_certificate_response = MarriageCertificateResponse(
-            **certificate_data.model_dump(),
-            marriage_certificate_id=new_certificate_id,
-            status=True,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
-        )
-        
-        # 5. Create outbox message in the same transaction
-        try:
-            outbox_repo = OutboxRepository(db)
+            # 4. Create response object
+            created_certificate_response = MarriageCertificateResponse(
+                **certificate_data.model_dump(),
+                marriage_certificate_id=new_certificate_id,
+                status=True,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
+            )
             
-            # Prepare event payload
-            event_payload = {
-                "eventType": "citizen_married",
-                "payload": {
+            # 5. Create outbox message
+            try:
+                outbox_repo = OutboxRepository(db)
+                
+                # Chuẩn bị payload đơn giản hơn, chuyển đổi các đối tượng date thành string
+                outbox_payload = {
                     "marriage_certificate_id": new_certificate_id,
                     "marriage_certificate_no": certificate_data.marriage_certificate_no,
                     "husband_id": certificate_data.husband_id,
@@ -252,38 +247,48 @@ async def register_marriage_certificate(
                     "registration_date": certificate_data.registration_date.isoformat(),
                     "issuing_authority_id": certificate_data.issuing_authority_id,
                     "status": True
-                },
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            }
+                }
+                
+                # Lưu vào outbox - đảm bảo transaction vẫn còn hoạt động
+                outbox_id = outbox_repo.create_outbox_message(
+                    "MarriageCertificate",
+                    new_certificate_id,
+                    "citizen_married",
+                    outbox_payload
+                )
+                
+                # Commit transaction nếu thành công
+                if 'transaction' in locals() and transaction.is_active:
+                    transaction.commit()
+                db.commit()
+                
+                logger.info(f"Created outbox message with ID: {outbox_id}")
+            except Exception as e:
+                # Rollback transaction nếu có lỗi
+                if 'transaction' in locals() and transaction.is_active:
+                    transaction.rollback()
+                db.rollback()  # Đảm bảo rollback session
+                logger.error(f"Error creating outbox message: {e}", exc_info=True)
+                
+                # Tạo HTTP Exception
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Lỗi lưu trữ sự kiện kết hôn: {str(e)}"
+                )
             
-            # Store in outbox
-            outbox_id = outbox_repo.create_outbox_message(
-                "MarriageCertificate",
-                new_certificate_id,
-                "citizen_married",
-                created_certificate_response.model_dump()
-            )
-            
-            logger.info(f"Created outbox message with ID: {outbox_id}")
-            
-            # Commit both certificate and outbox entries
-            transaction.commit()
-            db.commit()
+            # 6. Return success response
+            return created_certificate_response
             
         except Exception as e:
-            transaction.rollback()
-            logger.error(f"Error creating outbox message: {e}", exc_info=True)
+            if transaction.is_active:
+                transaction.rollback()
+            logger.error(f"Error during marriage registration: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Lỗi lưu trữ sự kiện kết hôn. Vui lòng thử lại."
+                detail=f"Lỗi: {str(e)}"
             )
-        
-        # 6. Return success response
-        return created_certificate_response
-        
+            
     except Exception as e:
-        if 'transaction' in locals() and transaction.is_active:
-            transaction.rollback()
         logger.error(f"Unexpected error during marriage registration: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Body
 from typing import List, Optional, Dict, Any
+import json
 from datetime import date
 from sqlalchemy.orm import Session
 
@@ -143,13 +144,25 @@ def get_citizen_family_tree(
 
 @router.post("/citizens/batch-validate", response_model=Dict[str, Any])
 def batch_validate_citizens(
-    citizen_ids: List[str],
-    include_family_tree: bool = False,
+    request_data: Dict[str, Any] = Body(...),
     db: Session = Depends(get_db)
 ):
     """
     Batch validate multiple citizens with optional family tree in a single request
     """
+    # Kiểm tra định dạng request
+    print(f"DEBUG - Received batch validate request: {json.dumps(request_data)}")
+    
+    # Đảm bảo citizen_ids là một danh sách
+    citizen_ids = request_data.get("citizen_ids", [])
+    include_family_tree = request_data.get("include_family_tree", False)
+    
+    if not isinstance(citizen_ids, list):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="citizen_ids must be a list"
+        )
+    
     repo = CitizenRepository(db)
     result = {}
     

@@ -1,6 +1,7 @@
 # civil_status_service_btp/app/services/bca_client.py
 import httpx
 from typing import Dict, Any, Optional, List
+import json
 from fastapi import HTTPException, status
 from app.config import get_settings
 from app.schemas.death_certificate import CitizenValidationResponse # Import schema đơn giản
@@ -94,18 +95,26 @@ class BCAClient:
         """
         try:
             async with httpx.AsyncClient(base_url=self.base_url, timeout=15.0) as client:
+                # Kiểm tra định dạng request
+                print(f"DEBUG - Request payload: {json.dumps({'citizen_ids': citizen_ids, 'include_family_tree': include_family_tree})}")
+                
                 response = await client.post(
                     "/api/v1/citizens/batch-validate",
                     json={"citizen_ids": citizen_ids, "include_family_tree": include_family_tree}
                 )
                 
+                # Kiểm tra mã phản hồi và nội dung
+                if response.status_code != 200:
+                    print(f"DEBUG - Response status: {response.status_code}, content: {response.text}")
+                    
                 if response.status_code == status.HTTP_200_OK:
                     return response.json()
                 else:
                     response.raise_for_status()
         
         except Exception as e:
-            # Exception handling
+            # Ghi log chi tiết hơn
+            print(f"DEBUG - Exception in batch_validate_citizens: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error in batch validation: {str(e)}"
