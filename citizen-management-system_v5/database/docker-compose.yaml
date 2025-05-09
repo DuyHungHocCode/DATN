@@ -2,40 +2,52 @@
 version: '3.8' # Phiên bản Docker Compose
 
 services:
-  # Service cho DB_BCA
+  # Service cho DB_BCA (Bộ Công an)
   sql-bca:
-    image: mcr.microsoft.com/mssql/server:2022-latest # Sử dụng image SQL Server 2022
-    container_name: sql_bca                       # Đặt tên cho container
-    environment:
-      ACCEPT_EULA: 'Y'                            # Chấp nhận điều khoản sử dụng
-      # QUAN TRỌNG: Thay thế bằng mật khẩu SA mạnh của bạn cho BCA
-      # Nên sử dụng file .env hoặc secrets thay vì hardcode ở đây
-      MSSQL_SA_PASSWORD: '<YourStrongPasswordBCA!>'
-      MSSQL_PID: 'Developer'                      # Sử dụng phiên bản Developer miễn phí
-    ports:
-      - "1401:1433"                               # Map cổng 1401 của host vào cổng 1433 của container
-    volumes:
-      - sql_bca_data:/var/opt/mssql               # Sử dụng named volume để lưu trữ dữ liệu BCA
-    networks:
-      - citizen_network                           # Kết nối vào network chung
-    restart: unless-stopped                       # Tùy chọn: Tự khởi động lại nếu không bị dừng thủ công
-
-  # Service cho DB_BTP
-  sql-btp:
-    image: mcr.microsoft.com/mssql/server:2022-latest # Sử dụng cùng image
-    container_name: sql_btp                       # Đặt tên khác cho container
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql_bca
     environment:
       ACCEPT_EULA: 'Y'
-      # QUAN TRỌNG: Thay thế bằng mật khẩu SA mạnh của bạn cho BTP (nên khác BCA)
-      # Nên sử dụng file .env hoặc secrets thay vì hardcode ở đây
-      MSSQL_SA_PASSWORD: '<YourStrongPasswordBTP!>'
+      MSSQL_SA_PASSWORD: 'Duyhung123' # Cân nhắc sử dụng mật khẩu mạnh hơn và khác nhau cho mỗi instance trong môi trường thực tế
       MSSQL_PID: 'Developer'
     ports:
-      - "1402:1433"                               # Map cổng 1402 của host (KHÁC với BCA)
+      - "1401:1433" # Map cổng 1401 của host vào cổng 1433 của container sql_bca
     volumes:
-      - sql_btp_data:/var/opt/mssql               # Sử dụng named volume khác để lưu trữ dữ liệu BTP
+      - sql_bca_data:/var/opt/mssql
     networks:
-      - citizen_network                           # Kết nối vào network chung
+      - citizen_network
+    restart: unless-stopped
+
+  # Service cho DB_BTP (Bộ Tư pháp)
+  sql-btp:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql_btp
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: 'Duyhung123' # Cân nhắc sử dụng mật khẩu mạnh hơn và khác nhau cho mỗi instance
+      MSSQL_PID: 'Developer'
+    ports:
+      - "1402:1433" # Map cổng 1402 của host vào cổng 1433 của container sql_btp
+    volumes:
+      - sql_btp_data:/var/opt/mssql
+    networks:
+      - citizen_network
+    restart: unless-stopped
+
+  # Service cho DB_Reference (CSDL Tham chiếu Dùng chung)
+  sql-reference:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql_reference
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: 'Duyhung123' # Cân nhắc sử dụng mật khẩu mạnh hơn và khác nhau cho mỗi instance
+      MSSQL_PID: 'Developer'
+    ports:
+      - "1403:1433" # Map cổng 1403 của host vào cổng 1433 của container sql_reference
+    volumes:
+      - sql_reference_data:/var/opt/mssql
+    networks:
+      - citizen_network
     restart: unless-stopped
 
 # Định nghĩa các named volumes để lưu trữ dữ liệu bền vững
@@ -43,6 +55,8 @@ volumes:
   sql_bca_data:
     driver: local
   sql_btp_data:
+    driver: local
+  sql_reference_data: # Volume mới cho DB_Reference
     driver: local
 
 # Định nghĩa network tùy chỉnh để các container có thể giao tiếp nếu cần
