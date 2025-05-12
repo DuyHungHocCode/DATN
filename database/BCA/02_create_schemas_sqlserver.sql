@@ -1,6 +1,7 @@
 -- Script to create schemas for database DB_BCA (Bộ Công an)
 -- This script should be run on the SQL Server instance dedicated to DB_BCA,
 -- after DB_BCA has been created.
+-- Updated to include the 'Reference' schema previously in DB_Reference.
 
 USE [DB_BCA];
 GO
@@ -38,6 +39,17 @@ BEGIN
 END
 ELSE
     PRINT N'  Schema [API_Internal] already exists.';
+GO
+
+-- Schema: Reference (to hold all common lookup/reference tables, moved from DB_Reference)
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'Reference')
+BEGIN
+    PRINT N'  Creating schema [Reference]...';
+    EXEC('CREATE SCHEMA [Reference]');
+    PRINT N'  Schema [Reference] created.';
+END
+ELSE
+    PRINT N'  Schema [Reference] already exists.';
 GO
 
 PRINT N'Finished creating schemas in DB_BCA.';

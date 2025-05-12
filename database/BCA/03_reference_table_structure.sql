@@ -1,5 +1,5 @@
 -- ==========================================================================================
--- DANH SÁCH CÁC BẢNG THAM CHIẾU TRONG SCHEMA [REFERENCE] CỦA DB_REFERENCE
+-- DANH SÁCH CÁC BẢNG THAM CHIẾU TRONG SCHEMA [REFERENCE] - NAY ĐƯỢC CHUYỂN VÀO DB_BCA
 -- ==========================================================================================
 --
 -- ------------------------------------------------------------------------------------------
@@ -17,7 +17,7 @@
 --
 -- CÁC BẢNG THAM CHIẾU BỔ SUNG (Tạo từ các CHECK constraint trước đây)
 -- ------------------------------------------------------------------------------------------
--- Từ DB_BCA:
+-- Từ DB_BCA (nay đã có sẵn trong DB này):
 -- 12. Reference.Genders                     -- Giới tính (Nam, Nữ, Khác)
 -- 13. Reference.MaritalStatuses             -- Tình trạng hôn nhân
 -- 14. Reference.EducationLevels             -- Trình độ học vấn
@@ -35,7 +35,7 @@
 -- 26. Reference.CrimeTypes                  -- Loại tội phạm
 -- 27. Reference.AddressTypes                -- Loại địa chỉ (trong BCA.CitizenAddress)
 --
--- Từ DB_BTP:
+-- Từ DB_BTP (các bảng này vẫn cần thiết cho DB_BTP tham chiếu đến DB_BCA):
 -- 28. Reference.HouseholdTypes              -- Loại hộ khẩu
 -- 29. Reference.HouseholdStatuses           -- Trạng thái hộ khẩu
 -- 30. Reference.RelationshipWithHeadTypes   -- Quan hệ với chủ hộ (cho BTP.HouseholdMember)
@@ -46,11 +46,11 @@
 -- ==========================================================================================
 
 
-
-USE [DB_Reference];
+-- Thay đổi USE statement để chạy trên DB_BCA
+USE [DB_BCA];
 GO
 
-PRINT N'Creating table structures in DB_Reference.Reference schema...';
+PRINT N'Creating reference table structures in DB_BCA.Reference schema...'; -- Cập nhật thông báo
 
 --------------------------------------------------------------------------------
 -- Schema: Reference
@@ -604,7 +604,7 @@ GO
 
 
 --------------------------------------------------------------------------------
--- Lookup Tables from DB_BTP CHECK constraints
+-- Lookup Tables from DB_BTP CHECK constraints (Needed for DB_BTP to reference DB_BCA)
 --------------------------------------------------------------------------------
 
 -- Table: Reference.HouseholdTypes (Loại hộ khẩu)
@@ -709,4 +709,4 @@ CREATE TABLE [Reference].[PopulationChangeTypes] (
 );
 PRINT N'  Table [Reference].[PopulationChangeTypes] created.';
 GO
-PRINT N'Finished creating all table structures in DB_Reference.Reference schema.';
+PRINT N'Finished creating all reference table structures in DB_BCA.Reference schema.'; -- Cập nhật thông báo
