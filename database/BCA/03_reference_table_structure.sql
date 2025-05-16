@@ -1,340 +1,163 @@
--- ==========================================================================================
--- DANH SÁCH CÁC BẢNG THAM CHIẾU TRONG SCHEMA [REFERENCE] - NAY ĐƯỢC CHUYỂN VÀO DB_BCA
--- ==========================================================================================
---
--- ------------------------------------------------------------------------------------------
--- 1.  Reference.Regions                     -- Vùng/Miền địa lý
--- 2.  Reference.Provinces                   -- Tỉnh/Thành phố trực thuộc trung ương
--- 3.  Reference.Districts                   -- Quận/Huyện/Thị xã/Thành phố thuộc tỉnh
--- 4.  Reference.Wards                       -- Phường/Xã/Thị trấn
--- 5.  Reference.Ethnicities                 -- Dân tộc
--- 6.  Reference.Religions                   -- Tôn giáo
--- 7.  Reference.Nationalities               -- Quốc tịch
--- 8.  Reference.Occupations                 -- Nghề nghiệp
--- 9.  Reference.Authorities                 -- Cơ quan có thẩm quyền/Đơn vị cấp phát
--- 10. Reference.RelationshipTypes           -- Loại quan hệ gia đình/thân nhân (dùng chung)
--- 11. Reference.PrisonFacilities            -- Cơ sở giam giữ
---
--- CÁC BẢNG THAM CHIẾU BỔ SUNG (Tạo từ các CHECK constraint trước đây)
--- ------------------------------------------------------------------------------------------
--- Từ DB_BCA (nay đã có sẵn trong DB này):
--- 12. Reference.Genders                     -- Giới tính (Nam, Nữ, Khác)
--- 13. Reference.MaritalStatuses             -- Tình trạng hôn nhân
--- 14. Reference.EducationLevels             -- Trình độ học vấn
--- 15. Reference.CitizenDeathStatuses        -- Trạng thái tử vong của Công dân (trong BCA.Citizen)
--- 16. Reference.BloodTypes                  -- Nhóm máu
--- 17. Reference.IdentificationCardTypes     -- Loại thẻ CCCD/CMND
--- 18. Reference.IdentificationCardStatuses  -- Trạng thái thẻ CCCD/CMND
--- 19. Reference.ResidenceTypes              -- Loại cư trú (Thường trú, Tạm trú)
--- 20. Reference.ResidenceRegistrationStatuses -- Trạng thái đăng ký cư trú
--- 21. Reference.TemporaryAbsenceStatuses    -- Trạng thái tạm vắng
--- 22. Reference.DataSensitivityLevels       -- Mức độ nhạy cảm dữ liệu
--- 23. Reference.CitizenStatusTypes          -- Loại trạng thái công dân (trong BCA.CitizenStatus)
--- 24. Reference.CitizenMovementTypes        -- Loại di biến động dân cư
--- 25. Reference.CitizenMovementStatuses     -- Trạng thái di biến động dân cư
--- 26. Reference.CrimeTypes                  -- Loại tội phạm
--- 27. Reference.AddressTypes                -- Loại địa chỉ (trong BCA.CitizenAddress)
---
--- Từ DB_BTP (các bảng này vẫn cần thiết cho DB_BTP tham chiếu đến DB_BCA):
--- 28. Reference.HouseholdTypes              -- Loại hộ khẩu
--- 29. Reference.HouseholdStatuses           -- Trạng thái hộ khẩu
--- 30. Reference.RelationshipWithHeadTypes   -- Quan hệ với chủ hộ (cho BTP.HouseholdMember)
--- 31. Reference.HouseholdMemberStatuses     -- Trạng thái thành viên hộ
--- 32. Reference.FamilyRelationshipStatuses  -- Trạng thái quan hệ gia đình (cho BTP.FamilyRelationship)
--- 33. Reference.PopulationChangeTypes       -- Loại thay đổi dân số
---
--- ==========================================================================================
+-- Script để tạo cấu trúc các bảng tham chiếu (Reference) cho DB_BCA
+-- Các bảng được phân nhóm theo chức năng và đã được cải tiến để tối ưu
 
-
--- Thay đổi USE statement để chạy trên DB_BCA
 USE [DB_BCA];
 GO
 
-PRINT N'Creating reference table structures in DB_BCA.Reference schema...'; -- Cập nhật thông báo
+PRINT N'Creating improved reference tables in DB_BCA.Reference schema...';
 
 --------------------------------------------------------------------------------
--- Schema: Reference
+-- I. BẢNG ĐỊA LÝ HÀNH CHÍNH
 --------------------------------------------------------------------------------
 
--- Table: Reference.Regions (Vùng/Miền)
--- Mô tả: Lưu trữ thông tin về các vùng miền địa lý của Việt Nam.
-IF OBJECT_ID('Reference.Regions', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[Regions] exists. Dropping it...';
-    DROP TABLE [Reference].[Regions];
-    PRINT N'  Table [Reference].[Regions] dropped.';
-END
+-- 1. Reference.Regions (Vùng/Miền địa lý)
+-- Mô tả: Lưu trữ thông tin về các vùng miền địa lý của Việt Nam
+IF OBJECT_ID('Reference.Regions', 'U') IS NOT NULL DROP TABLE [Reference].[Regions];
 GO
-PRINT N'  Creating table [Reference].[Regions]...';
 CREATE TABLE [Reference].[Regions] (
-    [region_id] SMALLINT PRIMARY KEY,               -- Khóa chính, ID của vùng miền
-    [region_code] VARCHAR(10) NOT NULL UNIQUE,      -- Mã vùng miền (ví dụ: BAC, TRU, NAM)
-    [region_name] NVARCHAR(50) NOT NULL,            -- Tên vùng miền (ví dụ: Miền Bắc, Miền Trung)
-    [description] NVARCHAR(MAX) NULL,               -- Mô tả chi tiết về vùng miền
-    [created_at] DATETIME2(7) DEFAULT GETDATE(),    -- Ngày giờ tạo bản ghi
-    [updated_at] DATETIME2(7) DEFAULT GETDATE()     -- Ngày giờ cập nhật bản ghi cuối cùng
+    [region_id] SMALLINT PRIMARY KEY,
+    [region_code] VARCHAR(10) NOT NULL UNIQUE,
+    [region_name] NVARCHAR(50) NOT NULL,
+    [description] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[Regions] created.';
 GO
 
--- Table: Reference.Provinces (Tỉnh/Thành phố)
--- Mô tả: Lưu trữ thông tin về các tỉnh/thành phố trực thuộc trung ương.
-IF OBJECT_ID('Reference.Provinces', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[Provinces] exists. Dropping it...';
-    DROP TABLE [Reference].[Provinces];
-    PRINT N'  Table [Reference].[Provinces] dropped.';
-END
+-- 2. Reference.Provinces (Tỉnh/Thành phố trực thuộc trung ương)
+-- Mô tả: Lưu trữ thông tin về các tỉnh/thành phố trực thuộc trung ương
+IF OBJECT_ID('Reference.Provinces', 'U') IS NOT NULL DROP TABLE [Reference].[Provinces];
 GO
-PRINT N'  Creating table [Reference].[Provinces]...';
 CREATE TABLE [Reference].[Provinces] (
-    [province_id] INT PRIMARY KEY,                  -- Khóa chính, ID của tỉnh/thành phố
-    [province_code] VARCHAR(10) NOT NULL UNIQUE,    -- Mã tỉnh/thành phố (ví dụ: HNO, HCM)
-    [province_name] NVARCHAR(100) NOT NULL,         -- Tên tỉnh/thành phố (ví dụ: Thành phố Hà Nội)
-    [region_id] SMALLINT NULL,                      -- Khóa ngoại tham chiếu đến Regions.region_id (sẽ tạo ở file constraints)
-    [administrative_unit_id] SMALLINT NULL,         -- ID loại đơn vị hành chính (ví dụ: 1 cho Thành phố TW, 2 cho Tỉnh)
-    [administrative_region_id] SMALLINT NULL,       -- ID của vùng hành chính theo phân loại của GSO (ví dụ: Đồng bằng sông Hồng, Tây Nguyên)
+    [province_id] INT PRIMARY KEY,
+    [province_code] VARCHAR(10) NOT NULL UNIQUE,
+    [province_name] NVARCHAR(100) NOT NULL,
+    [region_id] SMALLINT NULL,                      -- FK to Reference.Regions
+    [administrative_unit_id] SMALLINT NULL,         -- ID đơn vị hành chính
+    [administrative_region_id] SMALLINT NULL,       -- ID vùng hành chính theo GSO
     [area] DECIMAL(10,2) NULL,                      -- Diện tích (km2)
     [population] INT NULL,                          -- Dân số
-    [gso_code] VARCHAR(10) NULL UNIQUE,             -- Mã tỉnh/thành phố theo Tổng cục Thống kê
-    [is_city] BIT DEFAULT 0,                        -- Cờ đánh dấu là thành phố trực thuộc trung ương (1) hay tỉnh (0)
+    [gso_code] VARCHAR(10) NULL UNIQUE,             -- Mã tỉnh/thành theo Tổng cục Thống kê
+    [is_city] BIT DEFAULT 0,                        -- Cờ đánh dấu là TP trực thuộc TW (1) hay tỉnh (0)
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[Provinces] created.';
 GO
 
--- Table: Reference.Districts (Quận/Huyện/Thị xã/Thành phố thuộc tỉnh)
--- Mô tả: Lưu trữ thông tin về các đơn vị hành chính cấp quận/huyện.
-IF OBJECT_ID('Reference.Districts', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[Districts] exists. Dropping it...';
-    DROP TABLE [Reference].[Districts];
-    PRINT N'  Table [Reference].[Districts] dropped.';
-END
+-- 3. Reference.Districts (Quận/Huyện/Thị xã/Thành phố thuộc tỉnh)
+-- Mô tả: Lưu trữ thông tin về các đơn vị hành chính cấp quận/huyện
+IF OBJECT_ID('Reference.Districts', 'U') IS NOT NULL DROP TABLE [Reference].[Districts];
 GO
-PRINT N'  Creating table [Reference].[Districts]...';
 CREATE TABLE [Reference].[Districts] (
-    [district_id] INT PRIMARY KEY,                  -- Khóa chính, ID của quận/huyện
-    [district_code] VARCHAR(10) NOT NULL UNIQUE,    -- Mã quận/huyện
-    [district_name] NVARCHAR(100) NOT NULL,         -- Tên quận/huyện (ví dụ: Quận Ba Đình)
-    [province_id] INT NOT NULL,                     -- Khóa ngoại tham chiếu đến Provinces.province_id
-    [administrative_unit_id] SMALLINT NULL,         -- ID loại đơn vị hành chính (ví dụ: Quận, Huyện, Thị xã, TP thuộc tỉnh)
+    [district_id] INT PRIMARY KEY,
+    [district_code] VARCHAR(10) NOT NULL UNIQUE,
+    [district_name] NVARCHAR(100) NOT NULL,
+    [province_id] INT NOT NULL,                     -- FK to Reference.Provinces
+    [administrative_unit_id] SMALLINT NULL,         -- ID loại đơn vị hành chính
     [area] DECIMAL(10,2) NULL,
     [population] INT NULL,
-    [gso_code] VARCHAR(10) NULL UNIQUE,             -- Mã quận/huyện theo Tổng cục Thống kê
-    [is_urban] BIT DEFAULT 0,                       -- Cờ đánh dấu là đô thị (Quận, Thành phố thuộc tỉnh, Thị xã)
+    [gso_code] VARCHAR(10) NULL UNIQUE,             -- Mã quận/huyện theo GSO
+    [is_urban] BIT DEFAULT 0,                       -- Cờ đánh dấu là đô thị
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[Districts] created.';
 GO
 
--- Table: Reference.Wards (Phường/Xã/Thị trấn)
--- Mô tả: Lưu trữ thông tin về các đơn vị hành chính cấp phường/xã.
-IF OBJECT_ID('Reference.Wards', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[Wards] exists. Dropping it...';
-    DROP TABLE [Reference].[Wards];
-    PRINT N'  Table [Reference].[Wards] dropped.';
-END
+-- 4. Reference.Wards (Phường/Xã/Thị trấn)
+-- Mô tả: Lưu trữ thông tin về các đơn vị hành chính cấp phường/xã
+IF OBJECT_ID('Reference.Wards', 'U') IS NOT NULL DROP TABLE [Reference].[Wards];
 GO
-PRINT N'  Creating table [Reference].[Wards]...';
 CREATE TABLE [Reference].[Wards] (
-    [ward_id] INT PRIMARY KEY,                      -- Khóa chính, ID của phường/xã
-    [ward_code] VARCHAR(10) NOT NULL UNIQUE,        -- Mã phường/xã
-    [ward_name] NVARCHAR(100) NOT NULL,             -- Tên phường/xã (ví dụ: Phường Phúc Xá)
-    [district_id] INT NOT NULL,                     -- Khóa ngoại tham chiếu đến Districts.district_id
-    [administrative_unit_id] SMALLINT NULL,         -- ID loại đơn vị hành chính (ví dụ: Phường, Xã, Thị trấn)
+    [ward_id] INT PRIMARY KEY,
+    [ward_code] VARCHAR(10) NOT NULL UNIQUE,
+    [ward_name] NVARCHAR(100) NOT NULL,
+    [district_id] INT NOT NULL,                     -- FK to Reference.Districts
+    [administrative_unit_id] SMALLINT NULL,         -- ID loại đơn vị hành chính
     [area] DECIMAL(10,2) NULL,
     [population] INT NULL,
-    [gso_code] VARCHAR(10) NULL UNIQUE,             -- Mã phường/xã theo Tổng cục Thống kê
-    [is_urban] BIT DEFAULT 0,                       -- Cờ đánh dấu là đô thị (Phường, Thị trấn)
+    [gso_code] VARCHAR(10) NULL UNIQUE,             -- Mã phường/xã theo GSO
+    [is_urban] BIT DEFAULT 0,                       -- Cờ đánh dấu là đô thị
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[Wards] created.';
 GO
 
--- Table: Reference.Ethnicities (Dân tộc)
--- Mô tả: Lưu trữ danh sách các dân tộc Việt Nam.
-IF OBJECT_ID('Reference.Ethnicities', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[Ethnicities] exists. Dropping it...';
-    DROP TABLE [Reference].[Ethnicities];
-    PRINT N'  Table [Reference].[Ethnicities] dropped.';
-END
+--------------------------------------------------------------------------------
+-- II. BẢNG NHÂN KHẨU HỌC
+--------------------------------------------------------------------------------
+
+-- 5. Reference.Ethnicities (Dân tộc)
+-- Mô tả: Lưu trữ danh sách các dân tộc Việt Nam
+IF OBJECT_ID('Reference.Ethnicities', 'U') IS NOT NULL DROP TABLE [Reference].[Ethnicities];
 GO
-PRINT N'  Creating table [Reference].[Ethnicities]...';
 CREATE TABLE [Reference].[Ethnicities] (
-    [ethnicity_id] SMALLINT PRIMARY KEY,            -- Khóa chính, ID dân tộc
-    [ethnicity_code] VARCHAR(10) NOT NULL UNIQUE,   -- Mã dân tộc (ví dụ: KINH, TAY)
-    [ethnicity_name] NVARCHAR(100) NOT NULL,        -- Tên dân tộc (ví dụ: Kinh, Tày)
-    [description] NVARCHAR(MAX) NULL,               -- Mô tả thêm
-    [population] INT NULL,                          -- Dân số (tham khảo)
+    [ethnicity_id] SMALLINT PRIMARY KEY,
+    [ethnicity_code] VARCHAR(10) NOT NULL UNIQUE,
+    [ethnicity_name] NVARCHAR(100) NOT NULL,
+    [description] NVARCHAR(MAX) NULL,
+    [population] INT NULL,                          -- Dân số tham khảo
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[Ethnicities] created.';
 GO
 
--- Table: Reference.Religions (Tôn giáo)
--- Mô tả: Lưu trữ danh sách các tôn giáo được công nhận hoặc phổ biến.
-IF OBJECT_ID('Reference.Religions', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[Religions] exists. Dropping it...';
-    DROP TABLE [Reference].[Religions];
-    PRINT N'  Table [Reference].[Religions] dropped.';
-END
+-- 6. Reference.Religions (Tôn giáo)
+-- Mô tả: Lưu trữ danh sách các tôn giáo được công nhận hoặc phổ biến
+IF OBJECT_ID('Reference.Religions', 'U') IS NOT NULL DROP TABLE [Reference].[Religions];
 GO
-PRINT N'  Creating table [Reference].[Religions]...';
 CREATE TABLE [Reference].[Religions] (
-    [religion_id] SMALLINT PRIMARY KEY,             -- Khóa chính, ID tôn giáo
-    [religion_code] VARCHAR(10) NOT NULL UNIQUE,    -- Mã tôn giáo (ví dụ: BUDD, CATH)
-    [religion_name] NVARCHAR(100) NOT NULL,         -- Tên tôn giáo (ví dụ: Phật giáo, Công giáo)
-    [description] NVARCHAR(MAX) NULL,               -- Mô tả thêm
-    [followers] INT NULL,                           -- Số lượng tín đồ (tham khảo)
+    [religion_id] SMALLINT PRIMARY KEY,
+    [religion_code] VARCHAR(10) NOT NULL UNIQUE,
+    [religion_name] NVARCHAR(100) NOT NULL,
+    [description] NVARCHAR(MAX) NULL,
+    [followers] INT NULL,                           -- Số lượng tín đồ tham khảo
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[Religions] created.';
 GO
 
--- Table: Reference.Nationalities (Quốc tịch)
--- Mô tả: Lưu trữ danh sách các quốc tịch.
-IF OBJECT_ID('Reference.Nationalities', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[Nationalities] exists. Dropping it...';
-    DROP TABLE [Reference].[Nationalities];
-    PRINT N'  Table [Reference].[Nationalities] dropped.';
-END
+-- 7. Reference.Nationalities (Quốc tịch)
+-- Mô tả: Lưu trữ danh sách các quốc tịch
+IF OBJECT_ID('Reference.Nationalities', 'U') IS NOT NULL DROP TABLE [Reference].[Nationalities];
 GO
-PRINT N'  Creating table [Reference].[Nationalities]...';
 CREATE TABLE [Reference].[Nationalities] (
-    [nationality_id] SMALLINT PRIMARY KEY,          -- Khóa chính, ID quốc tịch
-    [nationality_code] VARCHAR(10) NOT NULL UNIQUE, -- Mã quốc tịch (thường là mã ISO 2 chữ cái)
-    [iso_code_alpha2] VARCHAR(2) NULL UNIQUE,       -- Mã ISO 3166-1 alpha-2 (ví dụ: VN, US)
-    [iso_code_alpha3] VARCHAR(3) NULL UNIQUE,       -- Mã ISO 3166-1 alpha-3 (ví dụ: VNM, USA)
-    [nationality_name] NVARCHAR(100) NOT NULL,     -- Tên quốc tịch (ví dụ: Việt Nam, Hoa Kỳ)
+    [nationality_id] SMALLINT PRIMARY KEY,
+    [nationality_code] VARCHAR(10) NOT NULL UNIQUE,
+    [iso_code_alpha2] VARCHAR(2) NULL UNIQUE,       -- Mã ISO 3166-1 alpha-2
+    [iso_code_alpha3] VARCHAR(3) NULL UNIQUE,       -- Mã ISO 3166-1 alpha-3
+    [nationality_name] NVARCHAR(100) NOT NULL,
     [country_name] NVARCHAR(100) NOT NULL,          -- Tên quốc gia tương ứng
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[Nationalities] created.';
 GO
 
--- Table: Reference.Occupations (Nghề nghiệp)
--- Mô tả: Lưu trữ danh mục các ngành nghề.
-IF OBJECT_ID('Reference.Occupations', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[Occupations] exists. Dropping it...';
-    DROP TABLE [Reference].[Occupations];
-    PRINT N'  Table [Reference].[Occupations] dropped.';
-END
+-- 8. Reference.Occupations (Nghề nghiệp)
+-- Mô tả: Lưu trữ danh mục các ngành nghề
+IF OBJECT_ID('Reference.Occupations', 'U') IS NOT NULL DROP TABLE [Reference].[Occupations];
 GO
-PRINT N'  Creating table [Reference].[Occupations]...';
 CREATE TABLE [Reference].[Occupations] (
-    [occupation_id] INT PRIMARY KEY,                -- Khóa chính, ID nghề nghiệp
-    [occupation_code] VARCHAR(20) NOT NULL UNIQUE,  -- Mã nghề nghiệp
-    [occupation_name] NVARCHAR(255) NOT NULL,       -- Tên nghề nghiệp
-    [occupation_group_id] INT NULL,                 -- ID nhóm nghề (nếu có phân cấp, tham chiếu đến bảng khác hoặc tự tham chiếu)
-    [description] NVARCHAR(MAX) NULL,               -- Mô tả chi tiết
+    [occupation_id] INT PRIMARY KEY,
+    [occupation_code] VARCHAR(20) NOT NULL UNIQUE,
+    [occupation_name] NVARCHAR(255) NOT NULL,
+    [occupation_group_id] INT NULL,                 -- ID nhóm nghề (tự tham chiếu)
+    [description] NVARCHAR(MAX) NULL,
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[Occupations] created.';
 GO
 
--- Table: Reference.Authorities (Cơ quan có thẩm quyền/Đơn vị cấp phát)
--- Mô tả: Lưu trữ thông tin về các cơ quan, đơn vị có thẩm quyền (ví dụ: Bộ Công an, UBND Phường X, Công an Tỉnh Y).
-IF OBJECT_ID('Reference.Authorities', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[Authorities] exists. Dropping it...';
-    DROP TABLE [Reference].[Authorities];
-    PRINT N'  Table [Reference].[Authorities] dropped.';
-END
-GO
-PRINT N'  Creating table [Reference].[Authorities]...';
-CREATE TABLE [Reference].[Authorities] (
-    [authority_id] INT PRIMARY KEY,                 -- Khóa chính, ID cơ quan
-    [authority_code] VARCHAR(30) NOT NULL UNIQUE,   -- Mã cơ quan
-    [authority_name] NVARCHAR(255) NOT NULL,        -- Tên cơ quan
-    [authority_type] NVARCHAR(100) NOT NULL,        -- Loại cơ quan (ví dụ: Bộ, Cục, Sở, Phòng, UBND Phường, Công an Tỉnh)
-    [address_detail] NVARCHAR(MAX) NULL,            -- Địa chỉ chi tiết của cơ quan
-    [ward_id] INT NULL,                             -- Khóa ngoại tham chiếu đến Wards.ward_id (nếu có)
-    [district_id] INT NULL,                         -- Khóa ngoại tham chiếu đến Districts.district_id (nếu có)
-    [province_id] INT NULL,                         -- Khóa ngoại tham chiếu đến Provinces.province_id (nếu có)
-    [phone] VARCHAR(50) NULL,                       -- Số điện thoại liên hệ
-    [email] VARCHAR(100) NULL,                      -- Địa chỉ email
-    [website] VARCHAR(255) NULL,                    -- Trang web
-    [parent_authority_id] INT NULL,                 -- ID của cơ quan cha (tự tham chiếu để tạo phân cấp)
-    [is_active] BIT DEFAULT 1,                      -- Trạng thái hoạt động
-    [created_at] DATETIME2(7) DEFAULT GETDATE(),
-    [updated_at] DATETIME2(7) DEFAULT GETDATE()
-);
-PRINT N'  Table [Reference].[Authorities] created.';
-GO
+--------------------------------------------------------------------------------
+-- III. BẢNG THÔNG TIN CÁ NHÂN
+--------------------------------------------------------------------------------
 
--- Table: Reference.RelationshipTypes (Loại quan hệ gia đình/thân nhân)
--- Mô tả: Định nghĩa các loại mối quan hệ (ví dụ: Cha-Con, Vợ-Chồng).
-IF OBJECT_ID('Reference.RelationshipTypes', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[RelationshipTypes] exists. Dropping it...';
-    DROP TABLE [Reference].[RelationshipTypes];
-    PRINT N'  Table [Reference].[RelationshipTypes] dropped.';
-END
-GO
-PRINT N'  Creating table [Reference].[RelationshipTypes]...';
-CREATE TABLE [Reference].[RelationshipTypes] (
-    [relationship_type_id] SMALLINT PRIMARY KEY,    -- Khóa chính, ID loại quan hệ
-    [relationship_code] VARCHAR(20) NOT NULL UNIQUE,-- Mã loại quan hệ
-    [relationship_name] NVARCHAR(100) NOT NULL,     -- Tên loại quan hệ (ví dụ: Con đẻ, Vợ, Chồng)
-    [inverse_relationship_type_id] SMALLINT NULL,   -- ID của loại quan hệ đối ứng (ví dụ: Cha <-> Con)
-    [description] NVARCHAR(MAX) NULL,               -- Mô tả
-    [created_at] DATETIME2(7) DEFAULT GETDATE(),
-    [updated_at] DATETIME2(7) DEFAULT GETDATE()
-);
-PRINT N'  Table [Reference].[RelationshipTypes] created.';
-GO
-
--- Table: Reference.PrisonFacilities (Cơ sở giam giữ)
--- Mô tả: Lưu trữ thông tin về các trại giam, cơ sở giáo dục bắt buộc.
-IF OBJECT_ID('Reference.PrisonFacilities', 'U') IS NOT NULL
-BEGIN
-    PRINT N'  Table [Reference].[PrisonFacilities] exists. Dropping it...';
-    DROP TABLE [Reference].[PrisonFacilities];
-    PRINT N'  Table [Reference].[PrisonFacilities] dropped.';
-END
-GO
-PRINT N'  Creating table [Reference].[PrisonFacilities]...';
-CREATE TABLE [Reference].[PrisonFacilities] (
-    [prison_facility_id] INT IDENTITY(1,1) PRIMARY KEY, -- Khóa chính, ID cơ sở giam giữ
-    [facility_code] VARCHAR(30) NULL UNIQUE,        -- Mã cơ sở (nếu có)
-    [facility_name] NVARCHAR(255) NOT NULL,         -- Tên cơ sở
-    [facility_type] NVARCHAR(100) NULL,             -- Loại cơ sở (ví dụ: Trại giam, Trại tạm giam, Cơ sở giáo dục)
-    [address_detail] NVARCHAR(MAX) NULL,            -- Địa chỉ chi tiết
-    [ward_id] INT NULL,                             -- Khóa ngoại tham chiếu đến Wards.ward_id
-    [district_id] INT NULL,                         -- Khóa ngoại tham chiếu đến Districts.district_id
-    [province_id] INT NOT NULL,                     -- Khóa ngoại tham chiếu đến Provinces.province_id
-    [capacity] INT NULL,                            -- Sức chứa (số lượng người)
-    [managing_authority_id] INT NULL,               -- ID cơ quan quản lý (tham chiếu đến Authorities.authority_id)
-    [phone_number] VARCHAR(50) NULL,
-    [is_active] BIT DEFAULT 1,
-    [notes] NVARCHAR(MAX) NULL,
-    [created_at] DATETIME2(7) DEFAULT GETDATE(),
-    [updated_at] DATETIME2(7) DEFAULT GETDATE()
-);
-PRINT N'  Table [Reference].[PrisonFacilities] created.';
-GO
-
--- Table: Reference.Genders (Giới tính)
--- Replaces CHECK constraint for gender columns
+-- 9. Reference.Genders (Giới tính)
+-- Mô tả: Danh mục giới tính
 IF OBJECT_ID('Reference.Genders', 'U') IS NOT NULL DROP TABLE [Reference].[Genders];
 GO
-PRINT N'  Creating table [Reference].[Genders]...';
 CREATE TABLE [Reference].[Genders] (
     [gender_id] SMALLINT PRIMARY KEY,
-    [gender_code] VARCHAR(10) UNIQUE, -- e.g., 'NAM', 'NU', 'KHAC'
+    [gender_code] VARCHAR(10) UNIQUE,
     [gender_name_vi] NVARCHAR(20) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -342,16 +165,15 @@ CREATE TABLE [Reference].[Genders] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[Genders] created.';
 GO
 
--- Table: Reference.MaritalStatuses (Tình trạng hôn nhân)
+-- 10. Reference.MaritalStatuses (Tình trạng hôn nhân)
+-- Mô tả: Danh mục các trạng thái hôn nhân
 IF OBJECT_ID('Reference.MaritalStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[MaritalStatuses];
 GO
-PRINT N'  Creating table [Reference].[MaritalStatuses]...';
 CREATE TABLE [Reference].[MaritalStatuses] (
     [marital_status_id] SMALLINT PRIMARY KEY,
-    [marital_status_code] VARCHAR(20) UNIQUE, -- e.g., 'DOCTHAN', 'DAKETHON'
+    [marital_status_code] VARCHAR(20) UNIQUE,
     [marital_status_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -359,16 +181,15 @@ CREATE TABLE [Reference].[MaritalStatuses] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[MaritalStatuses] created.';
 GO
 
--- Table: Reference.EducationLevels (Trình độ học vấn)
+-- 11. Reference.EducationLevels (Trình độ học vấn)
+-- Mô tả: Danh mục các trình độ học vấn
 IF OBJECT_ID('Reference.EducationLevels', 'U') IS NOT NULL DROP TABLE [Reference].[EducationLevels];
 GO
-PRINT N'  Creating table [Reference].[EducationLevels]...';
 CREATE TABLE [Reference].[EducationLevels] (
     [education_level_id] SMALLINT PRIMARY KEY,
-    [education_level_code] VARCHAR(30) UNIQUE, -- e.g., 'TIEUHOC', 'DAIHOC'
+    [education_level_code] VARCHAR(30) UNIQUE,
     [education_level_name_vi] NVARCHAR(100) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -376,51 +197,101 @@ CREATE TABLE [Reference].[EducationLevels] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[EducationLevels] created.';
 GO
 
--- Table: Reference.CitizenDeathStatuses (Trạng thái tử vong của Công dân trong bảng Citizen)
--- Phân biệt với CitizenStatusTypes nếu cần ngữ nghĩa khác
-IF OBJECT_ID('Reference.CitizenDeathStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[CitizenDeathStatuses];
-GO
-PRINT N'  Creating table [Reference].[CitizenDeathStatuses]...';
-CREATE TABLE [Reference].[CitizenDeathStatuses] (
-    [citizen_death_status_id] SMALLINT PRIMARY KEY,
-    [status_code] VARCHAR(20) UNIQUE, -- e.g., 'CONSống', 'DAMAT'
-    [status_name_vi] NVARCHAR(50) NOT NULL,
-    [description_vi] NVARCHAR(255) NULL,
-    [display_order] SMALLINT DEFAULT 0,
-    [is_active] BIT DEFAULT 1,
-    [created_at] DATETIME2(7) DEFAULT GETDATE(),
-    [updated_at] DATETIME2(7) DEFAULT GETDATE()
-);
-PRINT N'  Table [Reference].[CitizenDeathStatuses] created.';
-GO
-
--- Table: Reference.BloodTypes (Nhóm máu)
+-- 12. Reference.BloodTypes (Nhóm máu)
+-- Mô tả: Danh mục các nhóm máu
 IF OBJECT_ID('Reference.BloodTypes', 'U') IS NOT NULL DROP TABLE [Reference].[BloodTypes];
 GO
-PRINT N'  Creating table [Reference].[BloodTypes]...';
 CREATE TABLE [Reference].[BloodTypes] (
     [blood_type_id] SMALLINT PRIMARY KEY,
-    [blood_type_code] VARCHAR(10) UNIQUE, -- e.g., 'A_PLUS', 'O_MINUS'
-    [blood_type_name_vi] NVARCHAR(20) NOT NULL, -- e.g., 'A+', 'O-'
+    [blood_type_code] VARCHAR(10) UNIQUE,
+    [blood_type_name_vi] NVARCHAR(20) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
     [is_active] BIT DEFAULT 1,
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[BloodTypes] created.';
 GO
 
--- Table: Reference.IdentificationCardTypes (Loại thẻ CCCD/CMND)
+--------------------------------------------------------------------------------
+-- IV. BẢNG CƠ QUAN VÀ TỔ CHỨC
+--------------------------------------------------------------------------------
+
+-- 13. Reference.Authorities (Cơ quan có thẩm quyền/Đơn vị cấp phát)
+-- Mô tả: Lưu trữ thông tin về các cơ quan, đơn vị có thẩm quyền
+IF OBJECT_ID('Reference.Authorities', 'U') IS NOT NULL DROP TABLE [Reference].[Authorities];
+GO
+CREATE TABLE [Reference].[Authorities] (
+    [authority_id] INT PRIMARY KEY,
+    [authority_code] VARCHAR(30) NOT NULL UNIQUE,
+    [authority_name] NVARCHAR(255) NOT NULL,
+    [authority_type] NVARCHAR(100) NOT NULL,        -- Loại cơ quan
+    [address_detail] NVARCHAR(MAX) NULL,
+    [ward_id] INT NULL,                             -- FK to Reference.Wards
+    [district_id] INT NULL,                         -- FK to Reference.Districts
+    [province_id] INT NULL,                         -- FK to Reference.Provinces
+    [phone] VARCHAR(50) NULL,
+    [email] VARCHAR(100) NULL,
+    [website] VARCHAR(255) NULL,
+    [parent_authority_id] INT NULL,                 -- Tự tham chiếu phân cấp
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+-- 14. Reference.PrisonFacilities (Cơ sở giam giữ)
+-- Mô tả: Lưu trữ thông tin về các trại giam, cơ sở giáo dục bắt buộc
+IF OBJECT_ID('Reference.PrisonFacilities', 'U') IS NOT NULL DROP TABLE [Reference].[PrisonFacilities];
+GO
+CREATE TABLE [Reference].[PrisonFacilities] (
+    [prison_facility_id] INT IDENTITY(1,1) PRIMARY KEY,
+    [facility_code] VARCHAR(30) NULL UNIQUE,
+    [facility_name] NVARCHAR(255) NOT NULL,
+    [facility_type] NVARCHAR(100) NULL,             -- Loại cơ sở
+    [address_detail] NVARCHAR(MAX) NULL,
+    [ward_id] INT NULL,                             -- FK to Reference.Wards
+    [district_id] INT NULL,                         -- FK to Reference.Districts
+    [province_id] INT NOT NULL,                     -- FK to Reference.Provinces
+    [capacity] INT NULL,                            -- Sức chứa
+    [managing_authority_id] INT NULL,               -- FK to Reference.Authorities
+    [phone_number] VARCHAR(50) NULL,
+    [is_active] BIT DEFAULT 1,
+    [notes] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+--------------------------------------------------------------------------------
+-- V. BẢNG GIẤY TỜ VÀ TÀI LIỆU
+--------------------------------------------------------------------------------
+
+-- 15. Reference.DocumentTypes (Loại giấy tờ) - BẢNG MỚI
+-- Mô tả: Danh mục các loại giấy tờ sử dụng trong di chuyển, thủ tục pháp lý
+IF OBJECT_ID('Reference.DocumentTypes', 'U') IS NOT NULL DROP TABLE [Reference].[DocumentTypes];
+GO
+CREATE TABLE [Reference].[DocumentTypes] (
+    [document_type_id] SMALLINT PRIMARY KEY,
+    [document_type_code] VARCHAR(20) UNIQUE,
+    [document_type_name_vi] NVARCHAR(100) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+-- 16. Reference.IdentificationCardTypes (Loại thẻ CCCD/CMND)
+-- Mô tả: Danh mục các loại thẻ căn cước, chứng minh nhân dân
 IF OBJECT_ID('Reference.IdentificationCardTypes', 'U') IS NOT NULL DROP TABLE [Reference].[IdentificationCardTypes];
 GO
-PRINT N'  Creating table [Reference].[IdentificationCardTypes]...';
 CREATE TABLE [Reference].[IdentificationCardTypes] (
     [card_type_id] SMALLINT PRIMARY KEY,
-    [card_type_code] VARCHAR(20) UNIQUE, -- e.g., 'CMND9', 'CCCD_CHIP'
+    [card_type_code] VARCHAR(20) UNIQUE,
     [card_type_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -428,16 +299,15 @@ CREATE TABLE [Reference].[IdentificationCardTypes] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[IdentificationCardTypes] created.';
 GO
 
--- Table: Reference.IdentificationCardStatuses (Trạng thái thẻ CCCD/CMND)
+-- 17. Reference.IdentificationCardStatuses (Trạng thái thẻ CCCD/CMND)
+-- Mô tả: Danh mục các trạng thái của thẻ căn cước, chứng minh nhân dân
 IF OBJECT_ID('Reference.IdentificationCardStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[IdentificationCardStatuses];
 GO
-PRINT N'  Creating table [Reference].[IdentificationCardStatuses]...';
 CREATE TABLE [Reference].[IdentificationCardStatuses] (
     [card_status_id] SMALLINT PRIMARY KEY,
-    [card_status_code] VARCHAR(20) UNIQUE, -- e.g., 'DANGSUDUNG', 'HETHAN'
+    [card_status_code] VARCHAR(20) UNIQUE,
     [card_status_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -445,16 +315,19 @@ CREATE TABLE [Reference].[IdentificationCardStatuses] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[IdentificationCardStatuses] created.';
 GO
 
--- Table: Reference.ResidenceTypes (Loại cư trú: Thường trú, Tạm trú)
+--------------------------------------------------------------------------------
+-- VI. BẢNG CƯ TRÚ VÀ DI CHUYỂN
+--------------------------------------------------------------------------------
+
+-- 18. Reference.ResidenceTypes (Loại cư trú)
+-- Mô tả: Danh mục các loại hình cư trú (thường trú, tạm trú)
 IF OBJECT_ID('Reference.ResidenceTypes', 'U') IS NOT NULL DROP TABLE [Reference].[ResidenceTypes];
 GO
-PRINT N'  Creating table [Reference].[ResidenceTypes]...';
 CREATE TABLE [Reference].[ResidenceTypes] (
     [residence_type_id] SMALLINT PRIMARY KEY,
-    [residence_type_code] VARCHAR(20) UNIQUE, -- e.g., 'THUONGTRU', 'TAMTRU'
+    [residence_type_code] VARCHAR(20) UNIQUE,
     [residence_type_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -462,16 +335,15 @@ CREATE TABLE [Reference].[ResidenceTypes] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[ResidenceTypes] created.';
 GO
 
--- Table: Reference.ResidenceRegistrationStatuses (Trạng thái đăng ký cư trú)
+-- 19. Reference.ResidenceRegistrationStatuses (Trạng thái đăng ký cư trú)
+-- Mô tả: Danh mục các trạng thái đăng ký cư trú
 IF OBJECT_ID('Reference.ResidenceRegistrationStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[ResidenceRegistrationStatuses];
 GO
-PRINT N'  Creating table [Reference].[ResidenceRegistrationStatuses]...';
 CREATE TABLE [Reference].[ResidenceRegistrationStatuses] (
     [res_reg_status_id] SMALLINT PRIMARY KEY,
-    [status_code] VARCHAR(20) UNIQUE, -- e.g., 'ACTIVE', 'EXPIRED'
+    [status_code] VARCHAR(20) UNIQUE,
     [status_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -479,16 +351,15 @@ CREATE TABLE [Reference].[ResidenceRegistrationStatuses] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[ResidenceRegistrationStatuses] created.';
 GO
 
--- Table: Reference.TemporaryAbsenceStatuses (Trạng thái tạm vắng)
+-- 20. Reference.TemporaryAbsenceStatuses (Trạng thái tạm vắng)
+-- Mô tả: Danh mục các trạng thái tạm vắng
 IF OBJECT_ID('Reference.TemporaryAbsenceStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[TemporaryAbsenceStatuses];
 GO
-PRINT N'  Creating table [Reference].[TemporaryAbsenceStatuses]...';
 CREATE TABLE [Reference].[TemporaryAbsenceStatuses] (
     [temp_abs_status_id] SMALLINT PRIMARY KEY,
-    [status_code] VARCHAR(20) UNIQUE, -- e.g., 'ACTIVE', 'RETURNED'
+    [status_code] VARCHAR(20) UNIQUE,
     [status_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -496,50 +367,15 @@ CREATE TABLE [Reference].[TemporaryAbsenceStatuses] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[TemporaryAbsenceStatuses] created.';
 GO
 
--- Table: Reference.DataSensitivityLevels (Mức độ nhạy cảm dữ liệu)
-IF OBJECT_ID('Reference.DataSensitivityLevels', 'U') IS NOT NULL DROP TABLE [Reference].[DataSensitivityLevels];
-GO
-PRINT N'  Creating table [Reference].[DataSensitivityLevels]...';
-CREATE TABLE [Reference].[DataSensitivityLevels] (
-    [sensitivity_level_id] SMALLINT PRIMARY KEY,
-    [level_code] VARCHAR(20) UNIQUE, -- e.g., 'CONGKHAI', 'BAOMAT'
-    [level_name_vi] NVARCHAR(50) NOT NULL,
-    [description_vi] NVARCHAR(255) NULL,
-    [display_order] SMALLINT DEFAULT 0,
-    [is_active] BIT DEFAULT 1,
-    [created_at] DATETIME2(7) DEFAULT GETDATE(),
-    [updated_at] DATETIME2(7) DEFAULT GETDATE()
-);
-PRINT N'  Table [Reference].[DataSensitivityLevels] created.';
-GO
-
--- Table: Reference.CitizenStatusTypes (Loại trạng thái công dân trong bảng CitizenStatus)
-IF OBJECT_ID('Reference.CitizenStatusTypes', 'U') IS NOT NULL DROP TABLE [Reference].[CitizenStatusTypes];
-GO
-PRINT N'  Creating table [Reference].[CitizenStatusTypes]...';
-CREATE TABLE [Reference].[CitizenStatusTypes] (
-    [citizen_status_type_id] SMALLINT PRIMARY KEY,
-    [status_type_code] VARCHAR(20) UNIQUE, -- e.g., 'CONSống', 'MATTICH'
-    [status_type_name_vi] NVARCHAR(50) NOT NULL,
-    [description_vi] NVARCHAR(255) NULL,
-    [display_order] SMALLINT DEFAULT 0,
-    [is_active] BIT DEFAULT 1,
-    [created_at] DATETIME2(7) DEFAULT GETDATE(),
-    [updated_at] DATETIME2(7) DEFAULT GETDATE()
-);
-PRINT N'  Table [Reference].[CitizenStatusTypes] created.';
-GO
-
--- Table: Reference.CitizenMovementTypes (Loại di biến động dân cư)
+-- 21. Reference.CitizenMovementTypes (Loại di biến động dân cư)
+-- Mô tả: Danh mục các loại di chuyển dân cư
 IF OBJECT_ID('Reference.CitizenMovementTypes', 'U') IS NOT NULL DROP TABLE [Reference].[CitizenMovementTypes];
 GO
-PRINT N'  Creating table [Reference].[CitizenMovementTypes]...';
 CREATE TABLE [Reference].[CitizenMovementTypes] (
     [movement_type_id] SMALLINT PRIMARY KEY,
-    [movement_type_code] VARCHAR(20) UNIQUE, -- e.g., 'TRONGNUOC', 'XUATCANH'
+    [movement_type_code] VARCHAR(20) UNIQUE,
     [movement_type_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -547,16 +383,15 @@ CREATE TABLE [Reference].[CitizenMovementTypes] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[CitizenMovementTypes] created.';
 GO
 
--- Table: Reference.CitizenMovementStatuses (Trạng thái di biến động dân cư)
+-- 22. Reference.CitizenMovementStatuses (Trạng thái di biến động dân cư)
+-- Mô tả: Danh mục các trạng thái của di chuyển dân cư
 IF OBJECT_ID('Reference.CitizenMovementStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[CitizenMovementStatuses];
 GO
-PRINT N'  Creating table [Reference].[CitizenMovementStatuses]...';
 CREATE TABLE [Reference].[CitizenMovementStatuses] (
     [movement_status_id] SMALLINT PRIMARY KEY,
-    [status_code] VARCHAR(20) UNIQUE, -- e.g., 'HOATDONG', 'HOANTHANH'
+    [status_code] VARCHAR(20) UNIQUE,
     [status_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -564,34 +399,15 @@ CREATE TABLE [Reference].[CitizenMovementStatuses] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[CitizenMovementStatuses] created.';
 GO
 
--- Table: Reference.CrimeTypes (Loại tội phạm)
-IF OBJECT_ID('Reference.CrimeTypes', 'U') IS NOT NULL DROP TABLE [Reference].[CrimeTypes];
-GO
-PRINT N'  Creating table [Reference].[CrimeTypes]...';
-CREATE TABLE [Reference].[CrimeTypes] (
-    [crime_type_id] INT PRIMARY KEY,
-    [crime_type_code] VARCHAR(50) UNIQUE, -- e.g., 'VPHC', 'TPNGHIEMTRONG'
-    [crime_type_name_vi] NVARCHAR(150) NOT NULL,
-    [description_vi] NVARCHAR(500) NULL,
-    [severity_level] SMALLINT NULL, -- Mức độ nghiêm trọng (nếu có thể đánh số)
-    [display_order] SMALLINT DEFAULT 0,
-    [is_active] BIT DEFAULT 1,
-    [created_at] DATETIME2(7) DEFAULT GETDATE(),
-    [updated_at] DATETIME2(7) DEFAULT GETDATE()
-);
-PRINT N'  Table [Reference].[CrimeTypes] created.';
-GO
-
--- Table: Reference.AddressTypes (Loại địa chỉ trong BCA.CitizenAddress)
+-- 23. Reference.AddressTypes (Loại địa chỉ)
+-- Mô tả: Danh mục các loại địa chỉ
 IF OBJECT_ID('Reference.AddressTypes', 'U') IS NOT NULL DROP TABLE [Reference].[AddressTypes];
 GO
-PRINT N'  Creating table [Reference].[AddressTypes]...';
 CREATE TABLE [Reference].[AddressTypes] (
     [address_type_id] SMALLINT PRIMARY KEY,
-    [address_type_code] VARCHAR(20) UNIQUE, -- e.g., 'THUONGTRU', 'NOIOHIENTAI'
+    [address_type_code] VARCHAR(20) UNIQUE,
     [address_type_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -599,56 +415,58 @@ CREATE TABLE [Reference].[AddressTypes] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[AddressTypes] created.';
 GO
-
 
 --------------------------------------------------------------------------------
--- Lookup Tables from DB_BTP CHECK constraints (Needed for DB_BTP to reference DB_BCA)
+-- VII. BẢNG TRẠNG THÁI CÔNG DÂN
 --------------------------------------------------------------------------------
 
--- Table: Reference.HouseholdTypes (Loại hộ khẩu)
-IF OBJECT_ID('Reference.HouseholdTypes', 'U') IS NOT NULL DROP TABLE [Reference].[HouseholdTypes];
+-- 24. Reference.CitizenStatusTypes (Loại trạng thái công dân) - CẢI TIẾN
+-- Mô tả: Danh mục các trạng thái của công dân (đã hợp nhất với CitizenDeathStatuses)
+IF OBJECT_ID('Reference.CitizenStatusTypes', 'U') IS NOT NULL DROP TABLE [Reference].[CitizenStatusTypes];
 GO
-PRINT N'  Creating table [Reference].[HouseholdTypes]...';
-CREATE TABLE [Reference].[HouseholdTypes] (
-    [household_type_id] SMALLINT PRIMARY KEY,
-    [household_type_code] VARCHAR(20) UNIQUE, -- e.g., 'HOGIADINH', 'HOTAPTHE'
-    [household_type_name_vi] NVARCHAR(50) NOT NULL,
-    [description_vi] NVARCHAR(255) NULL,
-    [display_order] SMALLINT DEFAULT 0,
-    [is_active] BIT DEFAULT 1,
-    [created_at] DATETIME2(7) DEFAULT GETDATE(),
-    [updated_at] DATETIME2(7) DEFAULT GETDATE()
-);
-PRINT N'  Table [Reference].[HouseholdTypes] created.';
-GO
-
--- Table: Reference.HouseholdStatuses (Trạng thái hộ khẩu)
-IF OBJECT_ID('Reference.HouseholdStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[HouseholdStatuses];
-GO
-PRINT N'  Creating table [Reference].[HouseholdStatuses]...';
-CREATE TABLE [Reference].[HouseholdStatuses] (
-    [household_status_id] SMALLINT PRIMARY KEY,
-    [status_code] VARCHAR(30) UNIQUE, -- e.g., 'DANGHOATDONG', 'DACHUYENDI'
+CREATE TABLE [Reference].[CitizenStatusTypes] (
+    [citizen_status_id] SMALLINT PRIMARY KEY,
+    [status_code] VARCHAR(20) UNIQUE,
     [status_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
+    [affects_death_status] BIT DEFAULT 0,           -- Cờ đánh dấu ảnh hưởng đến trạng thái sống/chết
+    [requires_cause] BIT DEFAULT 0,                 -- Cờ đánh dấu yêu cầu lý do
+    [requires_location] BIT DEFAULT 0,              -- Cờ đánh dấu yêu cầu địa điểm
+    [requires_document] BIT DEFAULT 0,              -- Cờ đánh dấu yêu cầu giấy tờ chứng minh
     [display_order] SMALLINT DEFAULT 0,
     [is_active] BIT DEFAULT 1,
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[HouseholdStatuses] created.';
 GO
 
--- Table: Reference.RelationshipWithHeadTypes (Quan hệ với chủ hộ)
--- Có thể trùng với RelationshipTypes hoặc chi tiết hơn cho nghiệp vụ hộ khẩu
+--------------------------------------------------------------------------------
+-- VIII. BẢNG QUAN HỆ
+--------------------------------------------------------------------------------
+
+-- 25. Reference.RelationshipTypes (Loại quan hệ gia đình/thân nhân)
+-- Mô tả: Định nghĩa các loại mối quan hệ (Cha-Con, Vợ-Chồng)
+IF OBJECT_ID('Reference.RelationshipTypes', 'U') IS NOT NULL DROP TABLE [Reference].[RelationshipTypes];
+GO
+CREATE TABLE [Reference].[RelationshipTypes] (
+    [relationship_type_id] SMALLINT PRIMARY KEY,
+    [relationship_code] VARCHAR(20) NOT NULL UNIQUE,
+    [relationship_name] NVARCHAR(100) NOT NULL,
+    [inverse_relationship_type_id] SMALLINT NULL,   -- Tự tham chiếu đến quan hệ đối ứng
+    [description] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+-- 26. Reference.RelationshipWithHeadTypes (Quan hệ với chủ hộ)
+-- Mô tả: Danh mục các loại quan hệ với chủ hộ trong hộ khẩu
 IF OBJECT_ID('Reference.RelationshipWithHeadTypes', 'U') IS NOT NULL DROP TABLE [Reference].[RelationshipWithHeadTypes];
 GO
-PRINT N'  Creating table [Reference].[RelationshipWithHeadTypes]...';
 CREATE TABLE [Reference].[RelationshipWithHeadTypes] (
     [rel_with_head_id] SMALLINT PRIMARY KEY,
-    [rel_code] VARCHAR(30) UNIQUE, -- e.g., 'CHUHO', 'VO', 'CONDE'
+    [rel_code] VARCHAR(30) UNIQUE,
     [rel_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -656,16 +474,51 @@ CREATE TABLE [Reference].[RelationshipWithHeadTypes] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[RelationshipWithHeadTypes] created.';
 GO
 
--- Table: Reference.HouseholdMemberStatuses (Trạng thái thành viên hộ)
+--------------------------------------------------------------------------------
+-- IX. BẢNG HỘ KHẨU
+--------------------------------------------------------------------------------
+
+-- 27. Reference.HouseholdTypes (Loại hộ khẩu)
+-- Mô tả: Danh mục các loại hộ khẩu
+IF OBJECT_ID('Reference.HouseholdTypes', 'U') IS NOT NULL DROP TABLE [Reference].[HouseholdTypes];
+GO
+CREATE TABLE [Reference].[HouseholdTypes] (
+    [household_type_id] SMALLINT PRIMARY KEY,
+    [household_type_code] VARCHAR(20) UNIQUE,
+    [household_type_name_vi] NVARCHAR(50) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+-- 28. Reference.HouseholdStatuses (Trạng thái hộ khẩu)
+-- Mô tả: Danh mục các trạng thái của hộ khẩu
+IF OBJECT_ID('Reference.HouseholdStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[HouseholdStatuses];
+GO
+CREATE TABLE [Reference].[HouseholdStatuses] (
+    [household_status_id] SMALLINT PRIMARY KEY,
+    [status_code] VARCHAR(30) UNIQUE,
+    [status_name_vi] NVARCHAR(50) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+-- 29. Reference.HouseholdMemberStatuses (Trạng thái thành viên hộ)
+-- Mô tả: Danh mục các trạng thái của thành viên trong hộ khẩu
 IF OBJECT_ID('Reference.HouseholdMemberStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[HouseholdMemberStatuses];
 GO
-PRINT N'  Creating table [Reference].[HouseholdMemberStatuses]...';
 CREATE TABLE [Reference].[HouseholdMemberStatuses] (
     [member_status_id] SMALLINT PRIMARY KEY,
-    [status_code] VARCHAR(20) UNIQUE, -- e.g., 'ACTIVE', 'LEFT', 'DECEASED'
+    [status_code] VARCHAR(20) UNIQUE,
     [status_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -673,16 +526,15 @@ CREATE TABLE [Reference].[HouseholdMemberStatuses] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[HouseholdMemberStatuses] created.';
 GO
 
--- Table: Reference.FamilyRelationshipStatuses (Trạng thái quan hệ gia đình trong BTP.FamilyRelationship)
+-- 30. Reference.FamilyRelationshipStatuses (Trạng thái quan hệ gia đình)
+-- Mô tả: Danh mục các trạng thái của quan hệ gia đình trong BTP.FamilyRelationship
 IF OBJECT_ID('Reference.FamilyRelationshipStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[FamilyRelationshipStatuses];
 GO
-PRINT N'  Creating table [Reference].[FamilyRelationshipStatuses]...';
 CREATE TABLE [Reference].[FamilyRelationshipStatuses] (
     [family_rel_status_id] SMALLINT PRIMARY KEY,
-    [status_code] VARCHAR(20) UNIQUE, -- e.g., 'ACTIVE', 'INACTIVE'
+    [status_code] VARCHAR(20) UNIQUE,
     [status_name_vi] NVARCHAR(50) NOT NULL,
     [description_vi] NVARCHAR(255) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -690,16 +542,72 @@ CREATE TABLE [Reference].[FamilyRelationshipStatuses] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[FamilyRelationshipStatuses] created.';
 GO
 
--- Table: Reference.PopulationChangeTypes (Loại thay đổi dân số)
+--------------------------------------------------------------------------------
+-- X. BẢNG AN NINH VÀ PHÁP LÝ
+--------------------------------------------------------------------------------
+
+-- 31. Reference.CrimeTypes (Loại tội phạm)
+-- Mô tả: Danh mục các loại tội phạm
+IF OBJECT_ID('Reference.CrimeTypes', 'U') IS NOT NULL DROP TABLE [Reference].[CrimeTypes];
+GO
+CREATE TABLE [Reference].[CrimeTypes] (
+    [crime_type_id] INT PRIMARY KEY,
+    [crime_type_code] VARCHAR(50) UNIQUE,
+    [crime_type_name_vi] NVARCHAR(150) NOT NULL,
+    [description_vi] NVARCHAR(500) NULL,
+    [severity_level] SMALLINT NULL,                 -- Mức độ nghiêm trọng
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+-- 32. Reference.ExecutionStatuses (Trạng thái thi hành án) - BẢNG MỚI
+-- Mô tả: Danh mục các trạng thái chấp hành án phạt/quyết định
+IF OBJECT_ID('Reference.ExecutionStatuses', 'U') IS NOT NULL DROP TABLE [Reference].[ExecutionStatuses];
+GO
+CREATE TABLE [Reference].[ExecutionStatuses] (
+    [execution_status_id] SMALLINT PRIMARY KEY,
+    [status_code] VARCHAR(20) UNIQUE,
+    [status_name_vi] NVARCHAR(50) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+-- 33. Reference.DataSensitivityLevels (Mức độ nhạy cảm dữ liệu)
+-- Mô tả: Danh mục các mức độ nhạy cảm của dữ liệu
+IF OBJECT_ID('Reference.DataSensitivityLevels', 'U') IS NOT NULL DROP TABLE [Reference].[DataSensitivityLevels];
+GO
+CREATE TABLE [Reference].[DataSensitivityLevels] (
+    [sensitivity_level_id] SMALLINT PRIMARY KEY,
+    [level_code] VARCHAR(20) UNIQUE,
+    [level_name_vi] NVARCHAR(50) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+--------------------------------------------------------------------------------
+-- XI. BẢNG DÂN SỐ
+--------------------------------------------------------------------------------
+
+-- 34. Reference.PopulationChangeTypes (Loại thay đổi dân số)
+-- Mô tả: Danh mục các loại thay đổi dân số dùng cho BTP.PopulationChange
 IF OBJECT_ID('Reference.PopulationChangeTypes', 'U') IS NOT NULL DROP TABLE [Reference].[PopulationChangeTypes];
 GO
-PRINT N'  Creating table [Reference].[PopulationChangeTypes]...';
 CREATE TABLE [Reference].[PopulationChangeTypes] (
     [pop_change_type_id] INT PRIMARY KEY,
-    [change_type_code] VARCHAR(50) UNIQUE, -- e.g., 'DK_KHAISINH', 'DK_KETHON'
+    [change_type_code] VARCHAR(50) UNIQUE,
     [change_type_name_vi] NVARCHAR(150) NOT NULL,
     [description_vi] NVARCHAR(500) NULL,
     [display_order] SMALLINT DEFAULT 0,
@@ -707,6 +615,37 @@ CREATE TABLE [Reference].[PopulationChangeTypes] (
     [created_at] DATETIME2(7) DEFAULT GETDATE(),
     [updated_at] DATETIME2(7) DEFAULT GETDATE()
 );
-PRINT N'  Table [Reference].[PopulationChangeTypes] created.';
 GO
-PRINT N'Finished creating all reference table structures in DB_BCA.Reference schema.'; -- Cập nhật thông báo
+
+PRINT N'Finished creating improved reference tables in DB_BCA.Reference schema.';
+
+-- Dữ liệu mẫu cho DocumentTypes và ExecutionStatuses
+-- Chú ý: Đây chỉ là mẫu, có thể mở rộng và điều chỉnh
+
+-- Dữ liệu mẫu cho DocumentTypes
+PRINT N'  Thêm dữ liệu mẫu cho Reference.DocumentTypes...';
+INSERT INTO [Reference].[DocumentTypes] ([document_type_id], [document_type_code], [document_type_name_vi], [description_vi], [display_order])
+VALUES 
+    (1, 'CMND', N'Chứng minh nhân dân', N'Chứng minh nhân dân các loại', 1),
+    (2, 'CCCD', N'Căn cước công dân', N'Căn cước công dân các loại', 2),
+    (3, 'HOCHIEU', N'Hộ chiếu', N'Hộ chiếu thông thường, công vụ, ngoại giao', 3),
+    (4, 'GIAYTOKHAC', N'Giấy tờ khác', N'Giấy tờ tùy thân khác có giá trị', 4),
+    (5, 'VISA', N'Thị thực', N'Thị thực nhập cảnh', 5),
+    (6, 'GIAYDITACH', N'Giấy phép đi lại biên giới', N'Giấy phép đi lại biên giới cho cư dân biên giới', 6),
+    (7, 'XUATNHAPCANH', N'Giấy tờ xuất nhập cảnh', N'Các loại giấy tờ xuất nhập cảnh khác', 7);
+GO
+
+-- Dữ liệu mẫu cho ExecutionStatuses
+PRINT N'  Thêm dữ liệu mẫu cho Reference.ExecutionStatuses...';
+INSERT INTO [Reference].[ExecutionStatuses] ([execution_status_id], [status_code], [status_name_vi], [description_vi], [display_order])
+VALUES
+    (1, 'DANGCHAPHANH', N'Đang chấp hành', N'Đang chấp hành án phạt', 1),
+    (2, 'DAHOANTHANH', N'Đã hoàn thành', N'Đã hoàn thành việc chấp hành án phạt', 2),
+    (3, 'DUOCTHAMONG', N'Được giảm án/tha tù', N'Được giảm án hoặc tha tù trước thời hạn', 3),
+    (4, 'DUOCHUONG_ANTREO', N'Được hưởng án treo', N'Được hưởng án treo', 4),
+    (5, 'CHUACHAPHANH', N'Chưa chấp hành', N'Chưa bắt đầu chấp hành án phạt', 5),
+    (6, 'BOPHU_KHAC', N'Chấp hành hình phạt bổ sung', N'Đang chấp hành hình phạt bổ sung', 6),
+    (7, 'TRON_HANH', N'Bỏ trốn', N'Bỏ trốn khỏi nơi chấp hành án', 7),
+    (8, 'DUOC_DAOTAO', N'Giáo dục cải tạo', N'Đang được giáo dục cải tạo', 8),
+    (9, 'HOANTHI_HANH', N'Tạm hoãn thi hành án', N'Được tạm hoãn chấp hành án', 9);
+GO

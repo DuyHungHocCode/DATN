@@ -1,0 +1,14 @@
+2025-05-15 16:51:23,977 - app.main - INFO - BTP Civil Status Service starting, logs will be saved to: logs/btp_service_20250515.txt
+2025-05-15 16:51:23,982 - app.main - INFO - Civil Status Service starting up...
+2025-05-15 16:51:23,982 - app.services.outbox_processor - INFO - Outbox processor started
+2025-05-15 16:51:23,982 - app.services.event_retry_worker - INFO - Event retry worker started
+2025-05-15 16:51:23,982 - app.services.reconciliation - INFO - Reconciliation service started
+2025-05-15 16:51:24,156 - app.services.reconciliation - INFO - Starting marriage records consistency check
+2025-05-15 16:51:24,161 - app.services.reconciliation - INFO - No marriage inconsistencies found
+2025-05-15 16:51:24,162 - app.services.reconciliation - INFO - Starting death records consistency check
+2025-05-15 16:56:24,071 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=1 host=localhost:29092 <connecting> [IPv4 ('127.0.0.1', 29092)]>: connecting to localhost:29092 [('127.0.0.1', 29092) IPv4]
+2025-05-15 16:56:24,072 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=1 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Connection complete.
+2025-05-15 16:56:24,072 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:29092 <connected> [IPv4 ('127.0.0.1', 29092)]>: Closing connection. 
+2025-05-15 17:51:24,163 - app.services.reconciliation - INFO - Starting marriage records consistency check
+2025-05-15 17:51:24,182 - app.services.reconciliation - INFO - No marriage inconsistencies found
+2025-05-15 17:51:24,182 - app.services.reconciliation - INFO - Starting death records consistency check
