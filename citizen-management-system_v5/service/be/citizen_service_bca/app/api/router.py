@@ -9,8 +9,12 @@ from app.db.citizen_repo import CitizenRepository
 from app.schemas.citizen import CitizenSearch, CitizenResponse, CitizenValidationResponse
 from app.schemas.residence import ResidenceHistoryResponse, ContactInfoResponse
 from app.schemas.family_tree import FamilyTreeResponse
+from app.api.reference import router as reference_router
+
 
 router = APIRouter()
+
+router.include_router(reference_router)
 
 @router.get("/citizens/{citizen_id}", response_model=CitizenResponse)
 def get_citizen(
