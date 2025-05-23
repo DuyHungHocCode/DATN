@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     KAFKA_TOPIC_BTP_EVENTS: str = os.getenv("KAFKA_TOPIC_BTP_EVENTS", "btp_events")
     KAFKA_GROUP_ID: str = os.getenv("KAFKA_GROUP_ID", "bca_consumer_group")
     
+    # Redis settings
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", 6379))
+    REDIS_DB: int = int(os.getenv("REDIS_DB", 0))
+    REDIS_REFERENCE_CACHE_TTL: int = int(os.getenv("REDIS_REFERENCE_CACHE_TTL", 3600)) # Time-to-live in seconds (e.g., 1 hour)
+
     class Config:
         env_file = ".env"
 

@@ -10,6 +10,7 @@ from app.services.kafka_consumer import kafka_consumer_instance  # Thêm dòng n
 from sqlalchemy import text
 from datetime import datetime, timezone
 from app.db.database import SessionLocal
+from app.db.redis_client import get_redis_client, redis_client_instance # Import redis_client_instance
 
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
@@ -39,12 +40,24 @@ async def lifespan(app: FastAPI):
     # Khởi động Kafka consumer
     await kafka_consumer_instance.start()
     
+    if redis_client_instance.client:
+        logger.info("Redis client already initialized.")
+    else:
+        logger.error("Redis client failed to initialize. Caching will not be available.")
+
     yield  # Application runs here
     
     # Shutdown code - runs when application is shutting down
     logger.info("Citizen Service shutting down...")
     # Dừng Kafka consumer
     await kafka_consumer_instance.stop()
+    if redis_client_instance.client:
+        try:
+            redis_client_instance.client.close() # Một số client có phương thức close()
+            logger.info("Redis client connection closed.")
+        except AttributeError:
+            logger.info("Redis client does not have a close() method or already closed by pool.")
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -102,4 +115,16 @@ async def health_check():
         health_data["components"]["kafka_consumer"] = {"status": "DOWN"}
         health_data["status"] = "Degraded"
     
+    # Kiểm tra Redis connection
+    if redis_client_instance.client:
+        try:
+            redis_client_instance.client.ping()
+            health_data["components"]["redis"] = {"status": "UP"}
+        except Exception as e:
+            health_data["components"]["redis"] = {"status": "DOWN", "error": str(e)}
+            health_data["status"] = "Degraded"
+    else:
+        health_data["components"]["redis"] = {"status": "DOWN", "error": "Redis client not initialized"}
+        health_data["status"] = "Degraded"
+        
     return health_data

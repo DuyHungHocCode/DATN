@@ -1,0 +1,103 @@
+2025-05-23 15:19:06,010 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250523.txt
+2025-05-23 15:19:06,015 - app.main - INFO - Citizen Service starting up...
+2025-05-23 15:19:06,015 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-23 15:19:06,015 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-23 15:19:06,015 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-23 15:19:06,015 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-23 15:19:06,032 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-23 15:19:06,032 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-23 15:19:06,032 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-23 15:19:06,047 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 113) with member_id aiokafka-0.12.0-4c19846b-bb0a-4480-a04e-2812d2a8ddf6
+2025-05-23 15:19:06,047 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-23 15:19:06,056 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 113
+2025-05-23 15:19:06,056 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-23 15:19:06,056 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-23 15:19:06,056 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-23 15:19:06,056 - app.main - INFO - Redis client already initialized.
+2025-05-23 15:20:12,515 - app.db.reference_repo - INFO - Cache miss for reference table: Wards. Fetching from DB.
+2025-05-23 15:20:12,646 - app.db.reference_repo - INFO - Cached data for reference table: Wards
+2025-05-23 15:20:12,646 - app.db.reference_repo - INFO - Cache miss for reference table: Districts. Fetching from DB.
+2025-05-23 15:20:12,646 - app.db.reference_repo - ERROR - DB error fetching reference table Districts: This Connection is closed
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 22, in _fetch_from_db
+    cursor = conn.connection.cursor()
+             ^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 584, in connection
+    return self._revalidate_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 679, in _revalidate_connection
+    raise exc.ResourceClosedError("This Connection is closed")
+sqlalchemy.exc.ResourceClosedError: This Connection is closed
+2025-05-23 15:20:12,647 - app.db.reference_repo - INFO - Cached data for reference table: Districts
+2025-05-23 15:20:12,648 - app.db.reference_repo - INFO - Cache miss for reference table: Provinces. Fetching from DB.
+2025-05-23 15:20:12,648 - app.db.reference_repo - ERROR - DB error fetching reference table Provinces: This Connection is closed
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 22, in _fetch_from_db
+    cursor = conn.connection.cursor()
+             ^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 584, in connection
+    return self._revalidate_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 679, in _revalidate_connection
+    raise exc.ResourceClosedError("This Connection is closed")
+sqlalchemy.exc.ResourceClosedError: This Connection is closed
+2025-05-23 15:20:12,648 - app.db.reference_repo - INFO - Cached data for reference table: Provinces
+2025-05-23 15:20:12,649 - app.db.reference_repo - INFO - Cache miss for reference table: Authorities. Fetching from DB.
+2025-05-23 15:20:12,649 - app.db.reference_repo - ERROR - DB error fetching reference table Authorities: This Connection is closed
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 22, in _fetch_from_db
+    cursor = conn.connection.cursor()
+             ^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 584, in connection
+    return self._revalidate_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 679, in _revalidate_connection
+    raise exc.ResourceClosedError("This Connection is closed")
+sqlalchemy.exc.ResourceClosedError: This Connection is closed
+2025-05-23 15:20:12,649 - app.db.reference_repo - INFO - Cached data for reference table: Authorities
+2025-05-23 15:21:46,435 - app.db.reference_repo - INFO - Cache miss for reference table: 'Wards'. Fetching from DB.
+2025-05-23 15:21:46,437 - app.db.reference_repo - ERROR - DB error fetching reference table 'Wards': ('42000', "[42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Incorrect syntax near 'Wards'. (102) (SQLExecDirectW)")
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 23, in _fetch_from_db
+    cursor.execute(f"EXEC [API_Internal].[GetReferenceTableData] @tableNames = '{table_name}'")
+pyodbc.ProgrammingError: ('42000', "[42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Incorrect syntax near 'Wards'. (102) (SQLExecDirectW)")
+2025-05-23 15:21:46,438 - app.db.reference_repo - INFO - Cached data for reference table: 'Wards'
+2025-05-23 15:21:46,439 - app.db.reference_repo - INFO - Cache miss for reference table: 'Districts'. Fetching from DB.
+2025-05-23 15:21:46,439 - app.db.reference_repo - ERROR - DB error fetching reference table 'Districts': This Connection is closed
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 22, in _fetch_from_db
+    cursor = conn.connection.cursor()
+             ^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 584, in connection
+    return self._revalidate_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 679, in _revalidate_connection
+    raise exc.ResourceClosedError("This Connection is closed")
+sqlalchemy.exc.ResourceClosedError: This Connection is closed
+2025-05-23 15:21:46,440 - app.db.reference_repo - INFO - Cached data for reference table: 'Districts'
+2025-05-23 15:21:46,440 - app.db.reference_repo - INFO - Cache miss for reference table: 'Provinces'. Fetching from DB.
+2025-05-23 15:21:46,440 - app.db.reference_repo - ERROR - DB error fetching reference table 'Provinces': This Connection is closed
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 22, in _fetch_from_db
+    cursor = conn.connection.cursor()
+             ^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 584, in connection
+    return self._revalidate_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 679, in _revalidate_connection
+    raise exc.ResourceClosedError("This Connection is closed")
+sqlalchemy.exc.ResourceClosedError: This Connection is closed
+2025-05-23 15:21:46,441 - app.db.reference_repo - INFO - Cached data for reference table: 'Provinces'
+2025-05-23 15:21:46,442 - app.db.reference_repo - INFO - Cache miss for reference table: 'Authorities'. Fetching from DB.
+2025-05-23 15:21:46,442 - app.db.reference_repo - ERROR - DB error fetching reference table 'Authorities': This Connection is closed
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 22, in _fetch_from_db
+    cursor = conn.connection.cursor()
+             ^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 584, in connection
+    return self._revalidate_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 679, in _revalidate_connection
+    raise exc.ResourceClosedError("This Connection is closed")
+sqlalchemy.exc.ResourceClosedError: This Connection is closed
+2025-05-23 15:21:46,443 - app.db.reference_repo - INFO - Cached data for reference table: 'Authorities'

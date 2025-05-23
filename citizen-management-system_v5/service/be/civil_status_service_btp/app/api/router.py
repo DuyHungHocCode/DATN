@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 import logging
 from datetime import datetime, timezone
+from typing import List, Dict, Any
 from app.db.database import get_btp_db
 from app.db.civil_status_repo import CivilStatusRepository
 from app.schemas.death_certificate import DeathCertificateCreate, DeathCertificateResponse
@@ -12,6 +13,8 @@ from app.services.marriage_validator import MarriageValidator
 from app.services.event_retry_worker import get_event_retry_worker  # Import the missing dependency
 from app.db.outbox_repo import OutboxRepository  # Import OutboxRepository
 from app.schemas.marriage_certificate import MarriageCertificateCreate, MarriageCertificateResponse
+from app.schemas.death_certificate import DeathCertificateResponse 
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -123,21 +126,83 @@ async def register_death_certificate(
 )
 async def get_death_certificate(
     certificate_id: int,
-    db: Session = Depends(get_btp_db)
+    db: Session = Depends(get_btp_db),
+    bca_client: BCAClient = Depends(get_bca_client)
 ):
     logger.info(f"Request to get death certificate with ID: {certificate_id}")
     
     repo = CivilStatusRepository(db)
-    certificate = repo.get_death_certificate_by_id(certificate_id)
+    death_cert_raw = repo.get_death_certificate_by_id(certificate_id)
     
-    if not certificate:
+    if not death_cert_raw:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Không tìm thấy giấy chứng tử với ID {certificate_id}"
         )
     
-    return certificate
+    response_data = death_cert_raw.copy()
 
+    # Bước 2: Chuẩn bị lấy dữ liệu tham chiếu từ BCA service
+    ids_to_resolve = {
+        "Wards": [],
+        "Districts": [],
+        "Provinces": [],
+        "Authorities": []
+    
+    }
+
+    # Thu thập các ID cần phân giải từ death_cert_raw
+    if response_data.get("place_of_death_ward_id"):
+        ids_to_resolve["Wards"].append(response_data["place_of_death_ward_id"])
+    # Stored procedure InsertDeathCertificate đã lưu district_id và province_id
+    # nên chúng ta có thể lấy trực tiếp từ response_data
+    if response_data.get("place_of_death_district_id"):
+         ids_to_resolve["Districts"].append(response_data["place_of_death_district_id"])
+    if response_data.get("place_of_death_province_id"):
+         ids_to_resolve["Provinces"].append(response_data["place_of_death_province_id"])
+    if response_data.get("issuing_authority_id"):
+        ids_to_resolve["Authorities"].append(response_data["issuing_authority_id"])
+
+    # Tạo danh sách các bảng thực sự cần fetch (chỉ fetch nếu có ID tương ứng)
+    ref_tables_to_fetch = [table_name for table_name, id_list in ids_to_resolve.items() if id_list]
+
+    reference_data_from_bca: Dict[str, List[Dict[str, Any]]] = {}
+    if ref_tables_to_fetch:
+        try:
+            logger.info(f"Fetching reference data for tables: {ref_tables_to_fetch} from BCA service.")
+            reference_data_from_bca = await bca_client.get_reference_data(ref_tables_to_fetch)
+        except HTTPException as e:
+            logger.warning(f"Could not fetch reference data from BCA for death cert {certificate_id}: {e.detail}. Proceeding with available data.")
+            # Không ném lỗi ở đây, sẽ trả về tên là None
+        except Exception as e:
+            logger.error(f"Unexpected error fetching reference data for death cert {certificate_id}: {e}", exc_info=True)
+            # Cũng không ném lỗi, trả về tên là None
+    # Bước 3: Tạo map để dễ tra cứu tên từ ID
+    # Ví dụ: wards_map = {1001: "Phường Phúc Xá", ...}
+    wards_map = {item["ward_id"]: item["ward_name"] for item in reference_data_from_bca.get("Wards", [])}
+    districts_map = {item["district_id"]: item["district_name"] for item in reference_data_from_bca.get("Districts", [])}
+    provinces_map = {item["province_id"]: item["province_name"] for item in reference_data_from_bca.get("Provinces", [])}
+    authorities_map = {item["authority_id"]: item["authority_name"] for item in reference_data_from_bca.get("Authorities", [])}
+
+    # Bước 4: Điền các trường tên vào response_data
+    response_data["place_of_death_ward_name"] = wards_map.get(response_data.get("place_of_death_ward_id"))
+    response_data["place_of_death_district_name"] = districts_map.get(response_data.get("place_of_death_district_id"))
+    response_data["place_of_death_province_name"] = provinces_map.get(response_data.get("place_of_death_province_id"))
+    response_data["issuing_authority_name"] = authorities_map.get(response_data.get("issuing_authority_id"))
+
+    # Đảm bảo các trường bắt buộc của DeathCertificateResponse có mặt (nếu không có trong SELECT *)
+    # Ví dụ, status có thể không có trong bảng DeathCertificate, cần gán giá trị mặc định hoặc logic riêng
+    if "status" not in response_data:
+        response_data["status"] = True # Giả định là True nếu không có trong DB
+
+    # Validate dữ liệu cuối cùng với Pydantic model trước khi trả về
+    try:
+        return DeathCertificateResponse.model_validate(response_data)
+    except Exception as e:
+        logger.error(f"Error validating final response data for death certificate {certificate_id}: {response_data} - Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Lỗi tạo đối tượng response chi tiết cho giấy chứng tử.")
+
+            
 @router.post(
     "/marriage-certificates",
     response_model=MarriageCertificateResponse,

@@ -11,6 +11,9 @@ class DeathCertificateBase(BaseModel):
     time_of_death: Optional[time] = Field(None, description="Giờ mất")
     place_of_death_detail: str = Field(..., description="Nơi mất chi tiết")
     place_of_death_ward_id: Optional[int] = Field(None, description="ID Phường/Xã nơi mất (FK)")
+    # Các trường ID cho district và province cũng sẽ được lấy từ DB nếu có
+    place_of_death_district_id: Optional[int] = Field(None, description="ID Quận/Huyện nơi mất (FK)")
+    place_of_death_province_id: Optional[int] = Field(None, description="ID Tỉnh/Thành phố nơi mất (FK)")
     cause_of_death: Optional[str] = Field(None, description="Nguyên nhân mất")
     declarant_name: str = Field(..., max_length=100, description="Họ tên người khai")
     declarant_citizen_id: Optional[str] = Field(None, max_length=12, description="ID CCCD/CMND người khai")
@@ -38,16 +41,23 @@ class DeathCertificateBase(BaseModel):
         return v
 
 class DeathCertificateCreate(DeathCertificateBase):
-    pass # Kế thừa tất cả các trường từ Base
+    pass
 
-class DeathCertificateResponse(DeathCertificateBase):
-    death_certificate_id: int # Thêm ID sau khi tạo
+class DeathCertificateResponse(DeathCertificateBase): # Schema này sẽ được sử dụng cho response chi tiết
+    death_certificate_id: int
     status: bool
     created_at: datetime
     updated_at: datetime
-    
+
+    # Các trường tên đã được phân giải (lấy từ JOIN trong repository hoặc gọi BCAClient nếu cần thêm)
+    place_of_death_ward_name: Optional[str] = None
+    place_of_death_district_name: Optional[str] = None
+    place_of_death_province_name: Optional[str] = None
+    issuing_authority_name: Optional[str] = None
+    # Nếu có thêm các trường ID khác cần phân giải, ví dụ quốc tịch người khai, thì thêm trường tên tương ứng ở đây
+
     model_config = {
-        "from_attributes": True  # Thay thế cho orm_mode
+        "from_attributes": True  # Cho phép tạo model từ thuộc tính đối tượng ORM
     }
 
 class CitizenValidationResponse(BaseModel):

@@ -1,0 +1,754 @@
+2025-05-22 15:25:39,793 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250522.txt
+2025-05-22 15:25:39,799 - app.main - INFO - Citizen Service starting up...
+2025-05-22 15:25:39,799 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-22 15:25:39,799 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-22 15:25:39,799 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-22 15:25:39,799 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-22 15:25:39,823 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-22 15:25:39,823 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-22 15:25:39,824 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-22 15:25:39,845 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 103) with member_id aiokafka-0.12.0-295cb19f-0f02-4a7d-8021-368e4218acc2
+2025-05-22 15:25:39,846 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-22 15:25:39,858 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 103
+2025-05-22 15:25:39,859 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-22 15:25:39,859 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-22 15:25:39,859 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-22 15:25:39,859 - app.main - INFO - Redis client already initialized.
+2025-05-22 15:27:31,025 - app.api.reference - ERROR - Error getting reference data: 'ReferenceRepository' object has no attribute 'redis_client'
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/api/reference.py", line 88, in get_reference_data
+    data = repo.get_reference_tables_data(tables) # Sửa lại tên tham số cho phù hợp
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 299, in get_reference_tables_data
+    return self.get_reference_tables_data_cached_per_table(table_names)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 294, in get_reference_tables_data_cached_per_table
+    result[table_name] = self.get_reference_table_data(table_name)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 48, in get_reference_table_data
+    if not self.redis_client or not self.redis_client.client:
+           ^^^^^^^^^^^^^^^^^
+AttributeError: 'ReferenceRepository' object has no attribute 'redis_client'
+2025-05-22 15:28:01,344 - app.main - INFO - Citizen Service shutting down...
+2025-05-22 15:28:01,345 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-22 15:28:01,360 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-22 15:28:01,361 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-22 15:28:01,361 - app.main - INFO - Redis client connection closed.
+2025-05-22 15:28:02,169 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250522.txt
+2025-05-22 15:28:02,180 - app.main - INFO - Citizen Service starting up...
+2025-05-22 15:28:02,180 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-22 15:28:02,180 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-22 15:28:02,181 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-22 15:28:02,181 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-22 15:28:02,201 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-22 15:28:02,201 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-22 15:28:02,201 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-22 15:28:02,212 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 105) with member_id aiokafka-0.12.0-c22b7ebd-73de-4314-b6d0-6d6aaf9d394c
+2025-05-22 15:28:02,212 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-22 15:28:02,220 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 105
+2025-05-22 15:28:02,221 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-22 15:28:02,222 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-22 15:28:02,222 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-22 15:28:02,222 - app.main - INFO - Redis client already initialized.
+2025-05-22 15:28:06,872 - app.api.reference - ERROR - Error getting reference data: 'ReferenceRepository' object has no attribute 'redis_client'
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/api/reference.py", line 88, in get_reference_data
+    data = repo.get_reference_tables_data(tables) # Sửa lại tên tham số cho phù hợp
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 299, in get_reference_tables_data
+    return self.get_reference_tables_data_cached_per_table(table_names)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 294, in get_reference_tables_data_cached_per_table
+    result[table_name] = self.get_reference_table_data(table_name)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 48, in get_reference_table_data
+    if not self.redis_client or not self.redis_client.client:
+           ^^^^^^^^^^^^^^^^^
+AttributeError: 'ReferenceRepository' object has no attribute 'redis_client'
+2025-05-22 15:34:49,636 - app.main - INFO - Citizen Service shutting down...
+2025-05-22 15:34:49,636 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-22 15:34:49,641 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-22 15:34:49,641 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-22 15:34:49,642 - app.main - INFO - Redis client connection closed.
+2025-05-22 15:34:50,187 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250522.txt
+2025-05-22 15:34:50,192 - app.main - INFO - Citizen Service starting up...
+2025-05-22 15:34:50,192 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-22 15:34:50,192 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-22 15:34:50,192 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-22 15:34:50,192 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-22 15:34:50,201 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-22 15:34:50,201 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-22 15:34:50,201 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-22 15:34:50,204 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 107) with member_id aiokafka-0.12.0-9329ca36-4516-4fbd-8cb0-0e13a2fffc17
+2025-05-22 15:34:50,204 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-22 15:34:50,205 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 107
+2025-05-22 15:34:50,206 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-22 15:34:50,206 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-22 15:34:50,206 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-22 15:34:50,206 - app.main - INFO - Redis client already initialized.
+2025-05-22 15:35:06,737 - app.main - INFO - Citizen Service shutting down...
+2025-05-22 15:35:06,737 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-22 15:35:06,742 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-22 15:35:06,743 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-22 15:35:06,743 - app.main - INFO - Redis client connection closed.
+2025-05-22 15:35:07,257 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250522.txt
+2025-05-22 15:35:07,263 - app.main - INFO - Citizen Service starting up...
+2025-05-22 15:35:07,264 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-22 15:35:07,264 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-22 15:35:07,264 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-22 15:35:07,264 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-22 15:35:07,274 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-22 15:35:07,275 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-22 15:35:07,275 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-22 15:35:07,277 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 109) with member_id aiokafka-0.12.0-dbedf258-20fe-4bd8-8259-47771f6dc075
+2025-05-22 15:35:07,277 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-22 15:35:07,279 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 109
+2025-05-22 15:35:07,279 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-22 15:35:07,279 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-22 15:35:07,279 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-22 15:35:07,280 - app.main - INFO - Redis client already initialized.
+2025-05-22 15:35:17,575 - app.db.reference_repo - INFO - Cache miss for reference table: Regions. Fetching from DB.
+2025-05-22 15:35:17,757 - app.db.reference_repo - INFO - Cached data for reference table: Regions
+2025-05-22 15:45:00,856 - app.main - INFO - Citizen Service shutting down...
+2025-05-22 15:45:00,856 - app.services.kafka_consumer - INFO - Stopping Kafka consumer...
+2025-05-22 15:45:00,860 - aiokafka.consumer.group_coordinator - INFO - LeaveGroup request succeeded
+2025-05-22 15:45:00,860 - app.services.kafka_consumer - INFO - Kafka consumer stopped
+2025-05-22 15:45:00,860 - app.main - INFO - Redis client connection closed.
+2025-05-22 15:45:01,459 - app.main - INFO - BCA Citizen Service starting, logs will be saved to: logs/bca_service_20250522.txt
+2025-05-22 15:45:01,465 - app.main - INFO - Citizen Service starting up...
+2025-05-22 15:45:01,465 - app.services.kafka_consumer - INFO - Starting Kafka consumer for topic btp_events with bootstrap servers: localhost:29092
+2025-05-22 15:45:01,465 - app.services.kafka_consumer - INFO - Using bootstrap servers: ['localhost:29092']
+2025-05-22 15:45:01,465 - aiokafka.consumer.subscription_state - INFO - Updating subscribed topics to: frozenset({'btp_events'})
+2025-05-22 15:45:01,465 - app.services.kafka_consumer - INFO - Consumer created, attempting to start...
+2025-05-22 15:45:01,476 - aiokafka.consumer.group_coordinator - INFO - Discovered coordinator 1 for group bca_consumer_group
+2025-05-22 15:45:01,476 - aiokafka.consumer.group_coordinator - INFO - Revoking previously assigned partitions set() for group bca_consumer_group
+2025-05-22 15:45:01,476 - aiokafka.consumer.group_coordinator - INFO - (Re-)joining group bca_consumer_group
+2025-05-22 15:45:01,479 - aiokafka.consumer.group_coordinator - INFO - Joined group 'bca_consumer_group' (generation 111) with member_id aiokafka-0.12.0-71c16714-ef78-456c-bf62-c3e01dff69b8
+2025-05-22 15:45:01,480 - aiokafka.consumer.group_coordinator - INFO - Elected group leader -- performing partition assignments using roundrobin
+2025-05-22 15:45:01,483 - aiokafka.consumer.group_coordinator - INFO - Successfully synced group bca_consumer_group with generation 111
+2025-05-22 15:45:01,483 - aiokafka.consumer.group_coordinator - INFO - Setting newly assigned partitions {TopicPartition(topic='btp_events', partition=0)} for group bca_consumer_group
+2025-05-22 15:45:01,483 - app.services.kafka_consumer - INFO - Consumer start() completed successfully
+2025-05-22 15:45:01,483 - app.services.kafka_consumer - INFO - Kafka consumer started successfully
+2025-05-22 15:45:01,483 - app.main - INFO - Redis client already initialized.
+2025-05-22 15:45:14,571 - app.db.reference_repo - INFO - Cache miss for reference table: Regions. Fetching from DB.
+2025-05-22 15:45:14,704 - app.db.reference_repo - INFO - Cached data for reference table: Regions
+2025-05-22 17:14:19,431 - app.db.reference_repo - INFO - Cache miss for reference table: Regions. Fetching from DB.
+2025-05-22 17:14:19,511 - app.db.reference_repo - INFO - Cached data for reference table: Regions
+2025-05-22 17:15:09,141 - app.db.reference_repo - INFO - Cache miss for reference table: BloodTypes. Fetching from DB.
+2025-05-22 17:15:09,185 - app.db.reference_repo - INFO - Cached data for reference table: BloodTypes
+2025-05-22 17:15:53,324 - app.db.reference_repo - INFO - Cache hit for reference table: BloodTypes
+2025-05-22 17:15:53,325 - app.db.reference_repo - INFO - Cache miss for reference table: Districts. Fetching from DB.
+2025-05-22 17:15:53,376 - app.db.reference_repo - INFO - Cached data for reference table: Districts
+2025-05-22 18:22:23,719 - app.db.reference_repo - INFO - Cache miss for reference table: BloodTypes. Fetching from DB.
+2025-05-22 18:22:23,771 - app.db.reference_repo - INFO - Cached data for reference table: BloodTypes
+2025-05-22 18:22:23,771 - app.db.reference_repo - INFO - Cache miss for reference table: Districts. Fetching from DB.
+2025-05-22 18:22:23,772 - app.db.reference_repo - ERROR - DB error fetching reference table Districts: This Connection is closed
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 22, in _fetch_from_db
+    cursor = conn.connection.cursor()
+             ^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 584, in connection
+    return self._revalidate_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 679, in _revalidate_connection
+    raise exc.ResourceClosedError("This Connection is closed")
+sqlalchemy.exc.ResourceClosedError: This Connection is closed
+2025-05-22 18:22:23,773 - app.db.reference_repo - INFO - Cached data for reference table: Districts
+2025-05-22 18:22:29,430 - app.db.reference_repo - INFO - Cache miss for reference table: Wards. Fetching from DB.
+2025-05-22 18:22:29,489 - app.db.reference_repo - INFO - Cached data for reference table: Wards
+2025-05-22 18:22:29,490 - app.db.reference_repo - INFO - Cache hit for reference table: Districts
+2025-05-22 18:22:29,491 - app.db.reference_repo - INFO - Cache miss for reference table: Provinces. Fetching from DB.
+2025-05-22 18:22:29,491 - app.db.reference_repo - ERROR - DB error fetching reference table Provinces: This Connection is closed
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 22, in _fetch_from_db
+    cursor = conn.connection.cursor()
+             ^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 584, in connection
+    return self._revalidate_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 679, in _revalidate_connection
+    raise exc.ResourceClosedError("This Connection is closed")
+sqlalchemy.exc.ResourceClosedError: This Connection is closed
+2025-05-22 18:22:29,492 - app.db.reference_repo - INFO - Cached data for reference table: Provinces
+2025-05-22 18:22:29,492 - app.db.reference_repo - INFO - Cache miss for reference table: Authorities. Fetching from DB.
+2025-05-22 18:22:29,492 - app.db.reference_repo - ERROR - DB error fetching reference table Authorities: This Connection is closed
+Traceback (most recent call last):
+  File "/home/duyhung/Desktop/DATN/citizen-management-system_v5/service/be/citizen_service_bca/app/db/reference_repo.py", line 22, in _fetch_from_db
+    cursor = conn.connection.cursor()
+             ^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 584, in connection
+    return self._revalidate_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/duyhung/Desktop/DATN/myenv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 679, in _revalidate_connection
+    raise exc.ResourceClosedError("This Connection is closed")
+sqlalchemy.exc.ResourceClosedError: This Connection is closed
+2025-05-22 18:22:29,493 - app.db.reference_repo - INFO - Cached data for reference table: Authorities
+2025-05-22 18:28:26,438 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,440 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,441 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:26,443 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,443 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:26,544 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,545 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:26,554 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,555 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:26,647 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,648 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:26,649 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,649 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:26,749 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,749 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:26,750 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,751 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:26,851 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,852 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:26,852 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,853 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:26,954 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,954 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:26,955 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:26,955 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,056 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,056 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,057 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,057 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,134 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,135 - aiokafka.consumer.group_coordinator - ERROR - Error sending OffsetCommitRequest_v2 to node 1 [NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).] -- marking coordinator dead
+2025-05-22 18:28:27,135 - aiokafka.consumer.group_coordinator - WARNING - Marking the coordinator dead (node 1)for group bca_consumer_group.
+2025-05-22 18:28:27,135 - aiokafka.consumer.group_coordinator - WARNING - Auto offset commit failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,136 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,136 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,136 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,137 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,137 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,137 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,159 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,159 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,160 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,160 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,240 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,241 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,242 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,242 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,262 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,263 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,264 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,264 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,345 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,346 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,347 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,347 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,364 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,365 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,366 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,366 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,449 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,449 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,450 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,450 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,466 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,466 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,468 - aiokafka - ERROR - Unable connect to node with id 1: KafkaConnectionError: Connection at localhost:29092 closed
+2025-05-22 18:28:27,468 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,551 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,552 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,552 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,552 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,567 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,567 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,568 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,568 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,654 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,655 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,656 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,656 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,668 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,668 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,668 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,668 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,757 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,757 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,758 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,758 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,769 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,769 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,769 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,769 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,859 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,859 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,860 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,860 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,870 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,871 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,872 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,872 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,962 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,962 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,964 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,964 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:27,972 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,973 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:27,973 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:27,973 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,065 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,066 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,067 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,067 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,075 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,076 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,077 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,077 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,167 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,167 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,168 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,168 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,177 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,178 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,178 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,178 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,268 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,269 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,269 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,269 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,278 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,278 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,278 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,278 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,370 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,370 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,371 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,371 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,378 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,379 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,379 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,379 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,470 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,471 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,471 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,471 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,478 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,479 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,479 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,479 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,573 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,573 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,573 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,573 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,579 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,579 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,579 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,579 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,674 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,674 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,675 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,675 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,680 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,680 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,681 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,681 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,776 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,776 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,776 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,776 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,781 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,781 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,781 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,781 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,877 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,878 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,878 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,878 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,881 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,881 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,881 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,882 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,981 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,981 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,982 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,983 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:28,983 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,983 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:28,984 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:28,984 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:29,084 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,084 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,085 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,085 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,085 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,085 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:29,186 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,187 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,187 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,187 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,188 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,188 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:29,289 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,289 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,290 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,290 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,291 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,291 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:29,391 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,391 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,392 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,392 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,392 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,392 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:29,493 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,493 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,493 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,494 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,494 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,494 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:29,594 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,595 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,595 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,595 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,595 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,595 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:29,695 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,695 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,696 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,696 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,696 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,696 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:29,796 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,796 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,796 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,796 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,796 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,797 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:29,898 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,899 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,899 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,899 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:29,900 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:29,900 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:30,000 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,000 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,000 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,000 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,001 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,001 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:30,102 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,102 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,103 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,103 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,103 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,103 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:30,204 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,204 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,205 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,205 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,205 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,206 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:30,306 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,306 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,306 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,306 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,307 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,307 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:30,408 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,408 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,409 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,409 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,409 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,409 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:30,510 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,511 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,511 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,511 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,511 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,511 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:30,611 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,611 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,612 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,612 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,612 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,612 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:30,712 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,712 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,713 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,713 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,713 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,713 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:30,813 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,813 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,813 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,813 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,814 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,814 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:30,914 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,914 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,914 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,914 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:30,914 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:30,914 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:31,015 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,015 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,016 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,016 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,016 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,016 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:31,117 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,117 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,117 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,118 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,118 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,118 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:31,219 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,219 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,220 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,220 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,220 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,220 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:31,320 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,320 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,320 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,320 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,321 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,321 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:31,422 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,422 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,422 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,422 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,422 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,423 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:31,524 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,524 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,524 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,524 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,525 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,525 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:31,625 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,625 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,625 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,625 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,625 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,625 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:31,727 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,727 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,728 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,728 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,729 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,729 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:31,829 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,830 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,830 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,830 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,831 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,831 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:31,931 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,931 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,931 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,931 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:31,932 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:31,932 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:32,032 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,033 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,033 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,033 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,033 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,033 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:32,135 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,135 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,135 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,135 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,136 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,136 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:32,235 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,236 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,236 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,236 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,236 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,236 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:32,337 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,337 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,337 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,337 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,338 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,338 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:32,438 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,438 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,438 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,438 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,438 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,438 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:32,540 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,540 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,540 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,540 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,541 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,541 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:32,642 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,642 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,642 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,642 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,642 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,643 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:32,745 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,746 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,747 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,747 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,748 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,748 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:32,849 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,850 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,850 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,850 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,851 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,851 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:32,950 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,951 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,951 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,952 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:32,952 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:32,952 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,051 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,051 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,051 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,051 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,052 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,052 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,052 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,052 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,151 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,151 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,151 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,152 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,153 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,153 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,153 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,153 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,252 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,252 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,253 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,253 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,254 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,254 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,254 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,254 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,354 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,354 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,355 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,355 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,355 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,355 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,456 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,456 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,457 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,457 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,457 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,457 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,557 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,557 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,558 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,558 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,558 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,558 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,659 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,660 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,661 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,661 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,661 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,661 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,761 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,762 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,762 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,766 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,767 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,767 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,864 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,864 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,865 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,865 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,867 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,868 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,868 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,868 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,965 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,965 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,965 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,965 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:33,969 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,969 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:33,970 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:33,970 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,067 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,067 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,067 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,067 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,069 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,070 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,070 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,070 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,167 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,167 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,167 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,167 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,170 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,170 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,170 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,170 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,270 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,270 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,270 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,270 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,271 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,271 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,271 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,271 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,371 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,372 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,372 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,372 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,373 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,373 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,472 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,472 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,472 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,472 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,473 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,473 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,573 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,573 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,573 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,574 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,574 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,574 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,674 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,674 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,674 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,674 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,674 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,674 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,776 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,776 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,776 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,776 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,776 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,776 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,877 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,878 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,878 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,878 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,878 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,878 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:34,979 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,979 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,979 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,979 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:34,979 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:34,979 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:35,080 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:35,081 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:35,082 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:35,083 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:35,083 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:35,083 - aiokafka - ERROR - Unable to update metadata from [1]
+2025-05-22 18:28:35,184 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:35,184 - aiokafka.consumer.group_coordinator - ERROR - Group Coordinator Request failed: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:35,185 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:35,185 - aiokafka.consumer.fetcher - ERROR - Failed fetch messages from 1: NodeNotReadyError: Attempt to send a request to node which is not ready (node id 1).
+2025-05-22 18:28:35,186 - aiokafka - ERROR - Unable connect to node with id 1: [Errno 111] Connection refused
+2025-05-22 18:28:35,186 - aiokafka - ERROR - Unable to update metadata from [1]

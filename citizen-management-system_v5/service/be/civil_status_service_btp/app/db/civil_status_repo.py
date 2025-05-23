@@ -82,34 +82,18 @@ class CivilStatusRepository:
     def get_death_certificate_by_id(self, certificate_id: int) -> DeathCertificateResponse | None:
         """Lấy thông tin giấy chứng tử theo ID."""
         try:
-            # Query trực tiếp từ bảng DeathCertificate và các bảng Reference cần thiết
-            query = text("""
-                SELECT 
-                    dc.*,
-                    w.ward_name AS place_of_death_ward_name,
-                    d.district_name AS place_of_death_district_name,
-                    p.province_name AS place_of_death_province_name,
-                    a.authority_name AS issuing_authority_name
-                FROM 
-                    [BTP].[DeathCertificate] dc
-                    LEFT JOIN [Reference].[Wards] w ON dc.place_of_death_ward_id = w.ward_id
-                    LEFT JOIN [Reference].[Districts] d ON dc.place_of_death_district_id = d.district_id
-                    LEFT JOIN [Reference].[Provinces] p ON dc.place_of_death_province_id = p.province_id
-                    LEFT JOIN [Reference].[Authorities] a ON dc.issuing_authority_id = a.authority_id
-                WHERE 
-                    dc.death_certificate_id = :certificate_id
+            query_base = text("""
+                SELECT * FROM [BTP].[DeathCertificate]
+                WHERE death_certificate_id = :certificate_id
             """)
             
-            result = self.db.execute(query, {"certificate_id": certificate_id}).fetchone()
+            result_row = self.db.execute(query_base, {"certificate_id": certificate_id}).fetchone()
             
-            if not result:
+            if not result_row:
                 return None
-                
-            # Chuyển đổi Row thành dict
-            data = {key: value for key, value in result._mapping.items()}
             
-            # Tạo response object
-            return DeathCertificateResponse.model_validate(data)
+            # Trả về một dictionary chứa tất cả các cột từ bảng
+            return dict(result_row._mapping) 
             
         except SQLAlchemyError as e:
             logger.error(f"Database error getting death certificate by ID {certificate_id}: {e}", exc_info=True)
@@ -117,6 +101,7 @@ class CivilStatusRepository:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Lỗi cơ sở dữ liệu khi lấy thông tin giấy chứng tử: {str(e)}"
             )
+        
     def check_existing_death_certificate(self, citizen_id: str) -> bool:
         """Kiểm tra xem công dân đã có giấy chứng tử chưa."""
         try:

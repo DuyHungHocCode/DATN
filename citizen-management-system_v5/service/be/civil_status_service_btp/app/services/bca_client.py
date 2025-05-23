@@ -118,7 +118,45 @@ class BCAClient:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error in batch validation: {str(e)}"
             )
-        
+    async def get_reference_data(self, table_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Gọi API của CitizenService (BCA) để lấy dữ liệu từ các bảng tham chiếu.
+        API của BCA nhận 'tables' là một chuỗi các tên bảng cách nhau bởi dấu phẩy.
+        """
+        tables_query_param = ",".join(table_names)
+        try:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=10.0) as client:
+                response = await client.get(f"{settings.API_V1_STR}/references/", params={"tables": tables_query_param})
+            
+            # Log chi tiết request và response nếu cần debug
+            # print(f"DEBUG - BCAClient Request to /references/: tables='{tables_query_param}'")
+            # print(f"DEBUG - BCAClient Response from /references/: Status {response.status_code}, Content: {response.text[:500]}")
+
+
+            if response.status_code == status.HTTP_200_OK:
+                return response.json()
+            else:
+                # Ném lỗi với thông tin chi tiết từ response của BCA
+                raise HTTPException(
+                    status_code=response.status_code, # Trả về status code thực tế từ BCA
+                    detail=f"Dịch vụ BCA (get_reference_data) trả về lỗi: {response.text}"
+                )
+        except httpx.TimeoutException:
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail=f"Gọi dịch vụ BCA (get_reference_data) cho bảng '{tables_query_param}' bị timeout."
+            )
+        except httpx.RequestError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"Lỗi kết nối đến dịch vụ BCA (get_reference_data) cho bảng '{tables_query_param}': {exc}"
+            )
+        except Exception as e:
+             raise HTTPException(
+                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                 detail=f"Lỗi không xác định khi gọi dịch vụ BCA (get_reference_data) cho bảng '{tables_query_param}': {str(e)}"
+             )
+ 
     
 
 # Dependency function để inject client
