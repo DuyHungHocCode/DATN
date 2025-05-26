@@ -384,3 +384,172 @@ GRANT EXECUTE ON [API_Internal].[GetReferenceTableData] TO [api_service_user];
 GO
 
 PRINT 'Stored procedure [API_Internal].[GetReferenceTableData] created successfully.';
+
+
+/*
+============================================================================================
+============================================================================================
+*/
+
+USE [DB_BCA];
+GO
+
+-- Kiểm tra và xóa procedure nếu đã tồn tại
+IF OBJECT_ID('[API_Internal].[UpdateCitizenDeathStatus_v2]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[UpdateCitizenDeathStatus_v2];
+GO
+
+PRINT N'Tạo Stored Procedure [API_Internal].[UpdateCitizenDeathStatus_v2]...';
+GO
+
+CREATE PROCEDURE [API_Internal].[UpdateCitizenDeathStatus]
+    @citizen_id VARCHAR(12),           -- ID CCCD/CMND của công dân
+    @date_of_death DATE,               -- Ngày mất
+    @cause_of_death NVARCHAR(MAX) = NULL, -- Nguyên nhân mất (tùy chọn)
+    @place_of_death_detail NVARCHAR(MAX) = NULL, -- Nơi mất chi tiết (tùy chọn)
+    @death_certificate_no VARCHAR(50) = NULL, -- Số giấy chứng tử từ BTP (tùy chọn)
+    @issuing_authority_id_btp INT = NULL, -- ID cơ quan cấp giấy chứng tử của BTP (tùy chọn)
+    @updated_by VARCHAR(50) = 'KAFKA_CONSUMER' -- Người/hệ thống cập nhật
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Sử dụng trực tiếp các ID từ dữ liệu mẫu
+    -- Tham khảo từ file sample_data.sql cho DB_BCA/Reference
+    -- Reference.CitizenStatusTypes: 1='Còn sống', 2='Đã mất'
+    -- Reference.IdentificationCardStatuses: 1='Đang sử dụng', 3='Đã hủy' (hoặc 4='Bị thu hồi' tùy ngữ cảnh)
+    -- Reference.MaritalStatuses: 1='Độc thân', 2='Đã kết hôn', 3='Ly hôn', 4='Góa vợ/chồng'
+    DECLARE @citizen_status_id_deceased SMALLINT = 2; -- 'Đã mất'
+    DECLARE @citizen_status_id_alive SMALLINT = 1;    -- 'Còn sống'
+    DECLARE @card_status_id_recalled SMALLINT = 3;    -- 'Đã hủy' (hoặc 4 'Bị thu hồi' tùy nghiệp vụ)
+    DECLARE @marital_status_id_married SMALLINT = 2;  -- 'Đã kết hôn'
+    DECLARE @marital_status_id_widowed SMALLINT = 4;  -- 'Góa vợ/chồng'
+
+    DECLARE @affected_rows INT = 0;
+    DECLARE @current_spouse_id VARCHAR(12);
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Kiểm tra xem công dân có tồn tại không.
+        -- IF NOT EXISTS (SELECT 1 FROM [BCA].[Citizen] WHERE [citizen_id] = @citizen_id)
+        -- BEGIN
+        --     ROLLBACK TRANSACTION;
+        --     RAISERROR('Công dân với ID cung cấp không tồn tại.', 16, 1);
+        --     SELECT 0 AS affected_rows; RETURN;
+        -- END
+
+        -- Lấy thông tin người phối ngẫu hiện tại (nếu có) TRƯỚC KHI cập nhật người đã mất
+        -- Chỉ lấy nếu tình trạng hôn nhân của người mất là 'Đã kết hôn'
+        SELECT @current_spouse_id = [spouse_citizen_id]
+        FROM [BCA].[Citizen]
+        WHERE [citizen_id] = @citizen_id AND [marital_status_id] = @marital_status_id_married;
+
+        -- 1. Cập nhật bảng [BCA].[Citizen]
+        UPDATE [BCA].[Citizen]
+        SET [citizen_status_id] = @citizen_status_id_deceased,
+            [status_change_date] = @date_of_death,
+            -- [marital_status_id] = CASE
+            --                         WHEN [marital_status_id] = @marital_status_id_married THEN @marital_status_id_widowed
+            --                         ELSE [marital_status_id] -- Giữ nguyên nếu không phải "Đã kết hôn"
+            --                       END,
+            -- [spouse_citizen_id] -- Giữ nguyên spouse_citizen_id của người đã mất để tham chiếu
+            [updated_at] = SYSDATETIME(),
+            [updated_by] = @updated_by
+        WHERE [citizen_id] = @citizen_id;
+
+        SET @affected_rows = @@ROWCOUNT;
+
+        -- Nếu cập nhật thành công (công dân tồn tại)
+        IF @affected_rows > 0
+        BEGIN
+            -- 2. Cập nhật tất cả trạng thái hiện tại (is_current = 1) của công dân này thành không hiện tại (is_current = 0)
+            UPDATE [BCA].[CitizenStatus]
+            SET [is_current] = 0,
+                [updated_at] = SYSDATETIME(),
+                [updated_by] = @updated_by
+            WHERE [citizen_id] = @citizen_id
+              AND [is_current] = 1;
+
+            -- 3. Thêm mới trạng thái "Đã mất" vào [BCA].[CitizenStatus]
+            INSERT INTO [BCA].[CitizenStatus] (
+                [citizen_id], [citizen_status_id], [status_date], [description], [cause], [location],
+                [certificate_id], [document_number], [document_date], [authority_id],
+                [is_current], [created_at], [updated_at], [created_by], [updated_by]
+            )
+            VALUES (
+                @citizen_id, @citizen_status_id_deceased, @date_of_death,
+                N'Cập nhật từ thông tin khai tử của Bộ Tư pháp.',
+                @cause_of_death, @place_of_death_detail, @death_certificate_no, @death_certificate_no, @date_of_death,
+                @issuing_authority_id_btp, -- Sử dụng authority_id từ BTP nếu có
+                1, -- Đây là trạng thái hiện tại
+                SYSDATETIME(), SYSDATETIME(), @updated_by, @updated_by
+            );
+
+            -- 4. Thu hồi tất cả thẻ CCCD/CMND đang sử dụng của công dân đã mất
+            UPDATE [BCA].[IdentificationCard]
+            SET [card_status_id] = @card_status_id_recalled,
+                [updated_at] = SYSDATETIME(),
+                [updated_by] = @updated_by,
+                [notes] = ISNULL(RTRIM([notes]) + N' | ', N'') + N'Thu hồi do công dân đã mất ngày ' + CONVERT(NVARCHAR, @date_of_death, 103) -- dd/mm/yyyy
+            WHERE [citizen_id] = @citizen_id
+              AND [card_status_id] NOT IN (@card_status_id_recalled, (SELECT cs.card_status_id FROM [Reference].[IdentificationCardStatuses] cs WHERE cs.card_status_code = 'HETHAN')); -- Chỉ cập nhật nếu chưa bị thu hồi/hủy hoặc hết hạn
+
+            -- 5. Cập nhật trạng thái người phối ngẫu (nếu có và còn sống) thành "Góa"
+            IF @current_spouse_id IS NOT NULL
+            BEGIN
+                -- Kiểm tra xem người phối ngẫu có còn sống không
+                IF EXISTS (SELECT 1 FROM [BCA].[Citizen] WHERE [citizen_id] = @current_spouse_id AND [citizen_status_id] = @citizen_status_id_alive)
+                BEGIN
+                    UPDATE [BCA].[Citizen]
+                    SET [marital_status_id] = @marital_status_id_widowed,
+                        -- [spouse_citizen_id] = NULL, -- Cân nhắc nghiệp vụ: có nên xóa spouse_id của người còn sống?
+                                                    -- Hiện tại để không xóa, chỉ cập nhật tình trạng hôn nhân.
+                        [updated_at] = SYSDATETIME(),
+                        [updated_by] = @updated_by
+                    WHERE [citizen_id] = @current_spouse_id;
+
+                    -- Ghi nhận sự thay đổi tình trạng hôn nhân cho người phối ngẫu vào CitizenStatus
+                    IF @@ROWCOUNT > 0 -- Chỉ thêm nếu có cập nhật trên bảng Citizen của người phối ngẫu
+                    BEGIN
+                        -- Đặt is_current của trạng thái cũ của người phối ngẫu thành 0
+                        UPDATE [BCA].[CitizenStatus]
+                        SET [is_current] = 0,
+                            [updated_at] = SYSDATETIME(),
+                            [updated_by] = @updated_by
+                        WHERE [citizen_id] = @current_spouse_id AND [is_current] = 1;
+
+                        -- Thêm trạng thái mới cho người phối ngẫu
+                        INSERT INTO [BCA].[CitizenStatus] (
+                            [citizen_id], [citizen_status_id], [status_date], [description],
+                            [is_current], [created_at], [updated_at], [created_by], [updated_by]
+                        )
+                        VALUES (
+                            @current_spouse_id,
+                            @citizen_status_id_alive, -- Trạng thái chính của họ vẫn là "Còn sống"
+                            SYSDATETIME(), -- Ngày ghi nhận thay đổi tình trạng hôn nhân
+                            N'Cập nhật tình trạng hôn nhân thành góa do người phối ngẫu (' + @citizen_id + N') qua đời.',
+                            1, -- Đây là trạng thái hiện tại
+                            SYSDATETIME(), SYSDATETIME(), @updated_by, @updated_by
+                        );
+                    END
+                END
+            END
+        END
+
+        COMMIT TRANSACTION;
+        SELECT @affected_rows AS affected_rows;
+
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        PRINT ERROR_MESSAGE(); -- In ra thông báo lỗi SQL Server
+        THROW; -- Ném lại lỗi để lớp gọi xử lý
+    END CATCH
+END;
+GO
+
+PRINT 'Stored procedure [API_Internal].[UpdateCitizenDeathStatus_v2] đã được tạo/cập nhật thành công.';
+GO

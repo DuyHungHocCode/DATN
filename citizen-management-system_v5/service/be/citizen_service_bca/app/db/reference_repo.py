@@ -16,25 +16,32 @@ class ReferenceRepository:
         Helper method to fetch a single reference table from DB.
         """
         try:
-            # Gọi SP để lấy 1 bảng cụ thể
-            query = text("EXEC [API_Internal].[GetReferenceTableData] @tableNames = :table_name")
-            with self.db.connection() as conn:
-                cursor = conn.connection.cursor()
-                cursor.execute(f"EXEC [API_Internal].[GetReferenceTableData] @tableNames = '{table_name}'")
+            # Escape single quotes trong tên bảng để tránh SQL injection và lỗi syntax
+            escaped_table_name = table_name.replace("'", "''")
+            
+            # Sử dụng parameterized query thay vì f-string
+            query = text("EXEC [API_Internal].[GetReferenceTableData] @tableNames = :table_names")
+            
+            # Tạo connection mới cho mỗi query
+            with self.db.begin():  # Sử dụng begin() để tự động commit/rollback
+                result = self.db.execute(query, {"table_names": table_name})
                 
                 table_data = []
-                columns = [column[0] for column in cursor.description]
-                rows = cursor.fetchall()
-
+                rows = result.fetchall()
+                
                 if rows:
-                    # Bỏ qua cột 'TableName' (cột đầu tiên) khi tạo dict
-                    for row_tuple in rows:
+                    # Lấy tên cột từ result
+                    columns = result.keys()
+                    
+                    for row in rows:
                         row_dict = {}
                         for i, column_name in enumerate(columns):
-                            if i > 0: # Bỏ qua cột 'TableName'
-                                row_dict[column_name] = row_tuple[i]
-                        if row_dict: # Chỉ thêm nếu dict không rỗng (sau khi bỏ cột TableName)
-                             table_data.append(row_dict)
+                            # Bỏ qua cột 'TableName' (nếu có)
+                            if column_name != 'TableName':
+                                row_dict[column_name] = row[i]
+                        if row_dict:
+                            table_data.append(row_dict)
+                
                 return table_data
         except Exception as e:
             logger.error(f"DB error fetching reference table {table_name}: {str(e)}", exc_info=True)

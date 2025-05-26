@@ -123,25 +123,43 @@ class CitizenRepository:
                 detail=f"Lỗi cơ sở dữ liệu: {str(e)}"
             )
         
-    def update_citizen_death_status(self, citizen_id: str, date_of_death: date) -> bool:
+    def update_citizen_death_status(
+        self, 
+        citizen_id: str, 
+        date_of_death: date, 
+        cause_of_death: Optional[str] = None,
+        place_of_death_detail: Optional[str] = None,
+        death_certificate_no: Optional[str] = None,
+        issuing_authority_id_btp: Optional[int] = None,
+        updated_by: str = 'KAFKA_CONSUMER' # Default value as in SP
+    ) -> bool:
         """Cập nhật trạng thái và ngày mất của công dân."""
         try:
             logger.info(f"Calling stored procedure to update death status for citizen {citizen_id} with date {date_of_death}")
             
-            # Gọi stored procedure đơn giản
+            # Gọi stored procedure
             query = text("""
                 EXEC [API_Internal].[UpdateCitizenDeathStatus] 
                     @citizen_id = :citizen_id, 
                     @date_of_death = :date_of_death, 
-                    @updated_by = 'SYSTEM'
+                    @cause_of_death = :cause_of_death,
+                    @place_of_death_detail = :place_of_death_detail,
+                    @death_certificate_no = :death_certificate_no,
+                    @issuing_authority_id_btp = :issuing_authority_id_btp,
+                    @updated_by = :updated_by
             """)
             
             result = self.db.execute(query, {
                 "citizen_id": citizen_id, 
-                "date_of_death": date_of_death
+                "date_of_death": date_of_death,
+                "cause_of_death": cause_of_death,
+                "place_of_death_detail": place_of_death_detail,
+                "death_certificate_no": death_certificate_no,
+                "issuing_authority_id_btp": issuing_authority_id_btp,
+                "updated_by": updated_by
             })
             
-            # Lấy kết quả trả về (affected_rows)
+            # Lấy kết quả trả về (affected_rows) từ stored procedure
             row = result.fetchone()
             affected_rows = row[0] if row else 0
             logger.info(f"Stored procedure returned affected_rows: {affected_rows}")
@@ -152,7 +170,9 @@ class CitizenRepository:
                 logger.info(f"Successfully committed update for citizen {citizen_id}")
                 return True
             else:
-                logger.warning(f"No update performed for citizen {citizen_id}. Citizen may not exist.")
+                # Nếu không có hàng nào bị ảnh hưởng, có thể công dân không tồn tại hoặc đã được cập nhật
+                logger.warning(f"No update performed for citizen {citizen_id}. Citizen may not exist or already deceased.")
+                self.db.rollback() # Rollback nếu không có hàng nào bị ảnh hưởng để đảm bảo consistency
                 return False
             
         except Exception as e:

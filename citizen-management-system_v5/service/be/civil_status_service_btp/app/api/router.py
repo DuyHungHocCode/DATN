@@ -91,16 +91,7 @@ async def register_death_certificate(
              detail=f"Lỗi không xác định khi tạo bản ghi khai tử: {str(e)}"
          )
 
-    # Phần còn lại của hàm không thay đổi
-    # ...
-
-    # 3. (Optional) Get the full created record to return and send to Kafka
-    #    Hiện tại repo chưa hỗ trợ lấy chi tiết, nên ta tự tạo response tạm
-    # created_certificate = repo.get_death_certificate_by_id(new_certificate_id)
-    # if not created_certificate:
-    #     # Vẫn xem là thành công nhưng log warning và trả về dữ liệu gốc + ID
-    #     logger.warning(f"Could not retrieve details for newly created certificate ID: {new_certificate_id}")
-    #     # Tạo response tạm thời
+    
     created_certificate_response = DeathCertificateResponse(
          **certificate_data.model_dump(),
          death_certificate_id=new_certificate_id,
@@ -140,67 +131,111 @@ async def get_death_certificate(
             detail=f"Không tìm thấy giấy chứng tử với ID {certificate_id}"
         )
     
+    logger.info(f"Raw death certificate data: {death_cert_raw}")
+
     response_data = death_cert_raw.copy()
 
     # Bước 2: Chuẩn bị lấy dữ liệu tham chiếu từ BCA service
     ids_to_resolve = {
-        "Wards": [],
-        "Districts": [],
-        "Provinces": [],
-        "Authorities": []
-    
+        "ward_id": response_data.get("place_of_death_ward_id"),
+        "district_id": response_data.get("place_of_death_district_id"),
+        "province_id": response_data.get("place_of_death_province_id"),
+        "authority_id": response_data.get("issuing_authority_id")
     }
 
-    # Thu thập các ID cần phân giải từ death_cert_raw
-    if response_data.get("place_of_death_ward_id"):
-        ids_to_resolve["Wards"].append(response_data["place_of_death_ward_id"])
-    # Stored procedure InsertDeathCertificate đã lưu district_id và province_id
-    # nên chúng ta có thể lấy trực tiếp từ response_data
-    if response_data.get("place_of_death_district_id"):
-         ids_to_resolve["Districts"].append(response_data["place_of_death_district_id"])
-    if response_data.get("place_of_death_province_id"):
-         ids_to_resolve["Provinces"].append(response_data["place_of_death_province_id"])
-    if response_data.get("issuing_authority_id"):
-        ids_to_resolve["Authorities"].append(response_data["issuing_authority_id"])
+    logger.info(f"IDs to resolve: {ids_to_resolve}")
 
-    # Tạo danh sách các bảng thực sự cần fetch (chỉ fetch nếu có ID tương ứng)
-    ref_tables_to_fetch = [table_name for table_name, id_list in ids_to_resolve.items() if id_list]
+    reference_data = {}
 
-    reference_data_from_bca: Dict[str, List[Dict[str, Any]]] = {}
-    if ref_tables_to_fetch:
-        try:
-            logger.info(f"Fetching reference data for tables: {ref_tables_to_fetch} from BCA service.")
-            reference_data_from_bca = await bca_client.get_reference_data(ref_tables_to_fetch)
-        except HTTPException as e:
-            logger.warning(f"Could not fetch reference data from BCA for death cert {certificate_id}: {e.detail}. Proceeding with available data.")
-            # Không ném lỗi ở đây, sẽ trả về tên là None
-        except Exception as e:
-            logger.error(f"Unexpected error fetching reference data for death cert {certificate_id}: {e}", exc_info=True)
-            # Cũng không ném lỗi, trả về tên là None
-    # Bước 3: Tạo map để dễ tra cứu tên từ ID
-    # Ví dụ: wards_map = {1001: "Phường Phúc Xá", ...}
-    wards_map = {item["ward_id"]: item["ward_name"] for item in reference_data_from_bca.get("Wards", [])}
-    districts_map = {item["district_id"]: item["district_name"] for item in reference_data_from_bca.get("Districts", [])}
-    provinces_map = {item["province_id"]: item["province_name"] for item in reference_data_from_bca.get("Provinces", [])}
-    authorities_map = {item["authority_id"]: item["authority_name"] for item in reference_data_from_bca.get("Authorities", [])}
+    try:
+        # Lấy dữ liệu Provinces nếu cần
+        if ids_to_resolve["province_id"]:
+            logger.info(f"Fetching Provinces data from BCA")
+            provinces_data = await bca_client.get_reference_data(["Provinces"])
+            reference_data["Provinces"] = provinces_data.get("Provinces", [])
+            logger.info(f"Got {len(reference_data['Provinces'])} provinces")
+        
+        # Lấy dữ liệu Districts nếu cần
+        if ids_to_resolve["district_id"]:
+            logger.info(f"Fetching Districts data from BCA")
+            districts_data = await bca_client.get_reference_data(["Districts"])
+            reference_data["Districts"] = districts_data.get("Districts", [])
+            logger.info(f"Got {len(reference_data['Districts'])} districts")
+        
+        # Lấy dữ liệu Wards nếu cần
+        if ids_to_resolve["ward_id"]:
+            logger.info(f"Fetching Wards data from BCA")
+            wards_data = await bca_client.get_reference_data(["Wards"])
+            reference_data["Wards"] = wards_data.get("Wards", [])
+            logger.info(f"Got {len(reference_data['Wards'])} wards")
+        
+        # Lấy dữ liệu Authorities nếu cần
+        if ids_to_resolve["authority_id"]:
+            logger.info(f"Fetching Authorities data from BCA")
+            authorities_data = await bca_client.get_reference_data(["Authorities"])
+            reference_data["Authorities"] = authorities_data.get("Authorities", [])
+            logger.info(f"Got {len(reference_data['Authorities'])} authorities")
+            
+    except Exception as e:
+        logger.error(f"Error fetching reference data from BCA: {e}", exc_info=True)
+        # Tiếp tục với dữ liệu đã có
 
-    # Bước 4: Điền các trường tên vào response_data
-    response_data["place_of_death_ward_name"] = wards_map.get(response_data.get("place_of_death_ward_id"))
-    response_data["place_of_death_district_name"] = districts_map.get(response_data.get("place_of_death_district_id"))
-    response_data["place_of_death_province_name"] = provinces_map.get(response_data.get("place_of_death_province_id"))
-    response_data["issuing_authority_name"] = authorities_map.get(response_data.get("issuing_authority_id"))
+    # Bước 4: Map ID sang tên
+    # Map cho Province
+    if reference_data.get("Provinces") and ids_to_resolve["province_id"]:
+        for province in reference_data["Provinces"]:
+            if province.get("province_id") == ids_to_resolve["province_id"]:
+                response_data["place_of_death_province_name"] = province.get("province_name")
+                logger.info(f"Mapped province {ids_to_resolve['province_id']} to {province.get('province_name')}")
+                break
+    
+    # Map cho District
+    if reference_data.get("Districts") and ids_to_resolve["district_id"]:
+        for district in reference_data["Districts"]:
+            if district.get("district_id") == ids_to_resolve["district_id"]:
+                response_data["place_of_death_district_name"] = district.get("district_name")
+                logger.info(f"Mapped district {ids_to_resolve['district_id']} to {district.get('district_name')}")
+                break
+    
+    # Map cho Ward
+    if reference_data.get("Wards") and ids_to_resolve["ward_id"]:
+        for ward in reference_data["Wards"]:
+            if ward.get("ward_id") == ids_to_resolve["ward_id"]:
+                response_data["place_of_death_ward_name"] = ward.get("ward_name")
+                logger.info(f"Mapped ward {ids_to_resolve['ward_id']} to {ward.get('ward_name')}")
+                break
+    
+    # Map cho Authority
+    if reference_data.get("Authorities") and ids_to_resolve["authority_id"]:
+        for authority in reference_data["Authorities"]:
+            if authority.get("authority_id") == ids_to_resolve["authority_id"]:
+                response_data["issuing_authority_name"] = authority.get("authority_name")
+                logger.info(f"Mapped authority {ids_to_resolve['authority_id']} to {authority.get('authority_name')}")
+                break
 
-    # Đảm bảo các trường bắt buộc của DeathCertificateResponse có mặt (nếu không có trong SELECT *)
-    # Ví dụ, status có thể không có trong bảng DeathCertificate, cần gán giá trị mặc định hoặc logic riêng
+    # Đảm bảo các trường name có giá trị mặc định nếu không map được
+    response_data["place_of_death_province_name"] = response_data.get("place_of_death_province_name", "Không xác định")
+    response_data["place_of_death_district_name"] = response_data.get("place_of_death_district_name", "Không xác định")
+    response_data["place_of_death_ward_name"] = response_data.get("place_of_death_ward_name", "Không xác định")
+    response_data["issuing_authority_name"] = response_data.get("issuing_authority_name", "Không xác định")
+
+    # Đảm bảo các trường bắt buộc
     if "status" not in response_data:
-        response_data["status"] = True # Giả định là True nếu không có trong DB
+        response_data["status"] = True
 
-    # Validate dữ liệu cuối cùng với Pydantic model trước khi trả về
+    # Log final response data
+    logger.info(f"Final response data with names: {response_data}")
+
+    # Validate và trả về
     try:
         return DeathCertificateResponse.model_validate(response_data)
     except Exception as e:
-        logger.error(f"Error validating final response data for death certificate {certificate_id}: {response_data} - Error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Lỗi tạo đối tượng response chi tiết cho giấy chứng tử.")
+        logger.error(f"Error validating response: {e}", exc_info=True)
+        logger.error(f"Response data causing error: {response_data}")
+        raise HTTPException(
+            status_code=500, 
+            detail="Lỗi tạo response cho giấy chứng tử."
+        )
 
             
 @router.post(
