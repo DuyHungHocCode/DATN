@@ -13,7 +13,7 @@ GO
 -- Lưu ý: Các logic nghiệp vụ phức tạp, bao gồm cả việc lấy place_of_death_district_id và place_of_death_province_id
 -- từ place_of_death_ward_id (nếu ward_id thuộc DB khác), được giả định đã xử lý ở tầng ứng dụng.
 -- Stored procedure này tập trung vào việc ghi dữ liệu vào các bảng của DB_BTP.
-CREATE PROCEDURE [API_Internal].[InsertDeathCertificate_v2]
+CREATE PROCEDURE [API_Internal].[InsertDeathCertificate]
     -- Input parameters matching BTP.DeathCertificate columns
     @citizen_id VARCHAR(12),
     @death_certificate_no VARCHAR(20),

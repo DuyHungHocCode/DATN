@@ -1,0 +1,27 @@
+{
+  "name": "debezium-sqlserver-connector-btp-outbox",
+  "config": {
+    "connector.class": "io.debezium.connector.sqlserver.SqlServerConnector",
+    "tasks.max": "1",
+    "database.hostname": "sqlserver_btp", 
+    "database.port": "1433",
+    "database.user": "sa",
+    "database.password": "Duyhung123", 
+    "database.dbname": "DB_BTP",
+    "database.server.name": "sqlserver_btp", 
+    "table.include.list": "BTP.EventOutbox", 
+    "topic.prefix": "btp", 
+    "database.history.kafka.bootstrap.servers": "kafka:9092",
+    "database.history.kafka.topic": "schema-changes.db-btp", 
+    "snapshot.mode": "initial", 
+    "column.propagate.source.type": "outbox_id,aggregate_type,aggregate_id,event_type,payload,created_at,processed,processed_at,retry_count,error_message,next_retry_at", 
+    "transforms": "unwrap,route",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.drop.tombstones": "false",
+    "transforms.unwrap.add.source.fields": "db", 
+    "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.route.regex": "btp\\.DB_BTP\\.BTP\\.EventOutbox", 
+    "transforms.route.replacement": "btp_events", 
+    "message.key.columns": "BTP.EventOutbox:aggregate_id" 
+  }
+}

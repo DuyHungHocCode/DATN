@@ -1,0 +1,31 @@
+# Sử dụng image debezium/connect làm base
+FROM debezium/connect:2.5
+
+# Cài đặt các gói phụ thuộc cho sqlcmd
+USER root
+
+RUN microdnf update -y && \
+    microdnf install -y curl gnupg2 && \
+    # Thêm GPG key của Microsoft
+    curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/pki/rpm-gpg/microsoft.gpg && \
+    # Thêm kho lưu trữ của Microsoft SQL Server một cách thủ công
+    curl https://packages.microsoft.com/config/rhel/8/prod.repo > /etc/yum.repos.d/mssql-release.repo && \
+    microdnf update -y && \
+    # Cài đặt mssql-tools18 và unixODBC-devel
+    ACCEPT_EULA=Y microdnf install -y mssql-tools18 unixODBC-devel && \
+    # Tìm và tạo symlink cho sqlcmd (có thể ở /opt/mssql-tools18/bin/)
+    SQLCMD_PATH=$(find /opt -name "sqlcmd" 2>/dev/null | head -1) && \
+    if [ -n "$SQLCMD_PATH" ]; then \
+        ln -sf "$SQLCMD_PATH" /usr/local/bin/sqlcmd && \
+        echo "sqlcmd linked from $SQLCMD_PATH"; \
+    else \
+        echo "sqlcmd not found after installation"; \
+    fi && \
+    # Thêm đường dẫn vào PATH
+    echo 'export PATH="$PATH:/opt/mssql-tools18/bin:/opt/mssql-tools/bin"' >> /etc/bashrc && \
+    # Dọn dẹp cache
+    microdnf clean all && \
+    rm -rf /var/cache/yum/* /var/cache/dnf/* /tmp/*
+
+# Sử dụng user kafka (UID 1001) thay vì debezium
+USER kafka

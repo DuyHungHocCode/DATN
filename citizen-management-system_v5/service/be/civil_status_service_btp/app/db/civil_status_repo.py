@@ -36,6 +36,8 @@ class CivilStatusRepository:
                     @time_of_death = :time_of_death,
                     @place_of_death_detail = :place_of_death_detail,
                     @place_of_death_ward_id = :place_of_death_ward_id,
+                    @place_of_death_district_id = :place_of_death_district_id, 
+                    @place_of_death_province_id = :place_of_death_province_id, 
                     @cause_of_death = :cause_of_death,
                     @declarant_name = :declarant_name,
                     @declarant_citizen_id = :declarant_citizen_id,

@@ -41,7 +41,7 @@ VALUES
     (11, 'NBH', N'Tỉnh Ninh Bình', 1, 0, '37'),
     
     -- Trung du và miền núi phía Bắc
-    (12, 'HGG', N'Tỉnh Hà Giang', 2, 0, '02'),
+    (12, 'HG1', N'Tỉnh Hà Giang', 2, 0, '02'),
     (13, 'CAB', N'Tỉnh Cao Bằng', 2, 0, '04'),
     (14, 'BKN', N'Tỉnh Bắc Kạn', 2, 0, '06'),
     (15, 'TQG', N'Tỉnh Tuyên Quang', 2, 0, '08'),
@@ -67,7 +67,7 @@ VALUES
     -- Duyên hải Nam Trung Bộ
     (32, 'DNG', N'Thành phố Đà Nẵng', 4, 1, '48'),
     (33, 'QNM', N'Tỉnh Quảng Nam', 4, 0, '49'),
-    (34, 'QNI', N'Tỉnh Quảng Ngãi', 4, 0, '51'),
+    (34, 'QNG', N'Tỉnh Quảng Ngãi', 4, 0, '51'), -- Đã sửa QNI thành QNG
     (35, 'BDH', N'Tỉnh Bình Định', 4, 0, '52'),
     (36, 'PHYN', N'Tỉnh Phú Yên', 4, 0, '54'),
     (37, 'KHA', N'Tỉnh Khánh Hòa', 4, 0, '56'),
@@ -396,16 +396,17 @@ VALUES
     (10, 'KHONGBANGCAP', N'Không có bằng cấp', N'Không đi học hoặc chưa tốt nghiệp tiểu học', 10);
 GO
 
---------------------------------------------------------------------------------
--- 15. Reference.CitizenDeathStatuses (Trạng thái tử vong)
---------------------------------------------------------------------------------
-PRINT N'  Thêm dữ liệu cho Reference.CitizenDeathStatuses...';
-INSERT INTO [Reference].[CitizenDeathStatuses] ([citizen_death_status_id], [status_code], [status_name_vi], [description_vi], [display_order])
-VALUES 
-    (1, 'CONSONG', N'Còn sống', N'Công dân còn sống', 1),
-    (2, 'DAMAT', N'Đã mất', N'Công dân đã mất và có giấy chứng tử', 2),
-    (3, 'MATTICH', N'Mất tích', N'Công dân mất tích theo quyết định của tòa án', 3);
-GO
+-- Xóa bỏ phần chèn dữ liệu vào bảng Reference.CitizenDeathStatuses đã bị loại bỏ
+-- --------------------------------------------------------------------------------
+-- -- 15. Reference.CitizenDeathStatuses (Trạng thái tử vong)
+-- --------------------------------------------------------------------------------
+-- PRINT N'  Thêm dữ liệu cho Reference.CitizenDeathStatuses...';
+-- INSERT INTO [Reference].[CitizenDeathStatuses] ([citizen_death_status_id], [status_code], [status_name_vi], [description_vi], [display_order])
+-- VALUES 
+--     (1, 'CONSONG', N'Còn sống', N'Công dân còn sống', 1),
+--     (2, 'DAMAT', N'Đã mất', N'Công dân đã mất và có giấy chứng tử', 2),
+--     (3, 'MATTICH', N'Mất tích', N'Công dân mất tích theo quyết định của tòa án', 3);
+-- GO
 
 --------------------------------------------------------------------------------
 -- 16. Reference.BloodTypes (Nhóm máu)
@@ -504,7 +505,7 @@ GO
 -- 23. Reference.CitizenStatusTypes (Loại trạng thái công dân)
 --------------------------------------------------------------------------------
 PRINT N'  Thêm dữ liệu cho Reference.CitizenStatusTypes...';
-INSERT INTO [Reference].[CitizenStatusTypes] ([citizen_status_type_id], [status_type_code], [status_type_name_vi], [description_vi], [display_order])
+INSERT INTO [Reference].[CitizenStatusTypes] ([citizen_status_id], [status_code], [status_name_vi], [description_vi], [display_order]) -- Đã sửa tên cột
 VALUES 
     (1, 'CONSONG', N'Còn sống', N'Công dân còn sống', 1),
     (2, 'DAMAT', N'Đã mất', N'Công dân đã mất', 2),
