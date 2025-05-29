@@ -59,47 +59,51 @@ services:
 
   # 4. Service cho DB_BCA (Bộ Công an) - Tên mới: sqlserver_bca
   sqlserver_bca:
-    image: mcr.microsoft.com/mssql/server:2019-latest # 2019-latest được dùng phổ biến với Debezium, cân nhắc 2022-latest nếu cần
+    image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: sqlserver_bca_container
     environment:
       ACCEPT_EULA: 'Y'
-      SA_PASSWORD: 'Duyhung123' # KHUYẾN NGHỊ: Đổi mật khẩu mạnh hơn trong môi trường thực tế
+      SA_PASSWORD: 'StrongPassword123!' # Mật khẩu mạnh hơn
       MSSQL_PID: 'Developer'
-      MSSQL_AGENT_ENABLED: "True" # RẤT QUAN TRỌNG: Đảm bảo SQL Server Agent được bật cho CDC
+      MSSQL_AGENT_ENABLED: "True"
     ports:
-      - "1401:1433" # Map cổng 1401 của host vào cổng 1433 của container
+      - "1401:1433"
     volumes:
       - sql_bca_data:/var/opt/mssql
     networks:
-      - app_db_net # Kết nối vào network ứng dụng/DB
-    healthcheck: # Healthcheck để đảm bảo DB sẵn sàng
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Duyhung123", "-Q", "SELECT 1"]
-      interval: 10s
-      timeout: 5s
+      - app_db_net
+    healthcheck:
+      # CÁCH 1: Sử dụng nc (netcat) để kiểm tra port
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 60s # Chờ 60s trước khi bắt đầu healthcheck
     restart: unless-stopped
 
   # 5. Service cho DB_BTP (Bộ Tư pháp) - Tên mới: sqlserver_btp
   sqlserver_btp:
-    image: mcr.microsoft.com/mssql/server:2019-latest # 2019-latest được dùng phổ biến với Debezium
+    image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: sqlserver_btp_container
     environment:
       ACCEPT_EULA: 'Y'
-      SA_PASSWORD: 'Duyhung123' # KHUYẾN NGHỊ: Đổi mật khẩu mạnh hơn trong môi trường thực tế
+      SA_PASSWORD: 'StrongPassword123!' # Mật khẩu mạnh hơn
       MSSQL_PID: 'Developer'
-      MSSQL_AGENT_ENABLED: "True" # RẤT QUAN TRỌNG: Đảm bảo SQL Server Agent được bật cho CDC
+      MSSQL_AGENT_ENABLED: "True"
     ports:
-      - "1402:1433" # Map cổng 1402 của host vào cổng 1433 của container
+      - "1402:1433"
     volumes:
       - sql_btp_data:/var/opt/mssql
     networks:
       - app_db_net
-      - kafka_net # KẾT NỐI VÀO MẠNG CỦA KAFKA ĐỂ DEBEZIUM CÓ THỂ KẾT NỐI
-    healthcheck: # Healthcheck để đảm bảo DB sẵn sàng
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Duyhung123", "-Q", "SELECT 1"]
-      interval: 10s
-      timeout: 5s
+      - kafka_net
+    healthcheck:
+      # CÁCH 1: Sử dụng nc (netcat) để kiểm tra port
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 60s # Chờ 60s trước khi bắt đầu healthcheck
     restart: unless-stopped
 
   
@@ -125,16 +129,16 @@ services:
       VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       KEY_CONVERTER_SCHEMAS_ENABLE: 'false'
       VALUE_CONVERTER_SCHEMAS_ENABLE: 'false'
-      PLUGIN_PATH: /kafka/connect/debezium-connector-sqlserver
+      CONNECT_PLUGIN_PATH: /kafka/connect
     depends_on:
       - kafka
       - zookeeper
       - sqlserver_btp
     command: bash -c "
       echo 'Waiting for SQL Server to be ready...' &&
-      timeout 60 bash -c 'until sqlcmd -S sqlserver_btp -U sa -P \"Duyhung123\" -Q \"SELECT 1\" > /dev/null 2>&1; do echo \"Waiting for SQL Server...\"; sleep 5; done' &&
+      timeout 60 bash -c 'until /opt/mssql-tools18/bin/sqlcmd -S sqlserver_btp -U sa -P \"StrongPassword123!\" -Q \"SELECT 1\" -C > /dev/null 2>&1; do echo \"Waiting for SQL Server...\"; sleep 5; done' &&
       echo 'SQL Server DB_BTP is up, starting Kafka Connect...' &&
-      /kafka/connect/bin/connect-distributed.sh /kafka/connect/etc/connect-distributed.properties"
+      /docker-entrypoint.sh start"
     restart: unless-stopped
     # LƯU Ý QUAN TRỌNG:
     # database.hostname trong JSON config cho Debezium sẽ là 'sqlserver_btp' (tên service)
