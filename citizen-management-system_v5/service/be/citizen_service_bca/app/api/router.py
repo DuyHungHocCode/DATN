@@ -185,7 +185,7 @@ def batch_validate_citizens(
                 "full_name": citizen["full_name"],
                 "date_of_birth": citizen["date_of_birth"],
                 "gender": citizen["gender"],
-                "death_status": citizen["death_status"],
+                "death_status": citizen["citizen_status"],
                 "marital_status": citizen["marital_status"],
                 "spouse_citizen_id": citizen["spouse_citizen_id"]
             }

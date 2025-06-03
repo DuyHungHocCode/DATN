@@ -337,3 +337,64 @@ CREATE TABLE [BCA].[CitizenAddress] (
 PRINT N'  Table [BCA].[CitizenAddress] created.';
 GO
 
+-- Add Household table to BCA schema
+IF OBJECT_ID('BCA.Household', 'U') IS NOT NULL DROP TABLE [BCA].[Household];
+GO
+PRINT N'  Creating table [BCA].[Household]...';
+CREATE TABLE [BCA].[Household] (
+    [household_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [household_book_no] VARCHAR(20) NOT NULL,
+    [head_of_household_id] VARCHAR(12) NOT NULL, -- FK to BCA.Citizen.citizen_id
+    [address_id] BIGINT NOT NULL, -- FK to BCA.Address.address_id
+    [registration_date] DATE NOT NULL,
+    [issuing_authority_id] INT NULL, -- FK to Reference.Authorities
+    [area_code] VARCHAR(20) NULL,
+    [household_type_id] SMALLINT NOT NULL, -- FK to Reference.HouseholdTypes
+    [household_status_id] SMALLINT NOT NULL, -- FK to Reference.HouseholdStatuses
+    [notes] NVARCHAR(MAX) NULL,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
+);
+PRINT N'  Table [BCA].[Household] created.';
+GO
+
+-- Add HouseholdMember table to BCA schema
+IF OBJECT_ID('BCA.HouseholdMember', 'U') IS NOT NULL DROP TABLE [BCA].[HouseholdMember];
+GO
+PRINT N'  Creating table [BCA].[HouseholdMember]...';
+CREATE TABLE [BCA].[HouseholdMember] (
+    [household_member_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [household_id] BIGINT NOT NULL, -- FK to BCA.Household
+    [citizen_id] VARCHAR(12) NOT NULL, -- FK to BCA.Citizen.citizen_id
+    [rel_with_head_id] SMALLINT NOT NULL, -- FK to Reference.RelationshipWithHeadTypes
+    [join_date] DATE NOT NULL,
+    [leave_date] DATE NULL,
+    [leave_reason] NVARCHAR(MAX) NULL,
+    [previous_household_id] BIGINT NULL, -- FK to BCA.Household
+    [member_status_id] SMALLINT NOT NULL, -- FK to Reference.HouseholdMemberStatuses
+    [order_in_household] SMALLINT NULL,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
+);
+PRINT N'  Table [BCA].[HouseholdMember] created.';
+GO
+
+PRINT N'  Creating table [Audit].[AuditLog]...';
+CREATE TABLE [Audit].[AuditLog] (
+    [log_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [action_tstamp] DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
+    [schema_name] VARCHAR(100) NOT NULL,
+    [table_name] VARCHAR(100) NOT NULL,
+    [operation] VARCHAR(10) NOT NULL CHECK ([operation] IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE')),
+    [session_user_name] NVARCHAR(128) DEFAULT SUSER_SNAME(),
+    [application_name] NVARCHAR(128) DEFAULT APP_NAME(),
+    [client_net_address] VARCHAR(48) NULL,
+    [host_name] NVARCHAR(128) DEFAULT HOST_NAME(),
+    [transaction_id] BIGINT NULL,
+    [statement_only] BIT NOT NULL DEFAULT 0,
+    [row_data] NVARCHAR(MAX) NULL,
+    [changed_fields] NVARCHAR(MAX) NULL,
+    [query_text] NVARCHAR(MAX) NULL
+);
+PRINT N'  Table [Audit].[AuditLog] created.';
+GO

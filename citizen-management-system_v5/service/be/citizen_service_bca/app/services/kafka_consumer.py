@@ -100,26 +100,133 @@ class KafkaEventConsumer:
     async def _process_message(self, message: Dict[str, Any]):
         """Xử lý message nhận được từ Kafka."""
         try:
-            event_type = message.get('eventType')
-            payload = message.get('payload', {})
+           
+            # {
+            #   "outbox_id": 101,
+            #   "aggregate_type": "DeathCertificate",
+            #   "aggregate_id": "DC-TEST-12345",
+            #   "event_type": "citizen_died", <--- Chúng ta cần lấy trường này
+            #   "payload": "{...json string...}", <--- Và nội dung JSON từ trường này
+            #   "created_at": "...",
+            #   "processed": false,
+            #   "processed_at": null,
+            #   "retry_count": 0,
+            #   "error_message": null,
+            #   "next_retry_at": null
+            # }
+
+            if message.get('schema', {}).get('name', '').endswith('SchemaChangeValue'):
+                logger.info(f"Skipping Debezium schema change event: {message.get('payload', {}).get('schemaName', 'N/A')}.{message.get('payload', {}).get('tableName', 'N/A')}")
+                return # Bỏ qua tin nhắn DDL
+
+            # Lấy phần payload chính, chứa dữ liệu bản ghi đã được unwrapped từ EventOutbox.
+            # Cấu trúc của 'message' ở đây là {'schema': {...}, 'payload': {data_unwrapped_from_db}}
+            event_outbox_record = message.get('payload') 
+
+            if not event_outbox_record:
+                logger.warning(f"Invalid message format: Missing primary payload from Kafka message. Message: {message}")
+                self._store_failed_event(message, "Missing primary payload from Kafka message")
+                return
+
+            # Từ event_outbox_record (đã là bản ghi của EventOutbox), lấy các trường cần thiết.
+            event_type = event_outbox_record.get('event_type') # Ví dụ: 'citizen_died', 'CitizenMarried'
+            event_payload_json_str = event_outbox_record.get('payload') # Đây là chuỗi JSON chứa dữ liệu chi tiết của sự kiện
+
+            if not event_type or not event_payload_json_str:
+                logger.warning(f"Invalid message format: Missing 'event_type' ('{event_type}') or inner 'payload' string ('{event_payload_json_str}') within EventOutbox record. Record: {event_outbox_record}")
+                self._store_failed_event(message, "Missing event_type or inner payload string in EventOutbox record")
+                return
+
+            try:
+                # Chuyển đổi chuỗi JSON từ trường 'payload' bên trong thành Python dictionary.
+                actual_event_payload = json.loads(event_payload_json_str)
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to decode JSON payload from EventOutbox record. Error: {e}. Inner Payload string: {event_payload_json_str}")
+                self._store_failed_event(message, f"JSON Decode Error in inner payload: {str(e)}")
+                return
+
+            # Ghi log thông tin sự kiện đang xử lý
+            logger.info(f"Processing event: {event_type} for aggregate_id: {event_outbox_record.get('aggregate_id', 'N/A')}")
+
+            # Xử lý các loại sự kiện nghiệp vụ
+            if event_type == 'citizen_died':
+                await self._process_citizen_died_event(actual_event_payload)
+            elif event_type == 'citizen_married':
+                await self._process_citizen_married_event(actual_event_payload)
+            elif event_type == 'citizen_divorced': # Thêm xử lý cho sự kiện ly hôn nếu có
+                logger.info(f"Processing CitizenDivorced event (not yet implemented fully): {actual_event_payload}")
+                await self._process_citizen_divorced_event(actual_event_payload)
+            elif event_type == 'CitizenBirthRegistered': # Thêm xử lý cho sự kiện khai sinh nếu có
+                logger.info(f"Processing CitizenBirthRegistered event (not yet implemented fully): {actual_event_payload}")
+                #  Implement actual birth handling in a separate method
+            else:
+                logger.info(f"Ignoring unsupported event type: {event_type} for aggregate_id: {event_outbox_record.get('aggregate_id', 'N/A')}")
+
+        except Exception as e:
+            logger.error(f"Error processing message (outer try-catch). Message: {message}. Error: {e}", exc_info=True)
+            # Lưu toàn bộ message gốc nếu có lỗi không mong muốn ở đây
+            self._store_failed_event(message, f"Unexpected error in _process_message: {str(e)}")
+
+
+    async def _process_citizen_divorced_event(self, payload: Dict[str, Any]): # <-- Thêm phương thức xử lý ly hôn
+        """Xử lý sự kiện khi công dân ly hôn."""
+        try:
+            logger.info(f"Processing citizen_divorced event with payload: {payload}")
             
-            if not event_type or not payload:
-                logger.warning(f"Invalid message format: {message}")
+            husband_id = payload.get('husband_id')
+            wife_id = payload.get('wife_id')
+            divorce_date_str = payload.get('divorce_date')
+            judgment_no = payload.get('judgment_no')
+            
+            if not husband_id or not wife_id or not divorce_date_str or not judgment_no:
+                logger.warning(f"Missing required fields in citizen_divorced event: {payload}")
+                self._store_failed_event(payload, "Missing required fields")
                 return
             
-            logger.info(f"Processing event: {event_type}")
+            try:
+                if 'T' in divorce_date_str:
+                    divorce_date_str = divorce_date_str.split('T')[0]
+                divorce_date = datetime.strptime(divorce_date_str, "%Y-%m-%d").date()
+                logger.info(f"Parsed divorce date: {divorce_date}")
+            except Exception as e:
+                logger.error(f"Invalid date format for divorce_date: {divorce_date_str}, error: {e}")
+                self._store_failed_event(payload, f"Invalid date format for divorce_date: {e}")
+                return
             
-            # Xử lý các loại sự kiện
-            if event_type == 'citizen_died':
-                await self._process_citizen_died_event(payload)
-            elif event_type == 'citizen_married':
-                await self._process_citizen_married_event(payload)
-            else:
-                logger.info(f"Ignoring unsupported event type: {event_type}")
+            db = SessionLocal()
+            try:
+                repo = CitizenRepository(db)
+                
+                # Cập nhật trạng thái ly hôn cho chồng
+                husband_updated = repo.update_divorce_status(
+                    husband_id,
+                    wife_id, # former_spouse_citizen_id
+                    divorce_date,
+                    judgment_no
+                )
+                logger.info(f"Updated divorce status for husband {husband_id}: {husband_updated}")
+                
+                # Cập nhật trạng thái ly hôn cho vợ
+                wife_updated = repo.update_divorce_status(
+                    wife_id,
+                    husband_id, # former_spouse_citizen_id
+                    divorce_date,
+                    judgment_no
+                )
+                logger.info(f"Updated divorce status for wife {wife_id}: {wife_updated}")
+                
+                if not husband_updated and not wife_updated:
+                    logger.warning("Both husband and wife divorce updates failed. Possible data issue.")
+                    self._store_failed_event(payload, "Both updates failed")
+
+            finally:
+                db.close()
                     
         except Exception as e:
-            logger.error(f"Error processing message: {e}", exc_info=True)
-        
+            logger.error(f"Error processing citizen_divorced event: {e}", exc_info=True)
+            self._store_failed_event(payload, str(e))
+
+
     async def _process_citizen_died_event(self, payload: Dict[str, Any]):
         """Xử lý sự kiện khi công dân qua đời."""
         try:
@@ -168,25 +275,22 @@ class KafkaEventConsumer:
         except Exception as e:
             logger.error(f"Error processing citizen_died event: {e}", exc_info=True)
 
-    def _store_failed_event(self, payload, error_msg=None):
+    def _store_failed_event(self, original_message_data: Dict[str, Any], error_msg: Optional[str] = None):
         """Lưu event thất bại để xử lý sau."""
         try:
-            # Tạo tên file với timestamp
             filename = f"failed_events/{datetime.now().strftime('%Y%m%d')}_failed_events.jsonl"
             os.makedirs("failed_events", exist_ok=True)
             
-            # Lưu thông tin sự kiện và lỗi
             failed_event = {
-                "payload": payload,
+                "original_message_data": original_message_data, # Lưu toàn bộ bản ghi gốc được gửi từ Kafka
                 "error": error_msg,
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
             
-            # Ghi vào file
             with open(filename, "a") as f:
                 f.write(json.dumps(failed_event) + "\n")
                 
-            logger.info(f"Stored failed event for later processing: {error_msg}")
+            logger.info(f"Stored failed event for later processing: {error_msg}. Original message: {original_message_data.get('aggregate_id', 'N/A')}")
         except Exception as e:
             logger.error(f"Failed to store failed event: {e}")
 
@@ -212,30 +316,22 @@ class KafkaEventConsumer:
                 with open(temp_path, 'r') as f:
                     for line in f:
                         try:
-                            event = json.loads(line.strip())
+                            failed_event_record = json.loads(line.strip())
                             
-                            # Check if this is a marriage event
-                            event_payload = event.get('payload', {})
-                            event_type = event_payload.get('eventType')
+                            # Lấy lại dữ liệu gốc của tin nhắn Kafka đã lưu
+                            original_message_data = failed_event_record.get('original_message_data', {})
                             
-                            if event_type == 'citizen_married':
-                                # Process with updated marriage logic
-                                citizen_married_payload = event_payload.get('payload', {})
-                                if 'marriage_certificate_no' not in citizen_married_payload:
-                                    # Add default certificate number if missing in older events
-                                    certificate_id = citizen_married_payload.get('marriage_certificate_id', 'UNKNOWN')
-                                    citizen_married_payload['marriage_certificate_no'] = f"AUTO-{certificate_id}"
-                                    
-                                # Process with the updated handler
-                                await self._process_citizen_married_event(citizen_married_payload)
-                            else:
-                                # Process other event types
-                                await self._process_message(event_payload)
+                            if not original_message_data:
+                                logger.warning(f"Skipping failed event record with no original_message_data: {failed_event_record}")
+                                processed.append(failed_event_record) # Coi như đã xử lý để không lặp lại lỗi
+                                continue
+
+                            # Gọi lại _process_message với dữ liệu tin nhắn gốc
+                            await self._process_message(original_message_data)
                                 
-                            processed.append(event)
+                            processed.append(failed_event_record) # Chỉ đánh dấu là xử lý nếu _process_message không ném lỗi
                         except Exception as e:
-                            logger.error(f"Error reprocessing event: {e}")
-                            # Event remains in failed events file
+                            logger.error(f"Error reprocessing event: {e}. Record: {line.strip()[:200]}...")
                 
                 # Xóa các sự kiện đã xử lý thành công
                 if processed:

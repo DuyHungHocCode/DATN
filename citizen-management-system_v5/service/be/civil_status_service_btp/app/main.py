@@ -9,12 +9,12 @@ from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from app.api.router import router as civil_status_router
 from app.config import get_settings
-from app.services.kafka_producer import kafka_producer_instance # Import instance để đóng khi shutdown
+#from app.services.kafka_producer import kafka_producer_instance # Import instance để đóng khi shutdown
 from app.db.database import SessionLocal
 from logging.handlers import RotatingFileHandler
 import os
-from app.services.outbox_processor import outbox_processor
-from app.services.event_retry_worker import event_retry_worker
+#from app.services.outbox_processor import outbox_processor
+#from app.services.event_retry_worker import event_retry_worker
 from app.services.reconciliation import reconciliation_service
 
 settings = get_settings()
@@ -49,8 +49,8 @@ async def lifespan(app: FastAPI):
     # Startup code
     logger.info("Civil Status Service starting up...")
     # Start Kafka connections and retry worker
-    await outbox_processor.start()
-    await event_retry_worker.start()
+    #await outbox_processor.start()
+    #await event_retry_worker.start()
     await reconciliation_service.start()
     
     yield  # App runs here
@@ -58,9 +58,9 @@ async def lifespan(app: FastAPI):
     # Shutdown code
     logger.info("Civil Status Service shutting down...")
     await reconciliation_service.stop()
-    await outbox_processor.stop()
-    await event_retry_worker.stop()
-    kafka_producer_instance.close()
+    #await outbox_processor.stop()
+    #await event_retry_worker.stop()
+    #kafka_producer_instance.close()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -81,17 +81,6 @@ app.add_middleware(
 # Include router
 app.include_router(civil_status_router, prefix=settings.API_V1_STR, tags=["Civil Status"])
 
-# @app.on_event("startup")
-# async def startup_event():
-#     logger.info("Civil Status Service starting up...")
-#     # Có thể thêm kiểm tra kết nối DB, Kafka ở đây nếu cần
-#     # kafka_producer_instance # Khởi tạo producer khi startup (nếu chưa làm trong class)
-#     pass
-
-# @app.on_event("shutdown")
-# def shutdown_event():
-#     logger.info("Civil Status Service shutting down...")
-#     kafka_producer_instance.close() # Đóng kết nối Kafka producer
 
 @app.get("/")
 async def root():
@@ -122,22 +111,11 @@ async def health_check():
         health_data["components"]["database"] = {"status": "DOWN", "error": str(e)}
         health_data["status"] = "Degraded"
     
-    # Kiểm tra Kafka
-    if kafka_producer_instance.producer:
-        try:
-            # Sử dụng phương thức an toàn hơn để kiểm tra kết nối
-            connected = True  # Giả định kết nối nếu producer tồn tại
-            health_data["components"]["kafka"] = {
-                "status": "UP", 
-                "message": "Producer initialized"
-            }
-        except Exception as e:
-            logger.error(f"Error checking Kafka health: {e}", exc_info=True)
-            health_data["components"]["kafka"] = {"status": "DEGRADED", "error": str(e)}
-            health_data["status"] = "Degraded"
-    else:
-        health_data["components"]["kafka"] = {"status": "DOWN", "error": "Producer not initialized"}
-        health_data["status"] = "Degraded"
+    # Note: Kafka producer has been removed as events are now handled by Debezium
+    health_data["components"]["event_streaming"] = {
+        "status": "UP", 
+        "method": "Debezium CDC"
+    }
     
     # Kiểm tra BCA service (dependency)
     try:
@@ -156,6 +134,3 @@ async def health_check():
         health_data["status"] = "Degraded"
     
     return health_data
-# Thêm đoạn này để có thể chạy trực tiếp file main.py (cho development)
-# if __name__ == "__main__":
-#     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True) # Port 8001 ví dụ

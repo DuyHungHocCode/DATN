@@ -240,3 +240,44 @@ class CitizenRepository:
             self.db.rollback()
             logger.error(f"Database error when updating marriage status: {e}", exc_info=True)
             raise e
+        
+    def update_divorce_status(self, citizen_id: str, former_spouse_citizen_id: str, divorce_date: date, judgment_no: str) -> bool:
+        """Cập nhật trạng thái ly hôn của công dân."""
+        try:
+            logger.info(f"Updating divorce status for citizen {citizen_id} from marriage with {former_spouse_citizen_id}")
+            
+            query = text("""
+                EXEC [API_Internal].[UpdateCitizenDivorceStatus]
+                    @citizen_id = :citizen_id,
+                    @former_spouse_citizen_id = :former_spouse_citizen_id,
+                    @divorce_date = :divorce_date,
+                    @judgment_no = :judgment_no,
+                    @updated_by = 'KAFKA_CONSUMER'
+            """)
+            
+            result = self.db.execute(query, {
+                "citizen_id": citizen_id,
+                "former_spouse_citizen_id": former_spouse_citizen_id,
+                "divorce_date": divorce_date,
+                "judgment_no": judgment_no
+            })
+            
+            row = result.fetchone()
+            affected_rows = row[0] if row else 0 # Lấy giá trị trả về từ SP
+
+            if affected_rows > 0:
+                self.db.commit()
+                logger.info(f"Successfully updated divorce status for citizen {citizen_id}")
+                return True
+            else:
+                logger.warning(f"No rows updated for citizen {citizen_id}. Citizen may not exist or already divorced/not married to this spouse.")
+                self.db.rollback()
+                return False
+                
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Database error when updating divorce status: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Lỗi cơ sở dữ liệu khi cập nhật trạng thái ly hôn: {str(e)}"
+            )

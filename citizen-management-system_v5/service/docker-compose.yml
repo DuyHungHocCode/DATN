@@ -72,6 +72,8 @@ services:
       - sql_bca_data:/var/opt/mssql
     networks:
       - app_db_net
+    shm_size: '1g' # Tăng kích thước shared memory lên 1GB
+    mem_limit: '2g'
     healthcheck:
       # CÁCH 1: Sử dụng nc (netcat) để kiểm tra port
       test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
@@ -97,6 +99,8 @@ services:
     networks:
       - app_db_net
       - kafka_net
+    shm_size: '1g' # Tăng kích thước shared memory lên 1GB
+    mem_limit: '2g'
     healthcheck:
       # CÁCH 1: Sử dụng nc (netcat) để kiểm tra port
       test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
@@ -140,9 +144,7 @@ services:
       echo 'SQL Server DB_BTP is up, starting Kafka Connect...' &&
       /docker-entrypoint.sh start"
     restart: unless-stopped
-    # LƯU Ý QUAN TRỌNG:
-    # database.hostname trong JSON config cho Debezium sẽ là 'sqlserver_btp' (tên service)
-    # database.user và database.password sẽ là 'sa' và 'Duyhung123' (hoặc mật khẩu bạn đã đổi)
+   
 
 # Định nghĩa các named volumes để lưu trữ dữ liệu bền vững
 volumes:
