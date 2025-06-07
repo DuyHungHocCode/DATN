@@ -1160,3 +1160,355 @@ GO
 
 
 PRINT 'Stored procedure [API_Internal].[GetReferenceTableData] created successfully.';
+
+
+
+USE [DB_BCA];
+GO
+
+-- Kiểm tra và xóa procedure nếu đã tồn tại
+IF OBJECT_ID('[API_Internal].[RegisterPermanentResidence_OwnedProperty_DataOnly]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[RegisterPermanentResidence_OwnedProperty_DataOnly];
+GO
+
+PRINT N'Tạo Stored Procedure [API_Internal].[RegisterPermanentResidence_OwnedProperty_DataOnly] (Chi tiết hơn)...';
+GO
+
+CREATE PROCEDURE [API_Internal].[RegisterPermanentResidence_OwnedProperty_DataOnly]
+    -- Thông tin công dân và địa chỉ mới
+    @citizen_id VARCHAR(12),
+    @address_detail NVARCHAR(MAX),
+    @ward_id INT,
+    @district_id INT,
+    @province_id INT,
+    @postal_code VARCHAR(10) = NULL,
+    @latitude DECIMAL(9,6) = NULL,
+    @longitude DECIMAL(9,6) = NULL,
+
+    -- Thông tin quyền sở hữu
+    @ownership_certificate_id BIGINT,
+
+    -- Thông tin đăng ký cư trú
+    @registration_date DATE,
+    @issuing_authority_id INT, -- Cơ quan đăng ký (CA Quận/Phường)
+    @registration_number VARCHAR(50) = NULL, -- Số đăng ký thường trú (nếu có, có thể do hệ thống cấp)
+    @registration_reason NVARCHAR(MAX) = NULL,
+    @residence_expiry_date DATE = NULL, -- Ngày hết hạn cư trú (thường NULL cho thường trú)
+    @previous_address_id BIGINT = NULL, -- ID địa chỉ cũ (nếu có chuyển đi)
+    @residence_status_change_reason_id SMALLINT = NULL, -- ID lý do thay đổi trạng thái cư trú
+    @document_url VARCHAR(255) = NULL, -- URL tài liệu đính kèm
+    @rh_verification_status NVARCHAR(50) = N'Đã xác minh', -- Trạng thái xác minh của ResidenceHistory
+    @rh_verification_date DATE = NULL,
+    @rh_verified_by NVARCHAR(100) = NULL,
+    @registration_case_type NVARCHAR(50), -- Loại trường hợp đăng ký (ví dụ: 'OwnedProperty')
+    @supporting_document_info NVARCHAR(MAX) = NULL, -- Thông tin chi tiết tài liệu hỗ trợ
+
+    -- Ghi chú chung cho các bản ghi
+    @notes NVARCHAR(MAX) = NULL,
+    @updated_by VARCHAR(50) = 'SYSTEM',
+
+    -- Thông tin cho bảng CitizenStatus (nếu có thay đổi trạng thái kèm theo)
+    @cs_description NVARCHAR(MAX) = NULL,
+    @cs_cause NVARCHAR(200) = NULL,
+    @cs_location NVARCHAR(200) = NULL,
+    @cs_authority_id INT = NULL,
+    @cs_document_number VARCHAR(50) = NULL,
+    @cs_document_date DATE = NULL,
+    @cs_certificate_id VARCHAR(50) = NULL,
+    @cs_reported_by NVARCHAR(100) = NULL,
+    @cs_relationship NVARCHAR(50) = NULL,
+    @cs_verification_status NVARCHAR(50) = N'Đã xác minh',
+
+    -- Thêm các tham số cho CitizenAddress (ÁNH XẠ TỪ SCHEMA)
+    @ca_verification_status NVARCHAR(50) = N'Đã xác minh',
+    @ca_verification_date DATE = NULL,
+    @ca_verified_by NVARCHAR(100) = NULL,
+    @ca_notes NVARCHAR(MAX) = NULL,
+
+    -- Output parameter
+    @new_residence_history_id BIGINT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Định nghĩa các ID tham chiếu cứng (dựa trên sample_data và structure scripts)
+    DECLARE @residence_type_id_permanent_residence SMALLINT = 1; -- ID cho 'Thường trú'
+    DECLARE @res_reg_status_id_active SMALLINT = 1;             -- ID cho 'Đang hiệu lực'
+    DECLARE @citizen_status_id_alive SMALLINT = 1;              -- ID cho 'Còn sống'
+    DECLARE @address_type_id_permanent_residence SMALLINT = 1;  -- ID cho 'Nơi thường trú'
+    DECLARE @address_status_active BIT = 1;                     -- Trạng thái địa chỉ: Hoạt động
+
+    DECLARE @current_address_id BIGINT;
+    DECLARE @existing_address_id BIGINT;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- 1. Xử lý địa chỉ: Tìm kiếm địa chỉ hiện có hoặc tạo mới
+        SELECT @existing_address_id = address_id
+        FROM [BCA].[Address]
+        WHERE [address_detail] = @address_detail
+          AND [ward_id] = @ward_id
+          AND [district_id] = @district_id
+          AND [province_id] = @province_id;
+
+        IF @existing_address_id IS NOT NULL
+        BEGIN
+            SET @current_address_id = @existing_address_id;
+            UPDATE [BCA].[Address]
+            SET
+                [postal_code] = ISNULL(@postal_code, [postal_code]),
+                [latitude] = ISNULL(@latitude, [latitude]),
+                [longitude] = ISNULL(@longitude, [longitude]),
+                [updated_at] = SYSDATETIME(),
+                [updated_by] = @updated_by
+            WHERE [address_id] = @current_address_id;
+        END
+        ELSE
+        BEGIN
+            INSERT INTO [BCA].[Address] (
+                [address_detail], [ward_id], [district_id], [province_id],
+                [postal_code], [latitude], [longitude], [status], [notes],
+                [created_by], [updated_by]
+            )
+            VALUES (
+                @address_detail, @ward_id, @district_id, @province_id,
+                @postal_code, @latitude, @longitude, @address_status_active, @notes, -- Sử dụng @notes chung cho địa chỉ mới
+                @updated_by, @updated_by
+            );
+            SET @current_address_id = SCOPE_IDENTITY();
+        END
+
+        -- 2. Cập nhật bảng BCA.Citizen (primary_address_id)
+        UPDATE [BCA].[Citizen]
+        SET
+            [primary_address_id] = @current_address_id,
+            [updated_at] = SYSDATETIME(),
+            [updated_by] = @updated_by
+        WHERE [citizen_id] = @citizen_id;
+
+        -- 3. Thêm bản ghi vào BCA.ResidenceHistory
+        INSERT INTO [BCA].[ResidenceHistory] (
+            [citizen_id], [address_id], [residence_type_id], [registration_date], [expiry_date],
+            [registration_reason], [previous_address_id], [issuing_authority_id], [registration_number],
+            [ownership_certificate_id], [residence_status_change_reason_id], [document_url],
+            [verification_status], [verification_date], [verified_by], [res_reg_status_id],
+            [registration_case_type], [supporting_document_info], [notes],
+            [created_at], [updated_at], [created_by], [updated_by]
+        )
+        VALUES (
+            @citizen_id, @current_address_id, @residence_type_id_permanent_residence, @registration_date, @residence_expiry_date,
+            ISNULL(@registration_reason, N'Đăng ký thường trú theo quyền sở hữu chỗ ở'), @previous_address_id, @issuing_authority_id, @registration_number,
+            @ownership_certificate_id, @residence_status_change_reason_id, @document_url,
+            @rh_verification_status, ISNULL(@rh_verification_date, SYSDATETIME()), @rh_verified_by, @res_reg_status_id_active,
+            @registration_case_type, @supporting_document_info, @notes, -- Sử dụng @notes chung
+            SYSDATETIME(), SYSDATETIME(), @updated_by, @updated_by
+        );
+        SET @new_residence_history_id = SCOPE_IDENTITY();
+
+        -- 4. Cập nhật BCA.CitizenAddress
+        UPDATE [BCA].[CitizenAddress]
+        SET
+            [is_primary] = 0,
+            [is_permanent_residence] = 0,
+            [to_date] = @registration_date,
+            [status] = 0,
+            [notes] = ISNULL(RTRIM([notes]) + N' | ', N'') + N'Chấm dứt do đăng ký thường trú mới.',
+            [updated_at] = SYSDATETIME(),
+            [updated_by] = @updated_by
+        WHERE [citizen_id] = @citizen_id
+          AND ([is_primary] = 1 OR [is_permanent_residence] = 1)
+          AND [status] = 1;
+
+        INSERT INTO [BCA].[CitizenAddress] (
+            [citizen_id], [address_id], [address_type_id], [from_date], [to_date],
+            [is_primary], [is_permanent_residence], [status],
+            [registration_document_no], [registration_date], [issuing_authority_id],
+            [verification_status], [verification_date], [verified_by], [notes],
+            [related_residence_history_id],
+            [created_at], [updated_at], [created_by], [updated_by]
+        )
+        VALUES (
+            @citizen_id, @current_address_id, @address_type_id_permanent_residence, @registration_date, NULL,
+            1, 1, 1, -- Là địa chỉ chính, thường trú, đang hoạt động
+            @registration_number, @registration_date, @issuing_authority_id,
+            @ca_verification_status, ISNULL(@ca_verification_date, SYSDATETIME()), @ca_verified_by, @ca_notes, -- Sử dụng các tham số @ca_...
+            @new_residence_history_id,
+            SYSDATETIME(), SYSDATETIME(), @updated_by, @updated_by
+        );
+
+        -- 5. Cập nhật trạng thái công dân trong BCA.CitizenStatus
+        UPDATE [BCA].[CitizenStatus]
+        SET [is_current] = 0,
+            [updated_at] = SYSDATETIME(),
+            [updated_by] = @updated_by
+        WHERE [citizen_id] = @citizen_id
+          AND [is_current] = 1;
+
+        INSERT INTO [BCA].[CitizenStatus] (
+            [citizen_id], [citizen_status_id], [status_date], [description], [cause], [location],
+            [authority_id], [document_number], [document_date], [certificate_id],
+            [reported_by], [relationship], [verification_status], [is_current], [notes],
+            [created_at], [updated_at], [created_by], [updated_by]
+        )
+        VALUES (
+            @citizen_id, @citizen_status_id_alive, @registration_date,
+            ISNULL(@cs_description, N'Đăng ký thường trú mới tại ' + @address_detail), @cs_cause, @cs_location,
+            @cs_authority_id, @cs_document_number, @cs_document_date, @cs_certificate_id,
+            @cs_reported_by, @cs_relationship, @cs_verification_status, 1, @notes, -- Sử dụng @notes chung
+            SYSDATETIME(), SYSDATETIME(), @updated_by, @updated_by
+        );
+
+        COMMIT TRANSACTION;
+
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END;
+GO
+
+PRINT 'Stored Procedure [API_Internal].[RegisterPermanentResidence_OwnedProperty_DataOnly] đã được tạo/cập nhật thành công.';
+GO
+
+
+IF OBJECT_ID('[API_Internal].[MatchPropertyAndRegistrationAddress]', 'FN') IS NOT NULL
+    DROP FUNCTION [API_Internal].[MatchPropertyAndRegistrationAddress];
+GO
+
+PRINT N'Tạo Function [API_Internal].[MatchPropertyAndRegistrationAddress]...';
+GO
+
+CREATE FUNCTION [API_Internal].[MatchPropertyAndRegistrationAddress] (
+    @gcnqs_property_address_id BIGINT, -- address_id của tài sản trên GCNQS
+    @registration_address_detail NVARCHAR(MAX),
+    @registration_ward_id INT,
+    @registration_district_id INT,
+    @registration_province_id INT
+)
+RETURNS BIT
+AS
+BEGIN
+    DECLARE @registration_address_id BIGINT;
+    DECLARE @matchResult BIT;
+
+    -- Bước 1: Tìm address_id cho địa chỉ đang đăng ký
+    -- Cố gắng tìm một địa chỉ đã tồn tại khớp chính xác với thông tin đăng ký
+    SELECT TOP 1 @registration_address_id = address_id
+    FROM [BCA].[Address]
+    WHERE 
+        [address_detail] = @registration_address_detail
+        AND [ward_id] = @registration_ward_id
+        AND [district_id] = @registration_district_id
+        AND [province_id] = @registration_province_id
+    ORDER BY [address_id]; -- Lấy bản ghi cũ nhất nếu có nhiều bản ghi trùng (ít khả năng)
+
+    -- Bước 2: So sánh
+    -- Nếu không tìm thấy địa chỉ đăng ký trong bảng BCA.Address,
+    -- điều đó có nghĩa là địa chỉ này sẽ là một địa chỉ mới được tạo bởi SP chính.
+    -- Trong trường hợp này, nó không thể khớp với một @gcnqs_property_address_id đã có.
+    -- Chỉ coi là khớp nếu cả hai address_id đều trỏ đến cùng một bản ghi trong BCA.Address.
+    IF @registration_address_id IS NOT NULL AND @registration_address_id = @gcnqs_property_address_id
+        SET @matchResult = 1; -- Khớp
+    ELSE
+        SET @matchResult = 0; -- Không khớp
+
+    RETURN @matchResult;
+END;
+GO
+
+PRINT 'Function [API_Internal].[MatchPropertyAndRegistrationAddress] đã được tạo thành công.';
+GO
+
+-- Kiểm tra và xóa procedure nếu đã tồn tại
+IF OBJECT_ID('[API_Internal].[GetHouseholdDetails]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[GetHouseholdDetails];
+GO
+
+PRINT N'Tạo Stored Procedure [API_Internal].[GetHouseholdDetails]...';
+GO
+
+CREATE PROCEDURE [API_Internal].[GetHouseholdDetails]
+    @household_id BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Lấy thông tin chi tiết Hộ khẩu
+    SELECT
+        h.[household_id],
+        h.[household_book_no],
+        h.[head_of_household_id],
+        head_citizen.[full_name] AS head_of_household_full_name,
+        a.[address_detail],
+        w.[ward_name],
+        d.[district_name],
+        p.[province_name],
+        h.[registration_date],
+        auth.[authority_name] AS issuing_authority_name,
+        ht.[household_type_name_vi] AS household_type_name,
+        hs.[status_name_vi] AS household_status_name,
+        h.[ownership_certificate_id],
+        h.[rental_contract_id],
+        h.[notes],
+        h.[created_at],
+        h.[updated_at]
+    FROM
+        [BCA].[Household] h
+    INNER JOIN
+        [BCA].[Citizen] head_citizen ON h.head_of_household_id = head_citizen.citizen_id
+    INNER JOIN
+        [BCA].[Address] a ON h.address_id = a.address_id
+    INNER JOIN
+        [Reference].[Wards] w ON a.ward_id = w.ward_id
+    INNER JOIN
+        [Reference].[Districts] d ON a.district_id = d.district_id
+    INNER JOIN
+        [Reference].[Provinces] p ON a.province_id = p.province_id
+    LEFT JOIN
+        [Reference].[Authorities] auth ON h.issuing_authority_id = auth.authority_id
+    INNER JOIN
+        [Reference].[HouseholdTypes] ht ON h.household_type_id = ht.household_type_id
+    INNER JOIN
+        [Reference].[HouseholdStatuses] hs ON h.household_status_id = hs.household_status_id
+    WHERE
+        h.[household_id] = @household_id;
+
+    -- 2. Lấy danh sách thành viên trong hộ khẩu
+    SELECT
+        hm.[citizen_id],
+        member_citizen.[full_name],
+        rwh.[rel_name_vi] AS relationship_with_head,
+        hm.[join_date],
+        hms.[status_name_vi] AS member_status,
+        member_citizen.[date_of_birth],
+        g.[gender_name_vi] AS gender
+        -- Thêm các trường khác của thành viên nếu cần thiết
+    FROM
+        [BCA].[HouseholdMember] hm
+    INNER JOIN
+        [BCA].[Citizen] member_citizen ON hm.citizen_id = member_citizen.citizen_id
+    INNER JOIN
+        [Reference].[RelationshipWithHeadTypes] rwh ON hm.rel_with_head_id = rwh.rel_with_head_id
+    INNER JOIN
+        [Reference].[HouseholdMemberStatuses] hms ON hm.member_status_id = hms.member_status_id
+    LEFT JOIN
+        [Reference].[Genders] g ON member_citizen.gender_id = g.gender_id
+    WHERE
+        hm.[household_id] = @household_id
+    ORDER BY
+        hm.[order_in_household] ASC, hm.[join_date] ASC;
+
+END;
+GO
+
+PRINT 'Stored Procedure [API_Internal].[GetHouseholdDetails] đã được tạo thành công.';
+GO
+-- END OF MORE CODE

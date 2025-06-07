@@ -651,6 +651,7 @@ VALUES
     (3, 'PENDING', N'Đang xử lý', N'Quan hệ đang trong quá trình xử lý', 3),
     (4, 'DISPUTED', N'Đang tranh chấp', N'Quan hệ đang tranh chấp', 4),
     (5, 'TEMPORARY', N'Tạm thời', N'Quan hệ tạm thời', 5);
+    (6, 'PARTY_DECEASED', N'Bên liên quan đã mất', N'Quan hệ mà một bên đã qua đời', 6);
 GO
 
 --------------------------------------------------------------------------------
@@ -674,3 +675,73 @@ VALUES
 GO
 
 PRINT N'Hoàn thành thêm dữ liệu mẫu cho các bảng tham chiếu trong DB_Reference.';
+
+PRINT N'  Thêm dữ liệu mẫu cho Reference.TransactionTypes...';
+INSERT INTO [Reference].[TransactionTypes] ([transaction_type_id], [type_code], [type_name_vi], [description_vi], [display_order])
+VALUES
+    (1, 'MUA_BAN', N'Mua bán', N'Giao dịch mua bán tài sản', 1),
+    (2, 'THUA_KE', N'Thừa kế', N'Giao dịch thừa kế tài sản', 2),
+    (3, 'TANG_CHO', N'Tặng cho', N'Giao dịch tặng cho tài sản', 3),
+    (4, 'CHUYEN_NHUONG_KHAC', N'Chuyển nhượng khác', N'Các hình thức chuyển nhượng khác (không phải mua bán, thừa kế, tặng cho)', 4);
+GO
+
+
+PRINT N'  Thêm dữ liệu mẫu cho Reference.AccommodationFacilityTypes...';
+INSERT INTO [Reference].[AccommodationFacilityTypes] ([facility_type_id], [type_code], [type_name_vi], [description_vi], [display_order])
+VALUES
+    (1, 'CO_SO_TIN_NGUONG', N'Cơ sở tín ngưỡng', N'Chùa, đền, miếu, nhà thờ, thánh thất...', 1),
+    (2, 'CO_SO_TON_GIAO', N'Cơ sở tôn giáo', N'Tu viện, tịnh xá, trụ sở giáo hội...', 2),
+    (3, 'TRAI_GIAM', N'Trại giam', N'Cơ sở giam giữ phạm nhân', 3),
+    (4, 'DON_VI_QUAN_DOI', N'Đơn vị Quân đội', N'Doanh trại quân đội, đơn vị đóng quân', 4),
+    (5, 'CO_SO_TRO_GIUP_XH', N'Cơ sở trợ giúp xã hội', N'Trung tâm bảo trợ xã hội, mái ấm...', 5),
+    (6, 'NHA_O_CONG_VU', N'Nhà ở công vụ', N'Nhà ở do nhà nước cấp cho cán bộ công chức', 6),
+    (7, 'KY_TUC_XA', N'Ký túc xá', N'Ký túc xá học sinh, sinh viên', 7),
+    (8, 'BENH_VIEN', N'Bệnh viện', N'Cơ sở y tế, bệnh viện', 8);
+GO
+
+
+PRINT N'  Thêm dữ liệu mẫu cho Reference.VehicleTypes...';
+INSERT INTO [Reference].[VehicleTypes] ([vehicle_type_id], [type_code], [type_name_vi], [description_vi], [display_order])
+VALUES
+    (1, 'TAU_THUY', N'Tàu thủy', N'Tàu thuyền lớn hoạt động trên sông, biển', 1),
+    (2, 'THUYEN', N'Thuyền', N'Thuyền nhỏ, ghe', 2),
+    (3, 'O_TO_NHA_O', N'Ô tô nhà ở', N'Xe ô tô được thiết kế để ở (motorhome)', 3),
+    (4, 'PHUONG_TIEN_KHAC', N'Phương tiện khác', N'Các loại phương tiện khác dùng để ở', 4);
+GO
+
+
+PRINT N'  Thêm dữ liệu mẫu cho Reference.TemporaryAbsenceTypes...';
+INSERT INTO [Reference].[TemporaryAbsenceTypes] ([temp_abs_type_id], [type_code], [type_name_vi], [description_vi], [display_order])
+VALUES
+    (1, 'CONG_TAC', N'Công tác', N'Tạm vắng để công tác', 1),
+    (2, 'HOC_TAP', N'Học tập', N'Tạm vắng để học tập', 2),
+    (3, 'CHUA_BENH', N'Chữa bệnh', N'Tạm vắng để chữa bệnh', 3),
+    (4, 'CHAP_HANH_AN', N'Chấp hành án', N'Tạm vắng để chấp hành án phạt tù', 4),
+    (5, 'THAM_THAN', N'Thăm thân', N'Tạm vắng để thăm người thân', 5),
+    (6, 'DU_LICH', N'Du lịch', N'Tạm vắng để du lịch', 6),
+    (7, 'LY_DO_KHAC', N'Lý do khác', N'Các lý do tạm vắng khác', 7);
+GO
+
+PRINT N'  Thêm dữ liệu mẫu cho Reference.ResidenceStatusChangeReasons...';
+INSERT INTO [Reference].[ResidenceStatusChangeReasons] ([reason_id], [reason_code], [reason_name_vi], [description_vi], [display_order])
+VALUES
+    (1, 'KHAISINH', N'Khai sinh', N'Đăng ký thường trú do khai sinh', 1),
+    (2, 'KHAITU', N'Khai tử', N'Chấm dứt thường trú do khai tử', 2),
+    (3, 'KETHON', N'Kết hôn', N'Thay đổi thường trú do kết hôn', 3),
+    (4, 'LYHON', N'Ly hôn', N'Thay đổi thường trú do ly hôn', 4),
+    (5, 'NHAN_NUOI', N'Nhận nuôi', N'Đăng ký thường trú do nhận con nuôi', 5),
+    (6, 'CHUYEN_DEN', N'Chuyển đến', N'Đăng ký thường trú do chuyển đến', 6),
+    (7, 'CHUYEN_DI', N'Chuyển đi', N'Chấm dứt thường trú do chuyển đi nơi khác', 7),
+    (8, 'TACH_HO', N'Tách hộ', N'Đăng ký thường trú do tách hộ', 8),
+    (9, 'NHAP_HO', N'Nhập hộ', N'Đăng ký thường trú do nhập hộ', 9),
+    (10, 'HOI_HUONG', N'Hồi hương', N'Đăng ký thường trú do hồi hương', 10),
+    (11, 'DINH_CU_NN', N'Định cư nước ngoài', N'Chấm dứt thường trú do định cư nước ngoài', 11);
+GO
+
+PRINT N'  Thêm dữ liệu mẫu cho Reference.ContractTypes...';
+INSERT INTO [Reference].[ContractTypes] ([contract_type_id], [type_code], [type_name_vi], [description_vi], [display_order])
+VALUES
+    (1, 'HD_THUE_NHA', N'Hợp đồng thuê nhà', N'Hợp đồng cho thuê nhà ở', 1),
+    (2, 'HD_MUON_NHA', N'Hợp đồng mượn nhà', N'Hợp đồng cho mượn nhà ở', 2),
+    (3, 'VB_O_NHO', N'Văn bản cho ở nhờ', N'Văn bản đồng ý cho ở nhờ chỗ ở hợp pháp', 3);
+GO

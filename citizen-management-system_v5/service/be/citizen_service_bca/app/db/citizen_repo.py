@@ -4,6 +4,7 @@ from typing import Optional, List, Dict, Any
 from datetime import date
 from fastapi import HTTPException, status
 import logging
+from app.schemas.household import HouseholdDetailResponse, HouseholdMemberDetailResponse # Thêm import này
 # Configure logger
 logger = logging.getLogger(__name__)
 
@@ -281,3 +282,180 @@ class CitizenRepository:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Lỗi cơ sở dữ liệu khi cập nhật trạng thái ly hôn: {str(e)}"
             )
+        
+    def register_permanent_residence_owned_property(self, data: Dict[str, Any]) -> int:
+        """
+        Ghi dữ liệu đăng ký thường trú cho trường hợp công dân sở hữu chỗ ở hợp pháp.
+        Gọi stored procedure API_Internal.RegisterPermanentResidence_OwnedProperty_DataOnly.
+        """
+        try:
+            logger.info(f"Calling stored procedure RegisterPermanentResidence_OwnedProperty_DataOnly for citizen {data['citizen_id']}")
+            
+            # Chuẩn bị các tham số cho stored procedure
+            params = data.copy()
+            params['new_residence_history_id'] = None # Tham số output
+            
+            sql = text("""
+                DECLARE @output_id BIGINT;
+                EXEC [API_Internal].[RegisterPermanentResidence_OwnedProperty_DataOnly]
+                    @citizen_id = :citizen_id,
+                    @address_detail = :address_detail,
+                    @ward_id = :ward_id,
+                    @district_id = :district_id,
+                    @province_id = :province_id,
+                    @postal_code = :postal_code,
+                    @latitude = :latitude,
+                    @longitude = :longitude,
+                    @ownership_certificate_id = :ownership_certificate_id,
+                    @registration_date = :registration_date,
+                    @issuing_authority_id = :issuing_authority_id,
+                    @registration_number = :registration_number,
+                    @registration_reason = :registration_reason,
+                    @residence_expiry_date = :residence_expiry_date,
+                    @previous_address_id = :previous_address_id,
+                    @residence_status_change_reason_id = :residence_status_change_reason_id,
+                    @document_url = :document_url,
+                    @rh_verification_status = :rh_verification_status,
+                    @rh_verification_date = :rh_verification_date,
+                    @rh_verified_by = :rh_verified_by,
+                    @registration_case_type = :registration_case_type,
+                    @supporting_document_info = :supporting_document_info,
+                    @notes = :notes,
+                    @updated_by = :updated_by,
+                    @cs_description = :cs_description,
+                    @cs_cause = :cs_cause,
+                    @cs_location = :cs_location,
+                    @cs_authority_id = :cs_authority_id,
+                    @cs_document_number = :cs_document_number,
+                    @cs_document_date = :cs_document_date,
+                    @cs_certificate_id = :cs_certificate_id,
+                    @cs_reported_by = :cs_reported_by,
+                    @cs_relationship = :cs_relationship,
+                    @cs_verification_status = :cs_verification_status,
+                    @ca_verification_status = :ca_verification_status,
+                    @ca_verification_date = :ca_verification_date,
+                    @ca_verified_by = :ca_verified_by,
+                    @ca_notes = :ca_notes,
+                    @new_residence_history_id = @output_id OUTPUT;
+                SELECT @output_id AS new_id;
+            """)
+            
+            result = self.db.execute(sql, params)
+            new_id_row = result.fetchone()
+
+            if new_id_row and new_id_row.new_id:
+                self.db.commit()
+                logger.info(f"Successfully registered permanent residence for citizen {data['citizen_id']} with new history ID: {new_id_row.new_id}")
+                return new_id_row.new_id
+            else:
+                self.db.rollback()
+                logger.error("Stored procedure RegisterPermanentResidence_OwnedProperty_DataOnly did not return a new ID.")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Không thể tạo bản ghi đăng ký thường trú trong cơ sở dữ liệu."
+                )
+                
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Database error calling RegisterPermanentResidence_OwnedProperty_DataOnly: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Lỗi cơ sở dữ liệu khi đăng ký thường trú: {str(e)}"
+            )
+
+    def check_address_match(
+        self,
+        gcnqs_property_address_id: int,
+        registration_address_detail: str,
+        registration_ward_id: int,
+        registration_district_id: int,
+        registration_province_id: int
+    ) -> bool:
+        """
+        Kiểm tra xem địa chỉ tài sản trên GCNQS có khớp với địa chỉ đăng ký thường trú không.
+        Gọi SQL Function API_Internal.MatchPropertyAndRegistrationAddress.
+        """
+        try:
+            query = text("""
+                SELECT [API_Internal].[MatchPropertyAndRegistrationAddress] (
+                    :gcnqs_property_address_id,
+                    :reg_address_detail,
+                    :reg_ward_id,
+                    :reg_district_id,
+                    :reg_province_id
+                ) AS IsMatch;
+            """)
+            result = self.db.execute(query, {
+                "gcnqs_property_address_id": gcnqs_property_address_id,
+                "reg_address_detail": registration_address_detail,
+                "reg_ward_id": registration_ward_id,
+                "reg_district_id": registration_district_id,
+                "reg_province_id": registration_province_id
+            }).scalar_one_or_none() # scalar_one_or_none() sẽ trả về giá trị đơn hoặc None
+
+            if result is None:
+                logger.error("SQL Function MatchPropertyAndRegistrationAddress không trả về giá trị.")
+                return False # Hoặc ném lỗi tùy theo logic mong muốn
+            return bool(result)
+
+        except Exception as e:
+            logger.error(f"Lỗi cơ sở dữ liệu khi kiểm tra khớp địa chỉ: {e}", exc_info=True)
+            # Ném lại lỗi để tầng service có thể xử lý hoặc rollback transaction
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Lỗi cơ sở dữ liệu khi kiểm tra khớp địa chỉ: {str(e)}"
+            )
+        
+    def get_household_details_by_id(self, household_id: int) -> Optional[HouseholdDetailResponse]:
+        """
+        Lấy thông tin chi tiết của một hộ khẩu bao gồm các thành viên,
+        sử dụng Stored Procedure API_Internal.GetHouseholdDetails.
+        """
+        try:
+            # SQL Alchemy không hỗ trợ trực tiếp lấy nhiều result set từ một SP một cách dễ dàng
+            # như các thư viện DB-API thuần túy.
+            # Chúng ta sẽ sử dụng connection thuần để thực thi SP và xử lý result sets.
+            
+            conn = self.db.connection() # Lấy underlying DBAPI connection
+            cursor = conn.connection.cursor() # Lấy cursor từ DBAPI connection
+            
+            sql_query = "EXEC [API_Internal].[GetHouseholdDetails] @household_id = ?"
+            cursor.execute(sql_query, household_id)
+
+            # Xử lý result set đầu tiên: Thông tin hộ khẩu
+            household_data_row = cursor.fetchone()
+            if not household_data_row:
+                return None
+
+            # Lấy tên cột từ cursor.description cho result set đầu tiên
+            household_columns = [column[0] for column in cursor.description]
+            household_info_dict = dict(zip(household_columns, household_data_row))
+
+            # Chuyển sang result set tiếp theo: Danh sách thành viên
+            if not cursor.nextset():
+                # Nếu không có result set thứ hai, có thể hộ khẩu không có thành viên (ít khả năng)
+                # hoặc SP không trả về đúng cách.
+                logger.warning(f"Stored procedure GetHouseholdDetails không trả về result set thứ hai cho household_id: {household_id}")
+                household_info_dict["members"] = []
+            else:
+                members_data_rows = cursor.fetchall()
+                member_list = []
+                if members_data_rows:
+                    # Lấy tên cột cho result set thành viên
+                    member_columns = [column[0] for column in cursor.description]
+                    for row in members_data_rows:
+                        member_info_dict = dict(zip(member_columns, row))
+                        member_list.append(HouseholdMemberDetailResponse(**member_info_dict))
+                household_info_dict["members"] = member_list
+            
+            cursor.close()
+            conn.close() # Nhớ đóng connection
+
+            return HouseholdDetailResponse(**household_info_dict)
+
+        except Exception as e:
+            logger.error(f"Lỗi cơ sở dữ liệu khi lấy chi tiết hộ khẩu ID {household_id}: {e}", exc_info=True)
+            # Không ném HTTPException ở đây để service layer có thể xử lý hoặc ghi log thêm nếu cần
+            # Hoặc có thể ném nếu đây là lỗi nghiêm trọng
+            # raise HTTPException(status_code=500, detail=f"Lỗi DB: {str(e)}")
+            return None

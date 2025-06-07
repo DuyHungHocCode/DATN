@@ -1,31 +1,29 @@
-# Use debezium/connect as base image
+# Use the official Debezium Connect image as the base
 FROM debezium/connect:2.5
 
-# Install dependencies for sqlcmd
+# Switch to the root user to install necessary packages
 USER root
 
-RUN microdnf update -y && \
-    microdnf install -y curl gnupg2 && \
-    # Add Microsoft GPG key
-    curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/pki/rpm-gpg/microsoft.gpg && \
-    # Add Microsoft SQL Server repository
-    curl https://packages.microsoft.com/config/rhel/8/prod.repo > /etc/yum.repos.d/mssql-release.repo && \
+# Install jq, sqlcmd, and other dependencies in a single RUN command to optimize layers
+RUN \
+    # Update package lists
     microdnf update -y && \
-    # Install mssql-tools18 and unixODBC-devel
+    # Install jq (for potential advanced scripting) and curl/gnupg2 (for adding repositories)
+    microdnf install -y jq curl gnupg2 && \
+    # Import the Microsoft GPG key
+    curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/pki/rpm-gpg/microsoft.gpg && \
+    # Add the Microsoft SQL Server repository for RHEL 8
+    curl https://packages.microsoft.com/config/rhel/8/prod.repo > /etc/yum.repos.d/mssql-release.repo && \
+    # Update package lists again after adding the new repo
+    microdnf update -y && \
+    # Install mssql-tools and the unixODBC developer package, accepting the EULA
     ACCEPT_EULA=Y microdnf install -y mssql-tools18 unixODBC-devel && \
-    # Find and create symlink for sqlcmd
-    SQLCMD_PATH=$(find /opt -name "sqlcmd" 2>/dev/null | head -1) && \
-    if [ -n "$SQLCMD_PATH" ]; then \
-        ln -sf "$SQLCMD_PATH" /usr/local/bin/sqlcmd && \
-        echo "sqlcmd linked from $SQLCMD_PATH"; \
-    else \
-        echo "sqlcmd not found after installation"; \
-    fi && \
-    # Add path to PATH
-    echo 'export PATH="$PATH:/opt/mssql-tools18/bin:/opt/mssql-tools/bin"' >> /etc/bashrc && \
-    # Clean up cache
+    # Add the mssql-tools directory to the system's PATH for all users.
+    # This ensures that 'sqlcmd' is available in the shell.
+    echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> /etc/profile.d/mssql.sh && \
+    # Clean up the package manager cache to reduce final image size
     microdnf clean all && \
     rm -rf /var/cache/yum/* /var/cache/dnf/* /tmp/*
 
-# Use kafka user (UID 1001) instead of debezium
+# Switch back to the default kafka user to follow security best practices
 USER kafka

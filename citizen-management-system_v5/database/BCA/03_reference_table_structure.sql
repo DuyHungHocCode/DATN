@@ -632,8 +632,14 @@ VALUES
     (4, 'GIAYTOKHAC', N'Giấy tờ khác', N'Giấy tờ tùy thân khác có giá trị', 4),
     (5, 'VISA', N'Thị thực', N'Thị thực nhập cảnh', 5),
     (6, 'GIAYDITACH', N'Giấy phép đi lại biên giới', N'Giấy phép đi lại biên giới cho cư dân biên giới', 6),
-    (7, 'XUATNHAPCANH', N'Giấy tờ xuất nhập cảnh', N'Các loại giấy tờ xuất nhập cảnh khác', 7);
+    (7, 'XUATNHAPCANH', N'Giấy tờ xuất nhập cảnh', N'Các loại giấy tờ xuất nhập cảnh khác', 7),
+    (8, 'GCN_QSDĐ', N'Giấy chứng nhận Quyền sử dụng đất', N'Giấy chứng nhận quyền sử dụng đất', 8),
+    (9, 'GCN_SHNĐ', N'Giấy chứng nhận Quyền sở hữu nhà ở', N'Giấy chứng nhận quyền sở hữu nhà ở', 9),
+    (10, 'GCN_QSDĐ_SHNĐ', N'GCN QSDĐ, QSHNƠ và TSTGLVĐ', N'Giấy chứng nhận quyền sử dụng đất, quyền sở hữu nhà ở và tài sản khác gắn liền với đất (Sổ hồng)', 10),
+    (11, 'HD_MUABAN_BĐS', N'Hợp đồng mua bán bất động sản', N'Hợp đồng chuyển nhượng quyền sử dụng đất/sở hữu nhà', 11),
+    (12, 'QD_THUAKE', N'Quyết định/Văn bản thừa kế', N'Quyết định/văn bản xác nhận quyền thừa kế', 12);
 GO
+
 
 -- Dữ liệu mẫu cho ExecutionStatuses
 PRINT N'  Thêm dữ liệu mẫu cho Reference.ExecutionStatuses...';
@@ -648,4 +654,97 @@ VALUES
     (7, 'TRON_HANH', N'Bỏ trốn', N'Bỏ trốn khỏi nơi chấp hành án', 7),
     (8, 'DUOC_DAOTAO', N'Giáo dục cải tạo', N'Đang được giáo dục cải tạo', 8),
     (9, 'HOANTHI_HANH', N'Tạm hoãn thi hành án', N'Được tạm hoãn chấp hành án', 9);
+GO
+
+
+-- Mô tả: Danh mục các loại giao dịch liên quan đến quyền sở hữu tài sản
+IF OBJECT_ID('Reference.TransactionTypes', 'U') IS NOT NULL DROP TABLE [Reference].[TransactionTypes];
+GO
+CREATE TABLE [Reference].[TransactionTypes] (
+    [transaction_type_id] SMALLINT PRIMARY KEY,
+    [type_code] VARCHAR(50) UNIQUE,
+    [type_name_vi] NVARCHAR(100) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+
+-- Reference.AccommodationFacilityTypes (Loại cơ sở lưu trú đặc biệt)
+IF OBJECT_ID('Reference.AccommodationFacilityTypes', 'U') IS NOT NULL DROP TABLE [Reference].[AccommodationFacilityTypes];
+GO
+CREATE TABLE [Reference].[AccommodationFacilityTypes] (
+    [facility_type_id] SMALLINT PRIMARY KEY,
+    [type_code] VARCHAR(50) UNIQUE,
+    [type_name_vi] NVARCHAR(100) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+
+-- Reference.VehicleTypes (Loại phương tiện)
+IF OBJECT_ID('Reference.VehicleTypes', 'U') IS NOT NULL DROP TABLE [Reference].[VehicleTypes];
+GO
+CREATE TABLE [Reference].[VehicleTypes] (
+    [vehicle_type_id] SMALLINT PRIMARY KEY,
+    [type_code] VARCHAR(50) UNIQUE,
+    [type_name_vi] NVARCHAR(100) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+-- Reference.TemporaryAbsenceTypes (Loại tạm vắng)
+IF OBJECT_ID('Reference.TemporaryAbsenceTypes', 'U') IS NOT NULL DROP TABLE [Reference].[TemporaryAbsenceTypes];
+GO
+CREATE TABLE [Reference].[TemporaryAbsenceTypes] (
+    [temp_abs_type_id] SMALLINT PRIMARY KEY,
+    [type_code] VARCHAR(50) UNIQUE,
+    [type_name_vi] NVARCHAR(100) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+-- Reference.ResidenceStatusChangeReasons (Lý do thay đổi trạng thái cư trú)
+IF OBJECT_ID('Reference.ResidenceStatusChangeReasons', 'U') IS NOT NULL DROP TABLE [Reference].[ResidenceStatusChangeReasons];
+GO
+CREATE TABLE [Reference].[ResidenceStatusChangeReasons] (
+    [reason_id] SMALLINT PRIMARY KEY,
+    [reason_code] VARCHAR(50) UNIQUE,
+    [reason_name_vi] NVARCHAR(100) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
+GO
+
+-- Reference.ContractTypes (Loại hợp đồng thuê/mượn/ở nhờ)
+IF OBJECT_ID('Reference.ContractTypes', 'U') IS NOT NULL DROP TABLE [Reference].[ContractTypes];
+GO
+CREATE TABLE [Reference].[ContractTypes] (
+    [contract_type_id] SMALLINT PRIMARY KEY,
+    [type_code] VARCHAR(50) UNIQUE,
+    [type_name_vi] NVARCHAR(100) NOT NULL,
+    [description_vi] NVARCHAR(255) NULL,
+    [display_order] SMALLINT DEFAULT 0,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT GETDATE(),
+    [updated_at] DATETIME2(7) DEFAULT GETDATE()
+);
 GO

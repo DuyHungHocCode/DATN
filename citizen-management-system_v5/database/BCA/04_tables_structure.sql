@@ -33,7 +33,7 @@ CREATE TABLE [BCA].[Citizen] (
     [native_ward_id] INT NULL, -- FK to Reference.Wards
     [native_district_id] INT NULL, -- FK to Reference.Districts
     [native_province_id] INT NULL, -- FK to Reference.Provinces
-    [primary_address_id] BIGINT NULL, -- FK to BCA.Address (thay thế current_address*)
+    [primary_address_id] BIGINT NULL, -- FK to BCA.CitizenAddress
     [nationality_id] SMALLINT NOT NULL DEFAULT 1, -- FK to Reference.Nationalities
     [ethnicity_id] SMALLINT NULL, -- FK to Reference.Ethnicities
     [religion_id] SMALLINT NULL, -- FK to Reference.Religions
@@ -54,6 +54,9 @@ CREATE TABLE [BCA].[Citizen] (
     [tax_code] VARCHAR(13) NULL,
     [social_insurance_no] VARCHAR(13) NULL,
     [health_insurance_no] VARCHAR(15) NULL,
+    [citizenship_acquisition_date] DATE NULL,
+    [citizenship_document_no] VARCHAR(50) NULL,
+    [citizenship_document_type_id] SMALLINT NULL, --FK to Reference.DocumentTypes
     [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
     [updated_at] DATETIME2(7) DEFAULT SYSDATETIME(),
     [created_by] VARCHAR(50) NULL,
@@ -143,14 +146,22 @@ CREATE TABLE [BCA].[ResidenceHistory] (
     [registration_number] VARCHAR(50) NULL,
     [host_name] NVARCHAR(100) NULL,
     [host_citizen_id] VARCHAR(12) NULL,
+    [ownership_certificate_id] BIGINT NULL, -- FK to TNMT.OwnershipCertificate
     [host_relationship] NVARCHAR(50) NULL,
+    [rental_contract_id] BIGINT NULL, -- FK to TNMT.RentalContract (sẽ được định nghĩa sau)
+    [accommodation_facility_id] BIGINT NULL, -- FK to BCA.AccommodationFacility
+    [is_head_of_household] BIT DEFAULT 0,
+    [family_relationship_id] BIGINT NULL, -- FK to BTP.FamilyRelationship (Logical FK)
+    [residence_status_change_reason_id] SMALLINT NULL, -- FK to Reference.ResidenceStatusChangeReasons
     [document_url] VARCHAR(255) NULL,
     [extension_count] SMALLINT DEFAULT 0,
     [last_extension_date] DATE NULL,
     [verification_status] NVARCHAR(50) DEFAULT N'Đã xác minh',
     [verification_date] DATE NULL,
     [verified_by] NVARCHAR(100) NULL,
-    [res_reg_status_id] SMALLINT NOT NULL, -- FK to Reference.ResidenceRegistrationStatuses
+    [res_reg_status_id] SMALLINT NOT NULL, 
+    [registration_case_type] NVARCHAR(50) NULL,
+    [supporting_document_info] NVARCHAR(MAX) NULL,-- FK to Reference.ResidenceRegistrationStatuses
     [notes] NVARCHAR(MAX) NULL,
     [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
     [updated_at] DATETIME2(7) DEFAULT SYSDATETIME(),
@@ -190,6 +201,7 @@ CREATE TABLE [BCA].[TemporaryAbsence] (
     [verification_date] DATE NULL,
     [verified_by] NVARCHAR(100) NULL,
     [temp_abs_status_id] SMALLINT NOT NULL, -- FK to Reference.TemporaryAbsenceStatuses
+    [temporary_absence_type_id] SMALLINT NULL, -- FK to Reference.TemporaryAbsenceTypes
     [notes] NVARCHAR(MAX) NULL,
     [sensitivity_level_id] SMALLINT NOT NULL, -- FK to Reference.DataSensitivityLevels
     [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
@@ -329,6 +341,9 @@ CREATE TABLE [BCA].[CitizenAddress] (
     [verification_date] DATE NULL,
     [verified_by] NVARCHAR(100) NULL,
     [notes] NVARCHAR(MAX) NULL,
+    [is_permanent_residence] BIT DEFAULT 0,
+    [is_temporary_residence] BIT DEFAULT 0,
+    [related_residence_history_id] BIGINT NULL, -- FK to BCA.ResidenceHistory
     [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
     [updated_at] DATETIME2(7) DEFAULT SYSDATETIME(),
     [created_by] VARCHAR(50) NULL,
@@ -351,6 +366,8 @@ CREATE TABLE [BCA].[Household] (
     [area_code] VARCHAR(20) NULL,
     [household_type_id] SMALLINT NOT NULL, -- FK to Reference.HouseholdTypes
     [household_status_id] SMALLINT NOT NULL, -- FK to Reference.HouseholdStatuses
+    [ownership_certificate_id] BIGINT NULL, -- Logical  FK to TNMT.OwnershipCertificate
+    [rental_contract_id] BIGINT NULL, -- Logical FK to TNMT.RentalContract 
     [notes] NVARCHAR(MAX) NULL,
     [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
     [updated_at] DATETIME2(7) DEFAULT SYSDATETIME()
@@ -397,4 +414,75 @@ CREATE TABLE [Audit].[AuditLog] (
     [query_text] NVARCHAR(MAX) NULL
 );
 PRINT N'  Table [Audit].[AuditLog] created.';
+GO
+
+-- Table: BCA.AccommodationFacility (Cơ sở lưu trú đặc biệt)
+IF OBJECT_ID('BCA.AccommodationFacility', 'U') IS NOT NULL DROP TABLE [BCA].[AccommodationFacility];
+GO
+PRINT N'  Creating table [BCA].[AccommodationFacility]...';
+CREATE TABLE [BCA].[AccommodationFacility] (
+    [facility_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [facility_code] VARCHAR(50) UNIQUE NOT NULL,
+    [facility_name] NVARCHAR(255) NOT NULL,
+    [facility_type_id] SMALLINT NOT NULL, -- FK to Reference.AccommodationFacilityTypes
+    [address_id] BIGINT NOT NULL, -- FK to BCA.Address
+    [managing_authority_id] INT NULL, -- FK to Reference.Authorities (Đơn vị quản lý cơ sở)
+    [contact_person] NVARCHAR(100) NULL,
+    [phone_number] VARCHAR(50) NULL,
+    [capacity] INT NULL,
+    [notes] NVARCHAR(MAX) NULL,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [created_by] VARCHAR(50) NULL,
+    [updated_by] VARCHAR(50) NULL
+);
+PRINT N'  Table [BCA].[AccommodationFacility] created.';
+GO
+
+-- Table: BCA.MobileResidence (Nơi cư trú trên phương tiện di động)
+IF OBJECT_ID('BCA.MobileResidence', 'U') IS NOT NULL DROP TABLE [BCA].[MobileResidence];
+GO
+PRINT N'  Creating table [BCA].[MobileResidence]...';
+CREATE TABLE [BCA].[MobileResidence] (
+    [mobile_residence_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [vehicle_registration_number] VARCHAR(50) NOT NULL UNIQUE,
+    [vehicle_type_id] SMALLINT NOT NULL, -- FK to Reference.VehicleTypes
+    [owner_citizen_id] VARCHAR(12) NOT NULL, -- FK to BCA.Citizen
+    [fixed_mooring_address_id] BIGINT NULL, -- FK to BCA.Address (Địa điểm đậu đỗ thường xuyên)
+    [certificate_of_safety_no] VARCHAR(50) NULL, -- Giấy chứng nhận an toàn kỹ thuật
+    [purpose_of_use] NVARCHAR(255) NULL, -- Mục đích sử dụng (để ở, kinh doanh...)
+    [issuing_authority_id] INT NULL, -- Cơ quan cấp giấy tờ phương tiện
+    [notes] NVARCHAR(MAX) NULL,
+    [is_active] BIT DEFAULT 1,
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [updated_at] DATETIME2(7) DEFAULT SYSDATETIME(),
+    [created_by] VARCHAR(50) NULL,
+    [updated_by] VARCHAR(50) NULL
+);
+PRINT N'  Table [BCA].[MobileResidence] created.';
+GO
+
+IF OBJECT_ID('BCA.EventOutbox', 'U') IS NOT NULL
+BEGIN
+    PRINT N'  Table [BCA].[EventOutbox] already exists. Dropping it...';
+    DROP TABLE [BCA].[EventOutbox];
+    PRINT N'  Table [BCA].[EventOutbox] dropped.';
+END
+GO
+
+CREATE TABLE [BCA].[EventOutbox] (
+    [outbox_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [aggregate_type] VARCHAR(50) NOT NULL, -- Loại đối tượng gốc (e.g., 'Citizen', 'Household')
+    [aggregate_id] VARCHAR(50) NOT NULL,   -- ID của đối tượng gốc (e.g., citizen_id)
+    [event_type] VARCHAR(100) NOT NULL,    -- Loại sự kiện (e.g., 'CitizenCreated', 'HouseholdMemberAdded')
+    [payload] NVARCHAR(MAX) NOT NULL,      -- Nội dung sự kiện (thường là JSON)
+    [created_at] DATETIME2(7) DEFAULT SYSDATETIME(), --
+    [processed] BIT DEFAULT 0,             -- Đã được xử lý bởi consumer hay chưa
+    [processed_at] DATETIME2(7) NULL, --
+    [retry_count] INT DEFAULT 0, --
+    [error_message] NVARCHAR(MAX) NULL, --
+    [next_retry_at] DATETIME2(7) NULL --
+);
+PRINT N'  Table [BCA].[EventOutbox] created.';
 GO

@@ -1,9 +1,0 @@
-==================================================
- Bắt đầu Script: Mon Apr 21 06:15:56 PM +07 2025
-==================================================
-psql: error: connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused
-	Is the server running on that host and accepting TCP/IP connections?
-[FAILED] (BCA) /home/duyhung/Desktop/DATN/citizen-management-system_v4/database/01_common/01_extensions.sql (Exit status: 2)
-==================================================
- Script thất bại: Mon Apr 21 06:15:56 PM +07 2025
-==================================================

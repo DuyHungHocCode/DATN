@@ -1,13 +1,13 @@
-version: '3.8' # Phiên bản Docker Compose
+version: '3.8'
 
 networks:
-  kafka_net: # Network riêng cho Kafka, Zookeeper, Kafka Connect
+  kafka_net:
     driver: bridge
-  app_db_net: # Network riêng cho các service ứng dụng và DB
+  app_db_net:
     driver: bridge
 
 services:
-  # 1. Zookeeper (Giữ nguyên)
+  # 1. Zookeeper (Không thay đổi)
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
     container_name: zookeeper
@@ -19,7 +19,7 @@ services:
     ports:
       - "2181:2181"
 
-  # 2. Kafka Broker (Giữ nguyên)
+  # 2. Kafka Broker (Không thay đổi)
   kafka:
     image: confluentinc/cp-kafka:7.3.2
     container_name: kafka
@@ -28,7 +28,7 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "29092:29092" # Cổng cho kết nối từ bên ngoài (máy host)
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
@@ -41,7 +41,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
 
-  # 3. Kafka UI (Giữ nguyên)
+  # 3. Kafka UI (Không thay đổi)
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -57,13 +57,13 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
 
-  # 4. Service cho DB_BCA (Bộ Công an) - Tên mới: sqlserver_bca
+  # 4. Service cho DB_BCA (Bộ Công an) - (Không thay đổi)
   sqlserver_bca:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: sqlserver_bca_container
     environment:
       ACCEPT_EULA: 'Y'
-      SA_PASSWORD: 'StrongPassword123!' # Mật khẩu mạnh hơn
+      SA_PASSWORD: 'StrongPassword123!'
       MSSQL_PID: 'Developer'
       MSSQL_AGENT_ENABLED: "True"
     ports:
@@ -72,24 +72,22 @@ services:
       - sql_bca_data:/var/opt/mssql
     networks:
       - app_db_net
-    shm_size: '1g' # Tăng kích thước shared memory lên 1GB
-    mem_limit: '2g'
+      - kafka_net
     healthcheck:
-      # CÁCH 1: Sử dụng nc (netcat) để kiểm tra port
       test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s # Chờ 60s trước khi bắt đầu healthcheck
+      start_period: 60s
     restart: unless-stopped
 
-  # 5. Service cho DB_BTP (Bộ Tư pháp) - Tên mới: sqlserver_btp
+  # 5. Service cho DB_BTP (Bộ Tư pháp) - (Không thay đổi)
   sqlserver_btp:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: sqlserver_btp_container
     environment:
       ACCEPT_EULA: 'Y'
-      SA_PASSWORD: 'StrongPassword123!' # Mật khẩu mạnh hơn
+      SA_PASSWORD: 'StrongPassword123!'
       MSSQL_PID: 'Developer'
       MSSQL_AGENT_ENABLED: "True"
     ports:
@@ -99,20 +97,15 @@ services:
     networks:
       - app_db_net
       - kafka_net
-    shm_size: '1g' # Tăng kích thước shared memory lên 1GB
-    mem_limit: '2g'
     healthcheck:
-      # CÁCH 1: Sử dụng nc (netcat) để kiểm tra port
       test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s # Chờ 60s trước khi bắt đầu healthcheck
+      start_period: 60s
     restart: unless-stopped
 
-  
-
-  # 7. Kafka Connect (chứa Debezium)
+  # 6. Kafka Connect (chứa Debezium)
   connect:
     build:
       context: .
@@ -134,28 +127,39 @@ services:
       KEY_CONVERTER_SCHEMAS_ENABLE: 'false'
       VALUE_CONVERTER_SCHEMAS_ENABLE: 'false'
       CONNECT_PLUGIN_PATH: /kafka/connect
+    # SỬA ĐỔI: Sửa lỗi cú pháp trong depends_on
     depends_on:
-      - kafka
-      - zookeeper
-      - sqlserver_btp
-    command: bash -c "
-      echo 'Waiting for SQL Server to be ready...' &&
-      timeout 60 bash -c 'until /opt/mssql-tools18/bin/sqlcmd -S sqlserver_btp -U sa -P \"StrongPassword123!\" -Q \"SELECT 1\" -C > /dev/null 2>&1; do echo \"Waiting for SQL Server...\"; sleep 5; done' &&
-      echo 'SQL Server DB_BTP is up, starting Kafka Connect...' &&
-      /docker-entrypoint.sh start"
-    restart: unless-stopped
-   
+      kafka:
+        condition: service_started
+      zookeeper:
+        condition: service_started
+      sqlserver_btp:
+        condition: service_healthy
+      sqlserver_bca:
+        condition: service_healthy
+    # SỬA ĐỔI: Cập nhật command để mạnh mẽ hơn và hiển thị lỗi
+    command: >
+      bash -c '
+        echo "Waiting for SQL Server DB_BTP..."
+        until /opt/mssql-tools18/bin/sqlcmd -S sqlserver_btp -U sa -P "StrongPassword123!" -Q "SELECT 1" -b -t 15; do
+          echo "--> sqlcmd to DB_BTP failed. Retrying in 5 seconds..."
+          sleep 5
+        done
+        echo -e "\nSQL Server DB_BTP is up."
 
-# Định nghĩa các named volumes để lưu trữ dữ liệu bền vững
+        echo "Waiting for SQL Server DB_BCA..."
+        until /opt/mssql-tools18/bin/sqlcmd -S sqlserver_bca -U sa -P "StrongPassword123!" -Q "SELECT 1" -b -t 15; do
+          echo "--> sqlcmd to DB_BCA failed. Retrying in 5 seconds..."
+          sleep 5
+        done
+        echo -e "\nSQL Server DB_BCA is up. Starting Kafka Connect..."
+
+        /docker-entrypoint.sh start
+      '
+    restart: unless-stopped
+
 volumes:
   sql_bca_data:
     driver: local
   sql_btp_data:
     driver: local
-
-# Định nghĩa network tùy chỉnh
-networks:
-  kafka_net:
-    driver: bridge
-  app_db_net:
-    driver: bridge
