@@ -1,0 +1,36 @@
+{
+  "name": "bca-cdc-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.sqlserver.SqlServerConnector",
+    "tasks.max": "1",
+
+    "database.hostname": "sqlserver_bca",
+    "database.port": "1433",
+    "database.user": "sa",
+    "database.password": "StrongPassword123!",
+    "database.names": "DB_BCA",
+    "topic.prefix": "bca",
+    "database.encrypt": "true",
+    "database.trustServerCertificate": "true",
+
+    "schema.history.internal.kafka.bootstrap.servers": "kafka:9092",
+    "schema.history.internal.kafka.topic": "dbhistory.bca",
+
+    "table.include.list": "BCA.EventOutbox",
+    "snapshot.mode": "initial",
+
+    "transforms": "unwrap,route",  
+
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.drop.tombstones": "false",
+    "transforms.unwrap.delete.handling.mode": "drop",
+
+    "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.route.regex": ".*",
+    "transforms.route.replacement": "bca_events",
+
+    "message.key.columns": "BCA.EventOutbox:aggregate_id",
+
+    "column.exclude.list": "BCA.EventOutbox.processed,BCA.EventOutbox.processed_at,BCA.EventOutbox.retry_count,BCA.EventOutbox.error_message,BCA.EventOutbox.next_retry_at"
+  }
+}

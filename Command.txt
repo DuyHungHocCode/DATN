@@ -1,0 +1,158 @@
+Thêm khóa GPG chính thức của Docker
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+Thêm repository Docker
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+gpg: directory '/home/duyhung/.gnupg' created
+gpg: keybox '/home/duyhung/.gnupg/pubring.kbx' created
+Note: Use "gpg --full-generate-key" for a full featured key generation dialog.
+
+GnuPG needs to construct a user ID to identify your key.
+
+gpg: /home/duyhung/.gnupg/trustdb.gpg: trustdb created
+gpg: directory '/home/duyhung/.gnupg/openpgp-revocs.d' created
+gpg: revocation certificate stored as '/home/duyhung/.gnupg/openpgp-revocs.d/D67207F276481EAF5A9FDE66DB208365251DA10A.rev'
+public and secret key created and signed.
+
+pub   ed25519 2025-04-13 [SC] [expires: 2028-04-12]
+      D67207F276481EAF5A9FDE66DB208365251DA10A
+uid                      hung <duyhungpham0209@gmail.com>
+sub   cv25519 2025-04-13 [E] [expires: 2028-04-12]
+
+mkdir: created directory '/home/duyhung/.password-store/'
+Password store initialized for D67207F276481EAF5A9FDE66DB208365251DA10A
+
+/usr/share/doc/mssql-server or downloaded from: https://aka.ms/useterms
+
+The privacy statement can be viewed at:
+https://go.microsoft.com/fwlink/?LinkId=853010&clcid=0x409
+
+@Duyhung123
+
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+lt --port 8000 --subdomain
+
+
+curl -X POST http://localhost:8083/connectors   -H "Content-Type: application/json"   -d @debezium-connector-btp-cdc.json
+{
+    "citizen_id": "123456789012",
+    "death_certificate_no": "DC20240501-001",
+    "book_id": "DC2024",
+    "page_no": "001",
+    "date_of_death": "2024-05-01",
+    "time_of_death": "08:30:00",
+    "place_of_death_detail": "Bệnh viện Bạch Mai, Hà Nội",
+    "place_of_death_ward_id": 10101,
+    "cause_of_death": "Đột quỵ",
+    "declarant_name": "Trần Thị Bình",
+    "declarant_citizen_id": "234567890123", 
+    "declarant_relationship": "Vợ",
+    "registration_date": "2024-05-01",
+    "issuing_authority_id": 150
+  }
+
+{
+  "marriage_certificate_no": "GCN-KH-2024-00999",
+  "book_id": "KH-2024-C",
+  "page_no": "10",
+  "husband_id": "045198745632",
+  "husband_full_name": "Hoàng Minh Tuấn",
+  "husband_date_of_birth": "1990-12-01",
+  "husband_nationality_id": 1,
+  "husband_previous_marriage_status": "Độc thân",
+  "wife_id": "001293156482",
+  "wife_full_name": "Hoàng Thị Thu Nga",
+  "wife_date_of_birth": "1992-05-15",
+  "wife_nationality_id": 1,
+  "wife_previous_marriage_status": "Độc thân",
+  "marriage_date": "2024-05-29",
+  "registration_date": "2024-05-29",
+  "issuing_authority_id": 201,
+  "issuing_place": "UBND Quận Cầu Giấy, Hà Nội",
+  "witness1_name": "Nguyễn Văn A",
+  "witness2_name": "Trần Thị B",
+  "notes": "Đăng ký kết hôn lần đầu."
+}
+
+{
+  "divorce_certificate_no": "GCN-LH-2015-00042",
+  "book_id": "LH-2015-A",
+  "page_no": "12",
+  "marriage_certificate_id": 5,
+  "divorce_date": "2015-03-15",
+  "registration_date": "2015-03-20",
+  "court_name": "Tòa án nhân dân quận Hai Bà Trưng",
+  "judgment_no": "QĐTA-2015-078",
+  "judgment_date": "2015-03-10",
+  "issuing_authority_id": 201,
+  "reason": "Không thể hòa hợp trong cuộc sống hôn nhân",
+  "child_custody": null,
+  "property_division": "Tài sản đã được phân chia theo thỏa thuận",
+  "notes": null
+}
+
+
+
+
+
+
+
+
+{
+    "citizen_id": "001300123456",
+    "address_detail": "Số 100, Đường Giải Phóng",
+    "ward_id": 10601,
+    "district_id": 106,
+    "province_id": 1,
+    "postal_code": "11609",
+    "latitude": 21.0071,
+    "longitude": 105.8426,
+    "ownership_certificate_id": 101,
+    "registration_date": "2025-06-05", 
+    "issuing_authority_id": 404,
+    "registration_number": "TT2025-000123",
+    "registration_reason": "Đăng ký thường trú tại nhà ở thuộc sở hữu cá nhân",
+    "residence_expiry_date": null,
+    "previous_address_id": null,
+    "residence_status_change_reason_id": 101,
+    "document_url": null,
+    "rh_verification_status": "Đã xác minh",
+    "rh_verification_date": "2025-06-05", 
+    "rh_verified_by": "CB_DANGKY_01",
+    "registration_case_type": "OwnedProperty",
+    "supporting_document_info": "GCNQS số GCNQS-AN-001 và CCCD 001300123456",
+    "notes": "Công dân đủ điều kiện đăng ký thường trú.",
+    "updated_by": "API_TEST_USER",
+    "cs_description": "Đăng ký thường trú mới tại Số 100, Đường Giải Phóng, Phương Mai, Đống Đa, Hà Nội",
+    "cs_cause": null,
+    "cs_location": "Hà Nội",
+    "cs_authority_id": 404,
+    "cs_document_number": "TT2025-000123",
+    "cs_document_date": "2025-06-05", 
+    "cs_certificate_id": null,
+    "cs_reported_by": null,
+    "cs_relationship": null,
+    "cs_verification_status": "Đã xác minh",
+    "ca_verification_date": "2025-06-05",
+    "ca_verified_by": "CB_DANGKY_01",
+    "ca_notes": "Địa chỉ thường trú mới."
+}
+
+
+
+  'Droid Sans Mono', 'monospace', monospace
+
+  hoàn thien các api còn lại
+  + xem giấy khai sinh, ddki khai sinh
+  + xem giấy ly hôn, ddki ly hôn
+
+  
+  + xem hộ khẩu điện tử, ddki hộ khẩu mới
+
+  + ddki thường trú, dki tạm trú
+  + xem lịch sử cu trú
+  + xem thông tin người dân ( thêm về lịch sử phạm tội)
+  

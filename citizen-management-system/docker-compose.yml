@@ -1,0 +1,163 @@
+networks:
+  kafka_net:
+    driver: bridge
+  app_db_net:
+    driver: bridge
+
+services:
+  # 1. Zookeeper (Không thay đổi)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    container_name: zookeeper
+    networks:
+      - kafka_net
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  # 2. Kafka Broker (Không thay đổi)
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka
+    networks:
+      - kafka_net
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+  # 3. Kafka UI (Không thay đổi)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    networks:
+      - kafka_net
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kafka-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+
+  # 4. Service cho DB_BCA (Bộ Công an) - (Không thay đổi)
+  sqlserver_bca:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlserver_bca_container
+    environment:
+      ACCEPT_EULA: 'Y'
+      SA_PASSWORD: 'StrongPassword123!'
+      MSSQL_PID: 'Developer'
+      MSSQL_AGENT_ENABLED: "True"
+    ports:
+      - "1401:1433"
+    volumes:
+      - sql_bca_data:/var/opt/mssql
+    networks:
+      - app_db_net
+      - kafka_net
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # 5. Service cho DB_BTP (Bộ Tư pháp) - (Không thay đổi)
+  sqlserver_btp:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlserver_btp_container
+    environment:
+      ACCEPT_EULA: 'Y'
+      SA_PASSWORD: 'StrongPassword123!'
+      MSSQL_PID: 'Developer'
+      MSSQL_AGENT_ENABLED: "True"
+    ports:
+      - "1402:1433"
+    volumes:
+      - sql_btp_data:/var/opt/mssql
+    networks:
+      - app_db_net
+      - kafka_net
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # 6. Kafka Connect (chứa Debezium)
+  connect:
+    build:
+      context: ./infrastructure/kafka
+      dockerfile: Dockerfile.connect
+    container_name: kafka-connect
+    networks:
+      - kafka_net
+      - app_db_net
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: connect-cluster
+      CONFIG_STORAGE_TOPIC: connect-configs
+      OFFSET_STORAGE_TOPIC: connect-offsets
+      STATUS_STORAGE_TOPIC: connect-statuses
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      KEY_CONVERTER_SCHEMAS_ENABLE: 'false'
+      VALUE_CONVERTER_SCHEMAS_ENABLE: 'false'
+      CONNECT_PLUGIN_PATH: /kafka/connect
+    # SỬA ĐỔI: Sửa lỗi cú pháp trong depends_on
+    depends_on:
+      kafka:
+        condition: service_started
+      zookeeper:
+        condition: service_started
+      sqlserver_btp:
+        condition: service_healthy
+      sqlserver_bca:
+        condition: service_healthy
+    # SỬA ĐỔI: Cập nhật command để mạnh mẽ hơn và hiển thị lỗi
+    command: >
+      bash -c '
+        echo "Waiting for SQL Server DB_BTP..."
+        until /opt/mssql-tools18/bin/sqlcmd -S sqlserver_btp -U sa -P "StrongPassword123!" -Q "SELECT 1" -C &> /dev/null; do
+          echo "--> sqlcmd to DB_BTP failed. Retrying in 5 seconds..."
+          sleep 5
+        done
+        echo -e "\nSQL Server DB_BTP is up."
+
+        echo "Waiting for SQL Server DB_BCA..."
+        until /opt/mssql-tools18/bin/sqlcmd -S sqlserver_bca -U sa -P "StrongPassword123!" -Q "SELECT 1" -C &> /dev/null; do
+          echo "--> sqlcmd to DB_BCA failed. Retrying in 5 seconds..."
+          sleep 5
+        done
+        echo -e "\nSQL Server DB_BCA is up. Starting Kafka Connect..."
+
+        /docker-entrypoint.sh start
+      '
+    restart: unless-stopped
+
+volumes:
+  sql_bca_data:
+    driver: local
+  sql_btp_data:
+    driver: local

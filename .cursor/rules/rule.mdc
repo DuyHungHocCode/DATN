@@ -1,0 +1,61 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+These are the core rules to follow when working on this project.
+Rule #1: Service Responsibilities
+
+The system has 2 microservices with distinct roles:
+
+    citizen_service_bca (Ministry of Public Security):
+
+        Is the source of truth for all core identity & demographic information (name, age, address, family tree).
+
+        Validates citizen information for other services.
+
+        Provides ALL shared reference data (Provinces, Districts, Ethnicities, etc.).
+
+    civil_status_service_btp (Ministry of Justice):
+
+        Manages civil status events & documents (Birth, Death, Marriage, Divorce).
+
+        Must always call citizen_service_bca to validate citizen status BEFORE performing any business logic.
+
+Rule #2: Data Flow & Communication
+
+    API Call (Synchronous):
+
+        When: For immediate validation and response.
+
+        Example: BTP calls BCA to check marital status before issuing a marriage certificate.
+
+        Where to find it: civil_status_service_btp/app/services/bca_client.py.
+
+    Kafka & Debezium (Asynchronous):
+
+        When: To notify other services of an event that has occurred for data synchronization.
+
+        Example: BTP registers a death -> event is sent via Kafka -> BCA receives it and updates the citizen's status to "Deceased".
+
+        Where to find it: The flow starts at the EventOutbox in civil_status_repo.py and ends at the kafka_consumer.py in citizen_service_bca.
+
+Rule #3: Prioritize Stored Procedures (SP)
+
+    Complex business logic resides in the Database, not in Python.
+
+    Instead of writing multi-step UPDATE/INSERT statements, call a Stored Procedure from the ...repo.py files.
+
+    Example: The UpdateCitizenDeathStatus SP automatically updates the citizen's status, revokes their ID card, and changes the spouse's marital status to "Widowed".
+
+    Where to find it: database/BCA/db_bca_api_internal_procedures.sql and database/BTP/db_btp_internal_procedure.sql.
+
+Rule #4: Reference Data & Caching
+
+    citizen_service_bca is the single source of truth for all lookup data (provinces, genders, occupations, etc.).
+
+    This service uses Redis to cache this data for performance.
+
+    Other services (like BTP) must call the /references API on BCA to fetch this data.
+
+    Where to find it: citizen_service_bca/app/api/reference.py and db/reference_repo.py.
