@@ -1,2 +1,0 @@
-{"original_message_data": {"divorce_record_id": 1, "marriage_certificate_id": 5, "husband_id": "001187654321", "wife_id": "001196325874", "divorce_date": "2015-03-15", "registration_date": "2015-03-20"}, "error": "Missing required fields", "timestamp": "2025-06-02T05:27:19.092819+00:00"}
-{"original_message_data": {"marriage_certificate_id": "MC-TEST-54321", "husband_id": "001TEST002", "wife_id": "001TEST003", "marriage_date": "2025-05-20", "registration_date": "2025-05-25"}, "error": "Missing required fields", "timestamp": "2025-06-02T05:27:19.093999+00:00"}
