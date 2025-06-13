@@ -41,4 +41,4 @@ logs/
 *.swp
 *.swo
 
-.cursor
+.cursor/
