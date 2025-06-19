@@ -63,14 +63,13 @@ def search_citizens(
     full_name: Optional[str] = None,
     date_of_birth: Optional[date] = None,
     limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db)
 ):
     """
     Tìm kiếm danh sách công dân theo tên hoặc ngày sinh
     """
     repo = CitizenRepository(db)
-    citizens = repo.search_citizens(full_name, date_of_birth, limit, offset)
+    citizens = repo.search_citizens(full_name, date_of_birth, limit)
     
     return citizens
 

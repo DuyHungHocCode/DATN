@@ -1828,3 +1828,62 @@ GO
 
 PRINT 'Stored Procedure [API_Internal].[RemoveHouseholdMember] đã được tạo thành công.';
 GO
+
+
+IF OBJECT_ID('[API_Internal].[SearchCitizens]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[SearchCitizens];
+GO
+
+CREATE PROCEDURE [API_Internal].[SearchCitizens]
+    @FullName NVARCHAR(255) = NULL,
+    @DateOfBirth DATE = NULL,
+    @Limit INT = 20
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Basic validation for limit to prevent fetching too much data
+    IF @Limit IS NULL OR @Limit <= 0 OR @Limit > 100
+    BEGIN
+        SET @Limit = 20; -- Set to a default safe value
+    END
+
+    SELECT TOP (@Limit)
+        c.[citizen_id],
+        c.[full_name],
+        c.[date_of_birth],
+        g.[gender_name_vi] AS gender,
+        ms.[marital_status_name_vi] AS marital_status,
+        st.[status_name_vi] AS citizen_status,
+        c.[spouse_citizen_id],
+
+        -- Current Address Info
+        a.[address_detail] AS current_address_detail,
+        cw.[ward_name] AS current_ward_name,
+        cd.[district_name] AS current_district_name,
+        cp.[province_name] AS current_province_name
+        
+    FROM [BCA].[Citizen] c
+    -- Joins for essential information
+    LEFT JOIN [Reference].[Genders] g ON c.gender_id = g.gender_id
+    LEFT JOIN [Reference].[MaritalStatuses] ms ON c.marital_status_id = ms.marital_status_id
+    LEFT JOIN [Reference].[CitizenStatusTypes] st ON c.citizen_status_id = st.citizen_status_id
+    -- Join for Current Address
+    LEFT JOIN [BCA].[Address] a ON c.primary_address_id = a.address_id
+    LEFT JOIN [Reference].[Wards] cw ON a.ward_id = cw.ward_id
+    LEFT JOIN [Reference].[Districts] cd ON a.district_id = cd.district_id
+    LEFT JOIN [Reference].[Provinces] cp ON a.province_id = cp.province_id
+
+    WHERE
+        -- Search logic: matches if parameters are NULL or if they match the citizen's data.
+        -- Using LIKE for partial name matching with proper Unicode handling
+        (@FullName IS NULL OR c.full_name LIKE N'%' + @FullName + N'%')
+        AND (@DateOfBirth IS NULL OR c.date_of_birth = @DateOfBirth)
+        -- Search for living citizens - flexible status check
+        AND (st.status_code IN ('ALIVE', 'CONSONG') OR st.status_name_vi LIKE N'%Còn sống%')
+    ORDER BY
+        -- Order results by name for consistency
+        c.full_name, c.date_of_birth;
+
+END
+GO

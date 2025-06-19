@@ -34,58 +34,31 @@ class CitizenRepository:
     def search_citizens(self, 
                        full_name: Optional[str] = None, 
                        date_of_birth: Optional[date] = None,
-                       limit: int = 20, 
-                       offset: int = 0) -> List[Dict[str, Any]]:
-        """Tìm kiếm danh sách công dân theo các tiêu chí."""
+                       limit: int = 20) -> List[Dict[str, Any]]:
+        """Tìm kiếm danh sách công dân theo các tiêu chí bằng Stored Procedure."""
         try:
-            # Tạo query base
-            query_parts = ["SELECT TOP :limit * FROM [BCA].[Citizen] c"]
+            query = text("""
+                EXEC [API_Internal].[SearchCitizens]
+                    @FullName = :full_name,
+                    @DateOfBirth = :date_of_birth,
+                    @Limit = :limit
+            """)
             
-            # Thêm các joins
-            joins = [
-                "LEFT JOIN [Reference].[Nationalities] nat ON c.nationality_id = nat.nationality_id",
-                "LEFT JOIN [Reference].[Ethnicities] eth ON c.ethnicity_id = eth.ethnicity_id",
-                "LEFT JOIN [Reference].[Religions] rel ON c.religion_id = rel.religion_id",
-                "LEFT JOIN [Reference].[Occupations] occ ON c.occupation_id = occ.occupation_id",
-                "LEFT JOIN [Reference].[Provinces] bp ON c.birth_province_id = bp.province_id",
-                "LEFT JOIN [Reference].[Provinces] cp ON c.current_province_id = cp.province_id",
-                "LEFT JOIN [Reference].[Districts] cd ON c.current_district_id = cd.district_id",
-                "LEFT JOIN [Reference].[Wards] cw ON c.current_ward_id = cw.ward_id"
-            ]
+            params = {
+                "full_name": full_name,
+                "date_of_birth": date_of_birth,
+                "limit": limit
+            }
             
-            query_parts.extend(joins)
+            result = self.db.execute(query, params).fetchall()
             
-            # Thêm WHERE clause
-            where_clauses = []
-            params = {"limit": limit, "offset": offset}
-            
-            if full_name:
-                where_clauses.append("c.full_name LIKE :full_name")
-                params["full_name"] = f"%{full_name}%"
-                
-            if date_of_birth:
-                where_clauses.append("c.date_of_birth = :date_of_birth")
-                params["date_of_birth"] = date_of_birth
-            
-            if where_clauses:
-                query_parts.append("WHERE " + " AND ".join(where_clauses))
-            
-            # Thêm ORDER BY và OFFSET
-            query_parts.append("ORDER BY c.full_name OFFSET :offset ROWS")
-            
-            # Tạo câu query hoàn chỉnh
-            query = " ".join(query_parts)
-            
-            # Thực thi query
-            result = self.db.execute(text(query), params).fetchall()
-            
-            # Trả về danh sách dict
             return [dict(row._mapping) for row in result]
             
         except Exception as e:
+            logger.error(f"Database error in search_citizens: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                detail=f"Database error: {str(e)}"
+                detail=f"Database error during citizen search: {str(e)}"
             )
         
     def get_residence_history(self, citizen_id: str) -> List[Dict[str, Any]]:
@@ -461,57 +434,29 @@ class CitizenRepository:
             return None
 
     def _map_reason_code_to_id(self, reason_code: str) -> int:
-        """
-        Map reason_code từ request sang reason_id trong bảng Reference.HouseholdChangeType.
-        Returns the reason_id, defaults to 1 if not found.
-        """
+        """Maps a reason_code to a reason_id using a database function."""
         try:
-            query = text("""
-                SELECT id FROM [Reference].[HouseholdChangeType] 
-                WHERE name = :reason_name AND name IS NOT NULL
-            """)
+            query = text("SELECT [API_Internal].[MapReasonCodeToId](:reason_code)")
+            result = self.db.execute(query, {"reason_code": reason_code}).scalar()
             
-            # Mapping từ reason_code sang tên trong database
-            reason_mapping = {
-                "NHAP_HO_MOI_SINH": "Nhập hộ - Mới sinh",
-                "NHAP_HO_CHUYEN_DEN": "Nhập hộ - Chuyển đến", 
-                "CHUYEN_HO_KHAU": "Chuyển hộ khẩu",
-                "TACH_HO_KHAU": "Tách hộ khẩu",
-                "XOA_HK_DA_MAT": "Xóa HK - Đã mất",
-                "XOA_HK_DINH_CU_NN": "Xóa HK - Định cư nước ngoài",
-                "XOA_HK_HUY_DANG_KY": "Xóa HK - Hủy đăng ký",
-                "XOA_HK_THEO_QUYET_DINH": "Xóa HK - Theo quyết định"
-            }
-            
-            reason_name = reason_mapping.get(reason_code)
-            if not reason_name:
-                logger.warning(f"Unknown reason_code: {reason_code}, using default reason_id = 2")
-                return 2  # Default to "Nhập hộ - Chuyển đến"
-            
-            result = self.db.execute(query, {"reason_name": reason_name}).fetchone()
-            if result:
-                reason_id = result[0]
-                logger.info(f"Mapped reason_code '{reason_code}' to reason_id {reason_id}")
-                return reason_id
-            else:
-                logger.warning(f"No mapping found for reason_name: {reason_name}, using default reason_id = 2")
-                return 2  # Default fallback
+            if result is None:
+                logger.warning(f"Function MapReasonCodeToId returned NULL for code: {reason_code}. Defaulting to 2.")
+                return 2 # Default to "Nhập hộ - Chuyển đến"
+                
+            logger.info(f"Mapped reason_code '{reason_code}' to reason_id {result}")
+            return result
                 
         except Exception as e:
             logger.error(f"Error mapping reason_code to reason_id: {e}", exc_info=True)
             return 2  # Default fallback
 
     def _validate_authority_id(self, authority_id: int) -> bool:
-        """
-        Validate if authority_id exists and is active in Reference.Authorities table.
-        """
+        """Validates if an authority_id exists and is active using a database function."""
         try:
-            query = text("""
-                SELECT authority_id FROM [Reference].[Authorities] 
-                WHERE authority_id = :authority_id AND is_active = 1
-            """)
-            result = self.db.execute(query, {"authority_id": authority_id}).fetchone()
-            if result:
+            query = text("SELECT [API_Internal].[ValidateAuthorityId](:authority_id)")
+            result = self.db.execute(query, {"authority_id": authority_id}).scalar()
+            
+            if bool(result):
                 logger.info(f"Authority ID {authority_id} validation passed")
                 return True
             else:
@@ -523,18 +468,7 @@ class CitizenRepository:
 
     def _validate_relationship_with_head_id(self, citizen_id: str, to_household_id: int, rel_with_head_id: int) -> Dict[str, Any]:
         """
-        Validate relationship with head of household using comprehensive 3-level validation:
-        Level 1: Data Integrity Check
-        Level 2: Business Logic Check  
-        Level 3: Genealogical & Marital Status Cross-Check
-        
-        Returns:
-        {
-            'is_valid': bool,
-            'error_code': str or None,
-            'error_message': str or None,
-            'warning_message': str or None
-        }
+        Validates the household relationship using the dedicated stored procedure.
         """
         try:
             query = text("""
@@ -759,122 +693,62 @@ class CitizenRepository:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Lỗi cơ sở dữ liệu khi chuyển thành viên hộ khẩu: {str(e)}"
             )
+
     def find_household_by_id(self, household_id: int) -> Optional[Dict[str, Any]]:
-        """Kiểm tra sự tồn tại và trạng thái của hộ khẩu bằng ID."""
+        """Finds a household by its ID using a stored procedure."""
         try:
-            # Lấy thông tin cơ bản và trạng thái của hộ khẩu
-            query = text("""
-                SELECT 
-                    h.household_id, 
-                    h.household_book_no, 
-                    hs.status_name_vi as household_status
-                FROM [BCA].[Household] h
-                JOIN [Reference].[HouseholdStatuses] hs ON h.household_status_id = hs.household_status_id
-                WHERE h.household_id = :household_id
-            """)
+            query = text("EXEC [API_Internal].[FindHouseholdById] @household_id = :household_id")
             result = self.db.execute(query, {"household_id": household_id}).fetchone()
-            
-            if not result:
-                return None
-            
-            return dict(result._mapping)
-        
+            if result:
+                return dict(result._mapping)
+            return None
         except Exception as e:
-            logger.error(f"Lỗi cơ sở dữ liệu khi tìm hộ khẩu ID {household_id}: {e}", exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                detail="Lỗi cơ sở dữ liệu khi tìm kiếm hộ khẩu."
-            )
+            logger.error(f"Error finding household by id {household_id}: {e}", exc_info=True)
+            raise
 
     def is_citizen_in_active_household(self, citizen_id: str) -> bool:
-        """Kiểm tra xem công dân có phải là thành viên đang hoạt động của bất kỳ hộ khẩu nào không."""
+        """Checks if a citizen is part of any active household using a database function."""
         try:
-            query = text("""
-                SELECT COUNT(*) as count
-                FROM [BCA].[HouseholdMember] hm
-                WHERE hm.citizen_id = :citizen_id 
-                  AND hm.member_status_id = 1  -- 1: ACTIVE (Đang cư trú)
-            """)
-            result = self.db.execute(query, {"citizen_id": citizen_id}).fetchone()
-            return result[0] > 0 if result else False
+            query = text("SELECT [API_Internal].[IsCitizenInActiveHousehold](:citizen_id)")
+            result = self.db.execute(query, {"citizen_id": citizen_id}).scalar()
+            return bool(result)
         except Exception as e:
-            logger.error(f"Lỗi cơ sở dữ liệu khi kiểm tra thành viên hộ khẩu cho citizen_id {citizen_id}: {e}", exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                detail="Lỗi cơ sở dữ liệu khi kiểm tra thành viên hộ khẩu."
-            )
+            logger.error(f"Error checking if citizen {citizen_id} is in active household: {e}", exc_info=True)
+            raise
 
     def is_citizen_member_of_household(self, citizen_id: str, household_id: int) -> bool:
-        """Kiểm tra xem công dân có phải là thành viên đang hoạt động của một hộ khẩu cụ thể không."""
+        """Checks if a citizen is a member of a specific household using a database function."""
         try:
-            query = text("""
-                SELECT COUNT(*) as count
-                FROM [BCA].[HouseholdMember] hm
-                WHERE hm.citizen_id = :citizen_id 
-                  AND hm.household_id = :household_id
-                  AND hm.member_status_id = 1  -- 1: ACTIVE (Đang cư trú)
-            """)
-            result = self.db.execute(query, {
-                "citizen_id": citizen_id,
-                "household_id": household_id
-            }).fetchone()
-            return result[0] > 0 if result else False
+            query = text("SELECT [API_Internal].[IsCitizenMemberOfHousehold](:citizen_id, :household_id)")
+            result = self.db.execute(query, {"citizen_id": citizen_id, "household_id": household_id}).scalar()
+            return bool(result)
         except Exception as e:
-            logger.error(f"Lỗi cơ sở dữ liệu khi kiểm tra thành viên hộ khẩu cho citizen_id {citizen_id} và household_id {household_id}: {e}", exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                detail="Lỗi cơ sở dữ liệu khi kiểm tra thành viên hộ khẩu."
-            )
+            logger.error(f"Error checking if citizen {citizen_id} is member of household {household_id}: {e}", exc_info=True)
+            raise
 
     def is_citizen_head_of_household(self, citizen_id: str, household_id: int) -> bool:
-        """Kiểm tra xem công dân có phải là chủ hộ của một hộ khẩu cụ thể không."""
+        """Checks if a citizen is the head of a specific household using a database function."""
         try:
-            query = text("""
-                SELECT COUNT(*) as count
-                FROM [BCA].[HouseholdMember] hm
-                WHERE hm.citizen_id = :citizen_id 
-                  AND hm.household_id = :household_id
-                  AND hm.rel_with_head_id = 1  -- 1: CHUHO (Chủ hộ)
-                  AND hm.member_status_id = 1  -- 1: ACTIVE (Đang cư trú)
-            """)
-            result = self.db.execute(query, {
-                "citizen_id": citizen_id,
-                "household_id": household_id
-            }).fetchone()
-            return result[0] > 0 if result else False
+            query = text("SELECT [API_Internal].[IsCitizenHeadOfHousehold](:citizen_id, :household_id)")
+            result = self.db.execute(query, {"citizen_id": citizen_id, "household_id": household_id}).scalar()
+            return bool(result)
         except Exception as e:
-            logger.error(f"Lỗi cơ sở dữ liệu khi kiểm tra chủ hộ cho citizen_id {citizen_id} và household_id {household_id}: {e}", exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                detail="Lỗi cơ sở dữ liệu khi kiểm tra chủ hộ."
-            )
+            logger.error(f"Error checking if citizen {citizen_id} is head of household {household_id}: {e}", exc_info=True)
+            raise
 
     def count_active_household_members_excluding_citizen(self, household_id: int, exclude_citizen_id: str) -> int:
-        """Đếm số thành viên đang hoạt động trong hộ khẩu, không tính một công dân cụ thể."""
+        """Counts active members in a household, excluding a specific citizen, using a database function."""
         try:
-            query = text("""
-                SELECT COUNT(*) as count
-                FROM [BCA].[HouseholdMember] hm
-                WHERE hm.household_id = :household_id
-                  AND hm.citizen_id != :exclude_citizen_id
-                  AND hm.member_status_id = 1  -- 1: ACTIVE (Đang cư trú)
-            """)
-            result = self.db.execute(query, {
-                "household_id": household_id,
-                "exclude_citizen_id": exclude_citizen_id
-            }).fetchone()
-            return result[0] if result else 0
+            query = text("SELECT [API_Internal].[CountActiveHouseholdMembersExcludingCitizen](:household_id, :exclude_citizen_id)")
+            result = self.db.execute(query, {"household_id": household_id, "exclude_citizen_id": exclude_citizen_id}).scalar()
+            return result if result is not None else 0
         except Exception as e:
-            logger.error(f"Lỗi cơ sở dữ liệu khi đếm thành viên hộ khẩu cho household_id {household_id}: {e}", exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                detail="Lỗi cơ sở dữ liệu khi đếm thành viên hộ khẩu."
-            )
+            logger.error(f"Error counting members in household {household_id}: {e}", exc_info=True)
+            raise
 
     def remove_household_member(self, household_id: int, citizen_id: str, request_data) -> Dict[str, Any]:
         """
-        Xóa một thành viên khỏi hộ khẩu (soft delete).
-        Gọi stored procedure API_Internal.RemoveHouseholdMember.
+        Removes a member from a household using the RemoveHouseholdMember stored procedure.
         """
         try:
             logger.info(f"Removing household member: citizen {citizen_id} from household {household_id}")
@@ -936,8 +810,8 @@ class CitizenRepository:
                 
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Database error when removing household member: {e}", exc_info=True)
+            logger.error(f"Error removing household member: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Lỗi cơ sở dữ liệu khi xóa thành viên hộ khẩu: {str(e)}"
+                detail=f"An error occurred while removing the household member: {str(e)}"
             )

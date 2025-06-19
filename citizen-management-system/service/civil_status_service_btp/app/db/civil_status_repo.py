@@ -85,19 +85,14 @@ class CivilStatusRepository:
             )
 
     def get_death_certificate_by_id(self, certificate_id: int) -> DeathCertificateResponse | None:
-        """Lấy thông tin giấy chứng tử theo ID."""
+        """Lấy thông tin giấy chứng tử theo ID bằng Stored Procedure."""
         try:
-            query_base = text("""
-                SELECT * FROM [BTP].[DeathCertificate]
-                WHERE death_certificate_id = :certificate_id
-            """)
-            
-            result_row = self.db.execute(query_base, {"certificate_id": certificate_id}).fetchone()
+            query = text("EXEC [API_Internal].[GetDeathCertificateById] @certificate_id = :certificate_id")
+            result_row = self.db.execute(query, {"certificate_id": certificate_id}).fetchone()
             
             if not result_row:
                 return None
             
-            # Trả về một dictionary chứa tất cả các cột từ bảng
             return dict(result_row._mapping) 
             
         except SQLAlchemyError as e:
@@ -108,11 +103,11 @@ class CivilStatusRepository:
             )
         
     def check_existing_death_certificate(self, citizen_id: str) -> bool:
-        """Kiểm tra xem công dân đã có giấy chứng tử chưa."""
+        """Kiểm tra xem công dân đã có giấy chứng tử chưa bằng Function."""
         try:
-            query = text("SELECT COUNT(*) FROM [BTP].[DeathCertificate] WHERE [citizen_id] = :citizen_id")
+            query = text("SELECT [API_Internal].[CheckExistingDeathCertificate](:citizen_id)")
             result = self.db.execute(query, {"citizen_id": citizen_id}).scalar()
-            return result > 0
+            return bool(result)
         except SQLAlchemyError as e:
             logger.error(f"Database error when checking existing death certificate: {e}", exc_info=True)
             raise HTTPException(
@@ -178,16 +173,9 @@ class CivilStatusRepository:
             )
     
     def get_marriage_certificate_details(self, marriage_certificate_id: int) -> dict | None:
-        """
-        Lấy chi tiết giấy chứng nhận kết hôn bao gồm husband_id và wife_id.
-        """
+        """Lấy chi tiết giấy chứng nhận kết hôn bằng Stored Procedure."""
         try:
-            query = text("""
-                SELECT
-                    marriage_certificate_id, husband_id, wife_id, status
-                FROM [BTP].[MarriageCertificate]
-                WHERE marriage_certificate_id = :marriage_certificate_id
-            """)
+            query = text("EXEC [API_Internal].[GetMarriageCertificateDetails] @marriage_certificate_id = :marriage_certificate_id")
             result = self.db.execute(query, {"marriage_certificate_id": marriage_certificate_id}).fetchone()
             if result:
                 return dict(result._mapping)
@@ -327,38 +315,29 @@ class CivilStatusRepository:
             )
         
     def get_birth_certificate_by_id(self, certificate_id: int) -> dict | None:
-        """Lấy thông tin giấy khai sinh theo ID."""
+        """Lấy thông tin giấy khai sinh theo ID bằng Stored Procedure."""
         try:
-            query_base = text("""
-                SELECT * FROM [BTP].[BirthCertificate]
-                WHERE birth_certificate_id = :certificate_id
-            """)
-            
-            result_row = self.db.execute(query_base, {"certificate_id": certificate_id}).fetchone()
-            
-            if not result_row:
-                return None
-            
-            return dict(result_row._mapping) 
-            
+            query = text("EXEC [API_Internal].[GetBirthCertificateById] @certificate_id = :certificate_id")
+            result = self.db.execute(query, {"certificate_id": certificate_id}).fetchone()
+            if result:
+                return dict(result._mapping)
+            return None
         except SQLAlchemyError as e:
-            logger.error(f"Database error getting birth certificate by ID {certificate_id}: {e}", exc_info=True)
+            logger.error(f"Database error in get_birth_certificate_by_id: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Lỗi cơ sở dữ liệu khi lấy thông tin giấy khai sinh: {str(e)}"
+                detail=f"Lỗi cơ sở dữ liệu khi lấy giấy khai sinh: {e}"
             )
     
     def check_existing_birth_certificate_for_citizen(self, citizen_id: str) -> bool:
-        """
-        Kiểm tra xem một công dân (trẻ sơ sinh) đã có giấy khai sinh trong hệ thống BTP chưa.
-        """
+        """Kiểm tra xem công dân đã có giấy khai sinh chưa bằng Function."""
         try:
-            query = text("SELECT COUNT(*) FROM [BTP].[BirthCertificate] WHERE [citizen_id] = :citizen_id")
+            query = text("SELECT [API_Internal].[CheckExistingBirthCertificateForCitizen](:citizen_id)")
             result = self.db.execute(query, {"citizen_id": citizen_id}).scalar()
-            return result > 0
+            return bool(result)
         except SQLAlchemyError as e:
-            logger.error(f"Database error when checking existing birth certificate for citizen {citizen_id}: {e}", exc_info=True)
+            logger.error(f"Database error in check_existing_birth_certificate_for_citizen: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Lỗi cơ sở dữ liệu khi kiểm tra giấy khai sinh của công dân: {str(e)}"
+                detail=f"Lỗi cơ sở dữ liệu khi kiểm tra giấy khai sinh: {e}"
             )

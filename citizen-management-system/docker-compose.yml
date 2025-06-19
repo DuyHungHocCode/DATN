@@ -55,7 +55,7 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
 
-  # 4. Service cho DB_BCA (Bộ Công an) - (Không thay đổi)
+  # 4. Service cho DB_BCA (Bộ Công an) - (Đã tăng bộ nhớ)
   sqlserver_bca:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: sqlserver_bca_container
@@ -68,9 +68,15 @@ services:
       - "1401:1433"
     volumes:
       - sql_bca_data:/var/opt/mssql
+      - ./sql_backups/bca:/var/opt/mssql/backups
+      - ./sql_audit_logs/bca:/var/opt/mssql/audit
     networks:
       - app_db_net
       - kafka_net
+    # Tăng bộ nhớ cho SQL Server
+    mem_limit: 4g
+    mem_reservation: 2g
+    shm_size: 1g
     healthcheck:
       test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
       interval: 30s
@@ -79,7 +85,7 @@ services:
       start_period: 60s
     restart: unless-stopped
 
-  # 5. Service cho DB_BTP (Bộ Tư pháp) - (Không thay đổi)
+  # 5. Service cho DB_BTP (Bộ Tư pháp) - (Đã tăng bộ nhớ)
   sqlserver_btp:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: sqlserver_btp_container
@@ -92,9 +98,15 @@ services:
       - "1402:1433"
     volumes:
       - sql_btp_data:/var/opt/mssql
+      - ./sql_backups/btp:/var/opt/mssql/backups
+      - ./sql_audit_logs/btp:/var/opt/mssql/audit
     networks:
       - app_db_net
       - kafka_net
+    # Tăng bộ nhớ cho SQL Server
+    mem_limit: 4g
+    mem_reservation: 2g
+    shm_size: 1g
     healthcheck:
       test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
       interval: 30s

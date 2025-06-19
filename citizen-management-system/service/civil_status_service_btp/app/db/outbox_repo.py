@@ -19,33 +19,35 @@ class OutboxRepository:
         raise TypeError(f"Type {type(obj)} not serializable")
     
     def create_outbox_message(self, aggregate_type, aggregate_id, event_type, payload):
-        """
-        Create a new outbox message for later processing.
-        """
+        """Creates a new outbox message using a stored procedure."""
         try:
-            # Serialize JSON với xử lý đặc biệt cho kiểu date/datetime
-            payload_json = json.dumps(payload, default=lambda obj: obj.isoformat() if isinstance(obj, (date, datetime)) else str(obj))
+            # Serialize JSON with custom handler for date/datetime
+            payload_json = json.dumps(payload, default=self._json_serializer)
             
-            # 1. Thực hiện lệnh INSERT
-            insert_query = text("""
-                INSERT INTO [BTP].[EventOutbox]
-                    ([aggregate_type], [aggregate_id], [event_type], [payload], [created_at])
-                VALUES
-                    (:aggregate_type, :aggregate_id, :event_type, :payload, GETDATE());
+            # Call the stored procedure
+            query = text("""
+                DECLARE @new_id BIGINT;
+                EXEC [API_Internal].[CreateOutboxMessage]
+                    @aggregate_type = :aggregate_type,
+                    @aggregate_id = :aggregate_id,
+                    @event_type = :event_type,
+                    @payload = :payload,
+                    @outbox_id = @new_id OUTPUT;
+                SELECT @new_id AS new_outbox_id;
             """)
             
-            self.db.execute(insert_query, {
+            result = self.db.execute(query, {
                 "aggregate_type": aggregate_type,
                 "aggregate_id": aggregate_id,
                 "event_type": event_type,
                 "payload": payload_json
             })
             
-            # 2. Lấy ID vừa được tạo trong một truy vấn riêng biệt
-            identity_query = text("SELECT SCOPE_IDENTITY() AS outbox_id")
-            result = self.db.execute(identity_query)
-            outbox_id = result.scalar()
+            outbox_id = result.scalar_one_or_none()
             
+            if outbox_id is None:
+                raise Exception("Stored procedure CreateOutboxMessage did not return the new outbox ID.")
+
             return outbox_id
         except Exception as e:
             logger.error(f"Error creating outbox message: {e}", exc_info=True)

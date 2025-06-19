@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     DB_SERVER: str = os.getenv("DB_SERVER", "localhost")
     DB_PORT: str = os.getenv("DB_PORT", "1401")
     DB_NAME: str = os.getenv("DB_NAME", "DB_BCA")
-    DB_USER: str = os.getenv("DB_USER", "sa")
+    DB_USER: str = os.getenv("DB_USER", "")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "")
 
     KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:29092")

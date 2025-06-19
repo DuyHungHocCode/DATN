@@ -8,7 +8,7 @@ settings = get_settings()
 SQLALCHEMY_DATABASE_URL = (
     f"mssql+pyodbc://{settings.DB_USER_BTP}:{settings.DB_PASSWORD_BTP}@"
     f"{settings.DB_SERVER_BTP},{settings.DB_PORT_BTP}/{settings.DB_NAME_BTP}?"
-    f"driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes" 
+    f"driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=yes&ColumnEncryption=Enabled" 
 )
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
