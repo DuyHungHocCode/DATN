@@ -106,6 +106,7 @@ ALTER TABLE [BCA].[Citizen] ADD CONSTRAINT FK_Citizen_CitizenshipDocType FOREIGN
 -- Tự tham chiếu
 IF OBJECT_ID('BCA.FK_Citizen_Father', 'F') IS NOT NULL ALTER TABLE [BCA].[Citizen] DROP CONSTRAINT FK_Citizen_Father;
 ALTER TABLE [BCA].[Citizen] ADD CONSTRAINT FK_Citizen_Father FOREIGN KEY ([father_citizen_id]) REFERENCES [BCA].[Citizen]([citizen_id]);
+
 IF OBJECT_ID('BCA.FK_Citizen_Mother', 'F') IS NOT NULL ALTER TABLE [BCA].[Citizen] DROP CONSTRAINT FK_Citizen_Mother;
 ALTER TABLE [BCA].[Citizen] ADD CONSTRAINT FK_Citizen_Mother FOREIGN KEY ([mother_citizen_id]) REFERENCES [BCA].[Citizen]([citizen_id]);
 IF OBJECT_ID('BCA.FK_Citizen_Spouse', 'F') IS NOT NULL ALTER TABLE [BCA].[Citizen] DROP CONSTRAINT FK_Citizen_Spouse;
