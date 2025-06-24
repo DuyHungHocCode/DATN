@@ -18,3 +18,5 @@ httpx>=0.26.0
 # Configuration
 pydantic-settings>=2.0.0
 python-dotenv>=1.0.0
+
+azure-identity 
