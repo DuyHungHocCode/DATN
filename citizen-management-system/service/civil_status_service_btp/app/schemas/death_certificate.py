@@ -25,20 +25,20 @@ class DeathCertificateBase(BaseModel):
     witness2_name: Optional[str] = Field(None, max_length=100, description="Người làm chứng 2")
     notes: Optional[str] = Field(None, description="Ghi chú thêm")
     
-    @field_validator('date_of_death', 'registration_date')
-    @classmethod
-    def date_must_not_be_in_future(cls, v):
-        if v > date.today():
-            raise ValueError('Ngày không được ở tương lai')
-        return v
+    # @field_validator('date_of_death', 'registration_date')
+    # @classmethod
+    # def date_must_not_be_in_future(cls, v):
+    #     if v > date.today():
+    #         raise ValueError('Ngày không được ở tương lai')
+    #     return v
     
-    @field_validator('registration_date')
-    @classmethod
-    def registration_date_must_be_on_or_after_death(cls, v, info):
-        date_of_death = info.data.get('date_of_death')
-        if date_of_death is not None and v < date_of_death:
-            raise ValueError('Ngày đăng ký phải sau hoặc bằng ngày mất')
-        return v
+    # @field_validator('registration_date')
+    # @classmethod
+    # def registration_date_must_be_on_or_after_death(cls, v, info):
+    #     date_of_death = info.data.get('date_of_death')
+    #     if date_of_death is not None and v < date_of_death:
+    #         raise ValueError('Ngày đăng ký phải sau hoặc bằng ngày mất')
+    #     return v
 
 class DeathCertificateCreate(DeathCertificateBase):
     pass

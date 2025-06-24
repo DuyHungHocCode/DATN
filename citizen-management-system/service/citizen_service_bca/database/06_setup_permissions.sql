@@ -16,7 +16,7 @@ DECLARE @BCA_LoginName SYSNAME = 'bca_service_login';
 DECLARE @BCA_UserName SYSNAME = 'bca_service_user';
 DECLARE @BCA_RoleName SYSNAME = 'bca_api_role';
 DECLARE @BCADatabaseName SYSNAME = 'DB_BCA';
-DECLARE @Password NVARCHAR(256) = '#Hug@12a3b45'; 
+DECLARE @Password NVARCHAR(256) = 'Hug@12a3b45'; 
 
 --------------------------------------------------------------------------------
 -- STEP 1: CREATE SERVER LOGIN for citizen_service_bca

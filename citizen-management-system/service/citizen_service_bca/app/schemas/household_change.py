@@ -50,6 +50,7 @@ class HouseholdChangeResponse(BaseModel):
     message: str
     log_id: int
     household_member_id: Optional[int] = None
+    citizen_address_id: Optional[int] = None  # ID của bản ghi địa chỉ mới
     
     model_config = {
         "from_attributes": True

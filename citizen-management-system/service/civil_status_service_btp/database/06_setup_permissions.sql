@@ -16,7 +16,7 @@ DECLARE @BTP_LoginName SYSNAME = 'btp_service_login';
 DECLARE @BTP_UserName SYSNAME = 'btp_service_user';
 DECLARE @BTP_RoleName SYSNAME = 'btp_api_role';
 DECLARE @BTPDatabaseName SYSNAME = 'DB_BTP';
-DECLARE @Password NVARCHAR(256) = 'STRONG_BTP_PASSWORD_HERE'; -- !! IMPORTANT: Replace with a strong, unique password !!
+DECLARE @Password NVARCHAR(256) = 'H1u@2025'; -- !! IMPORTANT: Replace with a strong, unique password !!
 
 --------------------------------------------------------------------------------
 -- STEP 1: CREATE SERVER LOGIN for civil_status_service_btp

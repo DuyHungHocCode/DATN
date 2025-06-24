@@ -701,49 +701,12 @@ BEGIN
 
         SET @affected_rows = @@ROWCOUNT;
 
-        IF @affected_rows > 0
-        BEGIN
-            -- Ghi log vào Audit nếu có schema Audit
-            IF EXISTS (SELECT * FROM sys.schemas WHERE name = 'Audit')
-            BEGIN
-                -- Insert audit log here if Audit.AuditLog table exists
-                DECLARE @sql NVARCHAR(MAX) = N'
-                INSERT INTO [Audit].[AuditLog]
-                (
-                    [action_tstamp],
-                    [schema_name],
-                    [table_name],
-                    [operation],
-                    [session_user_name],
-                    [application_name],
-                    [client_net_address],
-                    [host_name],
-                    [statement_only],
-                    [row_data],
-                    [changed_fields]
-                )
-                VALUES
-                (
-                    GETDATE(),
-                    ''BCA'',
-                    ''Citizen'',
-                    ''UPDATE'',
-                    @updated_by,
-                    ''API_Internal.UpdateCitizenMarriageStatus'',
-                    NULL,
-                    HOST_NAME(),
-                    0,
-                    ''Citizen ID: '' + @citizen_id + '', Spouse ID: '' + @spouse_citizen_id,
-                    ''marital_status_id: '' + ISNULL(CAST(@previous_marital_status_id AS VARCHAR), ''NULL'') + 
-                    '' -> '' + CAST(@marital_status_id_married AS VARCHAR) + 
-                    '', spouse_citizen_id: '' + ISNULL(@previous_spouse_id, ''NULL'') + '' -> '' + @spouse_citizen_id
-                )';
-                
-                EXEC sp_executesql @sql, 
-                    N'@updated_by VARCHAR(50), @citizen_id VARCHAR(12), @spouse_citizen_id VARCHAR(12), @previous_marital_status_id SMALLINT, @marital_status_id_married SMALLINT, @previous_spouse_id VARCHAR(12)',
-                    @updated_by, @citizen_id, @spouse_citizen_id, @previous_marital_status_id, @marital_status_id_married, @previous_spouse_id;
-            END
-        END
+        -- IF @affected_rows > 0
+        -- BEGIN
+        --     -- Ghi log vào Audit nếu có schema Audit
+        --     -- The trigger [BCA].[TR_Citizen_Audit] will handle this automatically.
+        --     -- This manual logging block is redundant and has been removed.
+        -- END
 
         COMMIT TRANSACTION;
 
@@ -1445,40 +1408,28 @@ BEGIN
         h.[household_id],
         h.[household_book_no],
         h.[head_of_household_id],
-        head_citizen.[full_name] AS head_of_household_full_name,
-        a.[address_detail],
+        c.[full_name] AS head_of_household_name,
+        a.[address_detail] AS full_address,
         w.[ward_name],
         d.[district_name],
         p.[province_name],
         h.[registration_date],
-        auth.[authority_name] AS issuing_authority_name,
-        ht.[household_type_name_vi] AS household_type_name,
-        hs.[status_name_vi] AS household_status_name,
-        h.[ownership_certificate_id],
-        h.[rental_contract_id],
-        h.[notes],
+        h.area_code,
+        ht.[household_type_name_vi] AS household_type,
+        hs.[status_name_vi] AS household_status,
+        auth.[authority_name] AS issuing_authority,
         h.[created_at],
         h.[updated_at]
-    FROM
-        [BCA].[Household] h
-    INNER JOIN
-        [BCA].[Citizen] head_citizen ON h.head_of_household_id = head_citizen.citizen_id
-    INNER JOIN
-        [BCA].[Address] a ON h.address_id = a.address_id
-    INNER JOIN
-        [Reference].[Wards] w ON a.ward_id = w.ward_id
-    INNER JOIN
-        [Reference].[Districts] d ON a.district_id = d.district_id
-    INNER JOIN
-        [Reference].[Provinces] p ON a.province_id = p.province_id
-    LEFT JOIN
-        [Reference].[Authorities] auth ON h.issuing_authority_id = auth.authority_id
-    INNER JOIN
-        [Reference].[HouseholdTypes] ht ON h.household_type_id = ht.household_type_id
-    INNER JOIN
-        [Reference].[HouseholdStatuses] hs ON h.household_status_id = hs.household_status_id
-    WHERE
-        h.[household_id] = @household_id;
+    FROM [BCA].[Household] h
+    LEFT JOIN [BCA].[Citizen] c ON h.head_of_household_id = c.citizen_id -- SỬA THÀNH LEFT JOIN
+    LEFT JOIN [BCA].[Address] a ON h.address_id = a.address_id             -- SỬA THÀNH LEFT JOIN
+    LEFT JOIN [Reference].[Wards] w ON a.ward_id = w.ward_id
+    LEFT JOIN [Reference].[Districts] d ON a.district_id = d.district_id
+    LEFT JOIN [Reference].[Provinces] p ON a.province_id = p.province_id
+    LEFT JOIN [Reference].[HouseholdTypes] ht ON h.household_type_id = ht.household_type_id
+    LEFT JOIN [Reference].[HouseholdStatuses] hs ON h.household_status_id = hs.household_status_id
+    LEFT JOIN [Reference].[Authorities] auth ON h.issuing_authority_id = auth.authority_id
+    WHERE h.household_id = @household_id;
 
     -- 2. Lấy danh sách thành viên trong hộ khẩu
     SELECT
@@ -1543,16 +1494,33 @@ CREATE PROCEDURE [API_Internal].[AddHouseholdMember]
     -- Output parameters
     @new_household_member_id BIGINT OUTPUT,
     @new_log_id INT OUTPUT,
-    @new_residence_history_id BIGINT OUTPUT
+    @new_residence_history_id BIGINT OUTPUT,
+    @new_citizen_address_id BIGINT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON; -- Đảm bảo transaction sẽ rollback nếu có lỗi
 
+    -- Constants for reference IDs (based on system design)
+    DECLARE @address_type_id_permanent_residence SMALLINT = 1; -- 'Nơi thường trú'
+    DECLARE @residence_type_id_permanent SMALLINT = 1;         -- 'Thường trú'
+    DECLARE @res_reg_status_id_active SMALLINT = 1;            -- 'Đang hiệu lực'
+    DECLARE @member_status_id_active SMALLINT = 1;             -- 'Đang cư trú'
+
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        -- 1. Lấy address_id từ hộ khẩu đích
+        -- 1. Kiểm tra công dân đã có hộ khẩu chưa (không nên có hộ khẩu active)
+        IF EXISTS (
+            SELECT 1 FROM [BCA].[HouseholdMember] 
+            WHERE [citizen_id] = @citizen_id 
+              AND [member_status_id] = @member_status_id_active
+        )
+        BEGIN
+            THROW 50001, 'Công dân đã có hộ khẩu. Hãy sử dụng procedure TransferHouseholdMember để chuyển hộ khẩu.', 1;
+        END
+
+        -- 2. Lấy address_id từ hộ khẩu đích
         DECLARE @address_id BIGINT;
         SELECT @address_id = [address_id]
         FROM [BCA].[Household]
@@ -1561,50 +1529,82 @@ BEGIN
         -- Nếu không tìm thấy hộ khẩu hoặc địa chỉ, gây ra lỗi để rollback
         IF @address_id IS NULL
         BEGIN
-            THROW 50001, 'Hộ khẩu đích không tồn tại hoặc không có địa chỉ hợp lệ.', 1;
+            THROW 50002, 'Hộ khẩu đích không tồn tại hoặc không có địa chỉ hợp lệ.', 1;
         END
 
-        -- 2. Thêm thành viên mới vào hộ khẩu
-        -- Giả định member_status_id = 1 là 'Đang cư trú'
+        -- 3. Thêm thành viên mới vào hộ khẩu
         INSERT INTO [BCA].[HouseholdMember] (
             [household_id], [citizen_id], [rel_with_head_id], 
             [join_date], [member_status_id], [created_at], [updated_at]
         )
         VALUES (
             @to_household_id, @citizen_id, @relationship_with_head_id,
-            @effective_date, 1, -- 1: 'Đang cư trú'
+            @effective_date, @member_status_id_active,
             GETDATE(), GETDATE()
         );
         SET @new_household_member_id = SCOPE_IDENTITY();
 
-        -- 3. Cập nhật địa chỉ chính (primary_address_id) cho công dân
+        -- 4. Cập nhật địa chỉ chính (primary_address_id) cho công dân
         UPDATE [BCA].[Citizen]
         SET [primary_address_id] = @address_id,
-            [updated_at] = GETDATE()
+            [updated_at] = GETDATE(),
+            [updated_by] = @created_by_user_id
         WHERE [citizen_id] = @citizen_id;
 
-        -- 4. Ghi lịch sử cư trú mới
-        -- Giả định residence_type_id = 1 là 'Thường trú'
-        -- Giả định res_reg_status_id = 1 là 'Đang hiệu lực'
+        -- 5. Ghi lịch sử cư trú mới
         INSERT INTO [BCA].[ResidenceHistory] (
             [citizen_id], [address_id], [residence_type_id], [registration_date],
             [registration_reason], [issuing_authority_id], [res_reg_status_id],
-            [notes], [created_at], [updated_at]
+            [notes], [created_at], [updated_at], [created_by], [updated_by]
         )
         VALUES (
-            @citizen_id, @address_id, 1, @effective_date, -- 1: Thường trú
-            N'Nhập hộ khẩu mới', @issuing_authority_id, 1, -- 1: Đang hiệu lực
-            @notes, GETDATE(), GETDATE()
+            @citizen_id, @address_id, @residence_type_id_permanent, @effective_date,
+            N'Đăng ký thường trú lần đầu khi nhập hộ khẩu', @issuing_authority_id, @res_reg_status_id_active,
+            @notes, GETDATE(), GETDATE(), @created_by_user_id, @created_by_user_id
         );
         SET @new_residence_history_id = SCOPE_IDENTITY();
 
-        -- 5. Ghi vào sổ nhật ký thay đổi hộ khẩu
+        -- 6. Cập nhật CitizenAddress cũ (nếu có) thành không còn hiệu lực
+        -- Trường hợp: công dân có thể đã có địa chỉ tạm thời trước đó
+        UPDATE [BCA].[CitizenAddress]
+        SET [is_primary] = 0,
+            [is_permanent_residence] = 0,
+            [is_temporary_residence] = 0,
+            [to_date] = @effective_date,
+            [status] = 0, -- Không còn hoạt động
+            [notes] = ISNULL(RTRIM([notes]) + N' | ', N'') + N'Chấm dứt do đăng ký thường trú lần đầu ngày ' + CONVERT(NVARCHAR, @effective_date, 103),
+            [updated_at] = GETDATE(),
+            [updated_by] = @created_by_user_id
+        WHERE [citizen_id] = @citizen_id
+          AND [status] = 1; -- Chỉ cập nhật những địa chỉ đang hoạt động
+
+        -- 7. Thêm địa chỉ thường trú mới vào CitizenAddress
+        INSERT INTO [BCA].[CitizenAddress] (
+            [citizen_id], [address_id], [address_type_id], [from_date], [to_date],
+            [is_primary], [is_permanent_residence], [is_temporary_residence], [status],
+            [registration_document_no], [registration_date], [issuing_authority_id],
+            [verification_status], [verification_date], [verified_by],
+            [notes], [related_residence_history_id],
+            [created_at], [updated_at], [created_by], [updated_by]
+        )
+        VALUES (
+            @citizen_id, @address_id, @address_type_id_permanent_residence, 
+            @effective_date, NULL, -- from_date, to_date (NULL = không có ngày kết thúc)
+            1, 1, 0, 1, -- is_primary, is_permanent_residence, is_temporary_residence, status
+            NULL, @effective_date, @issuing_authority_id, -- registration info
+            N'Đã xác minh', @effective_date, @created_by_user_id, -- verification info
+            N'Đăng ký thường trú lần đầu khi nhập hộ khẩu', @new_residence_history_id,
+            GETDATE(), GETDATE(), @created_by_user_id, @created_by_user_id
+        );
+        SET @new_citizen_address_id = SCOPE_IDENTITY();
+
+        -- 8. Ghi vào sổ nhật ký thay đổi hộ khẩu
         INSERT INTO [BCA].[HouseholdChangeLog] (
             [citizen_id], [reason_id], [from_household_id], [to_household_id],
             [effective_date], [notes], [created_by_user_id], [created_at]
         )
         VALUES (
-            @citizen_id, @reason_id, NULL, @to_household_id,
+            @citizen_id, @reason_id, NULL, @to_household_id, -- from_household_id = NULL vì chưa có hộ khẩu
             @effective_date, @notes, @created_by_user_id, GETDATE()
         );
         SET @new_log_id = SCOPE_IDENTITY();
@@ -1654,11 +1654,19 @@ CREATE PROCEDURE [API_Internal].[TransferHouseholdMember]
     @old_household_member_id BIGINT OUTPUT,
     @new_household_member_id BIGINT OUTPUT,
     @new_log_id INT OUTPUT,
-    @new_residence_history_id BIGINT OUTPUT
+    @new_residence_history_id BIGINT OUTPUT,
+    @new_citizen_address_id BIGINT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON; -- Đảm bảo transaction sẽ rollback nếu có lỗi
+
+    -- Constants for reference IDs (based on system design)
+    DECLARE @address_type_id_permanent_residence SMALLINT = 1; -- 'Nơi thường trú'
+    DECLARE @residence_type_id_permanent SMALLINT = 1;         -- 'Thường trú'
+    DECLARE @res_reg_status_id_active SMALLINT = 1;            -- 'Đang hiệu lực'
+    DECLARE @member_status_id_active SMALLINT = 1;             -- 'Đang cư trú'
+    DECLARE @member_status_id_left SMALLINT = 2;               -- 'Đã chuyển đi'
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -1668,7 +1676,7 @@ BEGIN
         FROM [BCA].[HouseholdMember]
         WHERE [citizen_id] = @citizen_id 
           AND [household_id] = @from_household_id 
-          AND [member_status_id] = 1; -- 1: ACTIVE (Đang cư trú)
+          AND [member_status_id] = @member_status_id_active;
 
         -- Nếu không tìm thấy thành viên trong hộ khẩu nguồn, gây ra lỗi
         IF @old_household_member_id IS NULL
@@ -1690,7 +1698,7 @@ BEGIN
 
         -- 3. Cắt khẩu cũ: Cập nhật trạng thái thành viên cũ thành "Đã chuyển đi"
         UPDATE [BCA].[HouseholdMember]
-        SET [member_status_id] = 2, -- 2: LEFT (Đã chuyển đi)
+        SET [member_status_id] = @member_status_id_left,
             [leave_date] = @effective_date,
             [leave_reason] = N'Chuyển hộ khẩu',
             [updated_at] = GETDATE()
@@ -1704,7 +1712,7 @@ BEGIN
         )
         VALUES (
             @to_household_id, @citizen_id, @relationship_with_head_id,
-            @effective_date, 1, @from_household_id, -- 1: ACTIVE (Đang cư trú)
+            @effective_date, @member_status_id_active, @from_household_id,
             GETDATE(), GETDATE()
         );
         SET @new_household_member_id = SCOPE_IDENTITY();
@@ -1712,23 +1720,57 @@ BEGIN
         -- 5. Cập nhật địa chỉ chính (primary_address_id) cho công dân
         UPDATE [BCA].[Citizen]
         SET [primary_address_id] = @new_address_id,
-            [updated_at] = GETDATE()
+            [updated_at] = GETDATE(),
+            [updated_by] = @created_by_user_id
         WHERE [citizen_id] = @citizen_id;
 
         -- 6. Ghi lịch sử cư trú mới
         INSERT INTO [BCA].[ResidenceHistory] (
             [citizen_id], [address_id], [residence_type_id], [registration_date],
             [registration_reason], [issuing_authority_id], [res_reg_status_id],
-            [notes], [created_at], [updated_at]
+            [notes], [created_at], [updated_at], [created_by], [updated_by]
         )
         VALUES (
-            @citizen_id, @new_address_id, 1, @effective_date, -- 1: THUONGTRU (Thường trú)
-            N'Chuyển hộ khẩu', @issuing_authority_id, 1, -- 1: ACTIVE (Đang hiệu lực)
-            @notes, GETDATE(), GETDATE()
+            @citizen_id, @new_address_id, @residence_type_id_permanent, @effective_date,
+            N'Chuyển hộ khẩu', @issuing_authority_id, @res_reg_status_id_active,
+            @notes, GETDATE(), GETDATE(), @created_by_user_id, @created_by_user_id
         );
         SET @new_residence_history_id = SCOPE_IDENTITY();
 
-        -- 7. Ghi vào sổ nhật ký thay đổi hộ khẩu
+        -- 7. Cập nhật CitizenAddress: Đặt các địa chỉ cũ thành không còn hiệu lực
+        UPDATE [BCA].[CitizenAddress]
+        SET [is_primary] = 0,
+            [is_permanent_residence] = 0,
+            [to_date] = @effective_date,
+            [status] = 0, -- Không còn hoạt động
+            [notes] = ISNULL(RTRIM([notes]) + N' | ', N'') + N'Chấm dứt do chuyển hộ khẩu ngày ' + CONVERT(NVARCHAR, @effective_date, 103),
+            [updated_at] = GETDATE(),
+            [updated_by] = @created_by_user_id
+        WHERE [citizen_id] = @citizen_id
+          AND ([is_primary] = 1 OR [is_permanent_residence] = 1)
+          AND [status] = 1;
+
+        -- 8. Thêm địa chỉ mới vào CitizenAddress (địa chỉ của hộ khẩu đích)
+        INSERT INTO [BCA].[CitizenAddress] (
+            [citizen_id], [address_id], [address_type_id], [from_date], [to_date],
+            [is_primary], [is_permanent_residence], [status],
+            [registration_document_no], [registration_date], [issuing_authority_id],
+            [verification_status], [verification_date], [verified_by],
+            [notes], [related_residence_history_id],
+            [created_at], [updated_at], [created_by], [updated_by]
+        )
+        VALUES (
+            @citizen_id, @new_address_id, @address_type_id_permanent_residence, 
+            @effective_date, NULL, -- from_date, to_date (NULL = không có ngày kết thúc)
+            1, 1, 1, -- is_primary, is_permanent_residence, status (tất cả = 1)
+            NULL, @effective_date, @issuing_authority_id, -- registration info
+            N'Đã xác minh', @effective_date, @created_by_user_id, -- verification info
+            N'Địa chỉ thường trú mới do chuyển hộ khẩu', @new_residence_history_id,
+            GETDATE(), GETDATE(), @created_by_user_id, @created_by_user_id
+        );
+        SET @new_citizen_address_id = SCOPE_IDENTITY();
+
+        -- 9. Ghi vào sổ nhật ký thay đổi hộ khẩu
         INSERT INTO [BCA].[HouseholdChangeLog] (
             [citizen_id], [reason_id], [from_household_id], [to_household_id],
             [effective_date], [notes], [created_by_user_id], [created_at]
@@ -1885,5 +1927,477 @@ BEGIN
         -- Order results by name for consistency
         c.full_name, c.date_of_birth;
 
+END
+GO
+
+-- ====================================================================================
+-- Stored Procedure: RegisterTemporaryAbsence
+-- Description: Đăng ký tạm vắng cho một công dân. Công dân vẫn giữ địa chỉ thường trú
+--              nhưng được ghi nhận là tạm thời không có mặt tại địa chỉ đó.
+-- ====================================================================================
+
+IF OBJECT_ID('[API_Internal].[RegisterTemporaryAbsence]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[RegisterTemporaryAbsence];
+GO
+
+CREATE PROCEDURE [API_Internal].[RegisterTemporaryAbsence]
+    -- Input parameters
+    @citizen_id VARCHAR(12),
+    @from_date DATE,
+    @to_date DATE = NULL,                          -- Có thể NULL cho tạm vắng không xác định thời gian kết thúc
+    @reason NVARCHAR(MAX),
+    @temporary_absence_type_id SMALLINT,           -- FK to Reference.TemporaryAbsenceTypes
+    @destination_address_detail NVARCHAR(MAX) = NULL, -- Địa chỉ chi tiết nơi đến
+    @destination_ward_id INT = NULL,               -- Nếu trong nước
+    @destination_district_id INT = NULL,
+    @destination_province_id INT = NULL,
+    @contact_information NVARCHAR(MAX) = NULL,     -- Thông tin liên lạc
+    @registration_authority_id INT,                -- Cơ quan đăng ký
+    @sensitivity_level_id SMALLINT = 1,            -- Mức độ nhạy cảm (mặc định = 1: Thông thường)
+    @created_by_user_id NVARCHAR(100) = NULL,
+    @notes NVARCHAR(MAX) = NULL,
+
+    -- Output parameters
+    @new_temporary_absence_id BIGINT OUTPUT,
+    @registration_number VARCHAR(50) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    -- Constants
+    DECLARE @temp_abs_status_id_active SMALLINT = 1;           -- 'ACTIVE' - Đang tạm vắng
+    DECLARE @citizen_status_id_alive SMALLINT = 1;             -- 'CONSONG' - Còn sống
+
+    DECLARE @destination_address_id BIGINT = NULL;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- 1. Validation: Kiểm tra công dân tồn tại và đang sống
+        IF NOT EXISTS (
+            SELECT 1 FROM [BCA].[Citizen] c
+            INNER JOIN [Reference].[CitizenStatusTypes] st ON c.citizen_status_id = st.citizen_status_id
+            WHERE c.citizen_id = @citizen_id 
+              AND st.status_code IN ('CONSONG', 'ALIVE')
+        )
+        BEGIN
+            THROW 50001, 'Công dân không tồn tại hoặc không còn sống.', 1;
+        END
+
+        -- 2. Validation: Kiểm tra công dân có đang thường trú (có trong hộ khẩu) không
+        IF NOT EXISTS (
+            SELECT 1 FROM [BCA].[HouseholdMember] hm
+            INNER JOIN [Reference].[HouseholdMemberStatuses] hms ON hm.member_status_id = hms.member_status_id
+            WHERE hm.citizen_id = @citizen_id 
+              AND hms.status_code = 'ACTIVE' -- Đang cư trú
+        )
+        BEGIN
+            THROW 50002, 'Công dân phải có hộ khẩu và đang cư trú mới có thể đăng ký tạm vắng.', 1;
+        END
+
+        -- 3. Validation: Kiểm tra không có tạm vắng active chồng chéo thời gian
+        IF EXISTS (
+            SELECT 1 FROM [BCA].[TemporaryAbsence] ta
+            INNER JOIN [Reference].[TemporaryAbsenceStatuses] tas ON ta.temp_abs_status_id = tas.temp_abs_status_id
+            WHERE ta.citizen_id = @citizen_id 
+              AND tas.status_code = 'ACTIVE'
+              AND (
+                  (@to_date IS NULL) OR 
+                  (ta.to_date IS NULL) OR
+                  (@from_date <= ISNULL(ta.to_date, '9999-12-31') AND ISNULL(@to_date, '9999-12-31') >= ta.from_date)
+              )
+        )
+        BEGIN
+            THROW 50003, 'Công dân đã có đăng ký tạm vắng active trong khoảng thời gian này.', 1;
+        END
+
+        -- 4. Validation: Kiểm tra thời gian hợp lệ
+        IF @to_date IS NOT NULL AND @from_date > @to_date
+        BEGIN
+            THROW 50004, 'Ngày bắt đầu tạm vắng không thể sau ngày kết thúc.', 1;
+        END
+
+        IF @from_date > GETDATE()
+        BEGIN
+            THROW 50005, 'Ngày bắt đầu tạm vắng không thể trong tương lai. Chỉ đăng ký khi đã bắt đầu tạm vắng.', 1;
+        END
+
+        -- 5. Xử lý địa chỉ đích (nếu có thông tin đầy đủ trong nước)
+        IF @destination_address_detail IS NOT NULL AND @destination_ward_id IS NOT NULL 
+           AND @destination_district_id IS NOT NULL AND @destination_province_id IS NOT NULL
+        BEGIN
+            -- Tìm địa chỉ tương tự đã tồn tại
+            SELECT @destination_address_id = address_id
+            FROM [BCA].[Address]
+            WHERE [address_detail] = @destination_address_detail
+              AND [ward_id] = @destination_ward_id
+              AND [district_id] = @destination_district_id
+              AND [province_id] = @destination_province_id;
+
+            -- Nếu chưa có, tạo địa chỉ mới
+            IF @destination_address_id IS NULL
+            BEGIN
+                INSERT INTO [BCA].[Address] (
+                    [address_detail], [ward_id], [district_id], [province_id],
+                    [status], [created_by], [updated_by]
+                )
+                VALUES (
+                    @destination_address_detail, @destination_ward_id, @destination_district_id, @destination_province_id,
+                    1, @created_by_user_id, @created_by_user_id
+                );
+                SET @destination_address_id = SCOPE_IDENTITY();
+            END
+        END
+
+        -- 6. Tạo số đăng ký tự động 
+        SET @registration_number = 'TV-' + FORMAT(GETDATE(), 'yyyy') + '-' + FORMAT(NEXT VALUE FOR dbo.SEQ_TemporaryAbsence, '000000');
+
+        -- 7. Thêm bản ghi tạm vắng
+        INSERT INTO [BCA].[TemporaryAbsence] (
+            [citizen_id], [from_date], [to_date], [reason],
+            [destination_address_id], [destination_detail], [contact_information],
+            [registration_authority_id], [registration_number],
+            [temp_abs_status_id], [temporary_absence_type_id], [sensitivity_level_id],
+            [verification_status], [verification_date], [verified_by],
+            [notes], [created_at], [updated_at], [created_by], [updated_by]
+        )
+        VALUES (
+            @citizen_id, @from_date, @to_date, @reason,
+            @destination_address_id, @destination_address_detail, @contact_information,
+            @registration_authority_id, @registration_number,
+            @temp_abs_status_id_active, @temporary_absence_type_id, @sensitivity_level_id,
+            N'Đã xác minh', GETDATE(), @created_by_user_id,
+            @notes, GETDATE(), GETDATE(), @created_by_user_id, @created_by_user_id
+        );
+        SET @new_temporary_absence_id = SCOPE_IDENTITY();
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        THROW;
+    END CATCH;
+END;
+GO
+
+PRINT 'Stored Procedure [API_Internal].[RegisterTemporaryAbsence] đã được tạo thành công.';
+GO
+
+-- ====================================================================================
+-- Stored Procedure: ConfirmReturn
+-- Description: Xác nhận công dân đã trở về từ tạm vắng. Cập nhật trạng thái và 
+--              ngày trở về thực tế.
+-- ====================================================================================
+
+IF OBJECT_ID('[API_Internal].[ConfirmReturn]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[ConfirmReturn];
+GO
+
+CREATE PROCEDURE [API_Internal].[ConfirmReturn]
+    -- Input parameters
+    @temporary_absence_id BIGINT = NULL,           -- Option 1: Direct ID
+    @citizen_id VARCHAR(12) = NULL,                -- Option 2: Find active absence by citizen
+    @return_date DATE = NULL,                      -- Ngày trở về (NULL = ngày hiện tại)
+    @return_notes NVARCHAR(MAX) = NULL,            -- Ghi chú về việc trở về
+    @confirmed_by_user_id NVARCHAR(100) = NULL,
+
+    -- Output parameters
+    @updated_temporary_absence_id BIGINT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    -- Constants
+    DECLARE @temp_abs_status_id_returned SMALLINT = 2;        -- 'RETURNED' - Đã trở về
+    DECLARE @temp_abs_status_id_active SMALLINT = 1;          -- 'ACTIVE' - Đang tạm vắng
+
+    -- Default return date to today if not provided
+    IF @return_date IS NULL
+        SET @return_date = CAST(GETDATE() AS DATE);
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- 1. Tìm temporary_absence_id nếu chỉ có citizen_id
+        IF @temporary_absence_id IS NULL AND @citizen_id IS NOT NULL
+        BEGIN
+            SELECT TOP 1 @temporary_absence_id = temporary_absence_id
+            FROM [BCA].[TemporaryAbsence] ta
+            INNER JOIN [Reference].[TemporaryAbsenceStatuses] tas ON ta.temp_abs_status_id = tas.temp_abs_status_id
+            WHERE ta.citizen_id = @citizen_id 
+              AND tas.status_code = 'ACTIVE'
+            ORDER BY ta.from_date DESC; -- Lấy đăng ký tạm vắng gần nhất
+        END
+
+        -- 2. Validation: Kiểm tra bản ghi tạm vắng tồn tại và đang active
+        IF @temporary_absence_id IS NULL OR NOT EXISTS (
+            SELECT 1 FROM [BCA].[TemporaryAbsence] ta
+            INNER JOIN [Reference].[TemporaryAbsenceStatuses] tas ON ta.temp_abs_status_id = tas.temp_abs_status_id
+            WHERE ta.temporary_absence_id = @temporary_absence_id 
+              AND tas.status_code = 'ACTIVE'
+        )
+        BEGIN
+            THROW 50001, 'Không tìm thấy đăng ký tạm vắng đang active với thông tin cung cấp.', 1;
+        END
+
+        -- 3. Validation: Kiểm tra ngày trở về hợp lệ
+        DECLARE @from_date DATE;
+        SELECT @from_date = from_date
+        FROM [BCA].[TemporaryAbsence]
+        WHERE temporary_absence_id = @temporary_absence_id;
+
+        IF @return_date < @from_date
+        BEGIN
+            THROW 50002, 'Ngày trở về không thể trước ngày bắt đầu tạm vắng.', 1;
+        END
+
+        -- 4. Cập nhật thông tin trở về
+        UPDATE [BCA].[TemporaryAbsence]
+        SET [return_date] = @return_date,
+            [return_confirmed] = 1,
+            [return_confirmed_by] = @confirmed_by_user_id,
+            [return_confirmed_date] = GETDATE(),
+            [return_notes] = @return_notes,
+            [temp_abs_status_id] = @temp_abs_status_id_returned,
+            [updated_at] = GETDATE(),
+            [updated_by] = @confirmed_by_user_id
+        WHERE [temporary_absence_id] = @temporary_absence_id;
+
+        SET @updated_temporary_absence_id = @temporary_absence_id;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        THROW;
+    END CATCH;
+END;
+GO
+
+PRINT 'Stored Procedure [API_Internal].[ConfirmReturn] đã được tạo thành công.';
+GO
+
+-- ====================================================================================
+-- Stored Procedure: ExtendTemporaryAbsence
+-- Description: Gia hạn thời gian tạm vắng cho công dân đang tạm vắng.
+-- ====================================================================================
+
+IF OBJECT_ID('[API_Internal].[ExtendTemporaryAbsence]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[ExtendTemporaryAbsence];
+GO
+
+CREATE PROCEDURE [API_Internal].[ExtendTemporaryAbsence]
+    -- Input parameters
+    @temporary_absence_id BIGINT,
+    @new_to_date DATE,                             -- Ngày kết thúc mới
+    @extension_reason NVARCHAR(MAX),               -- Lý do gia hạn
+    @updated_by_user_id NVARCHAR(100) = NULL,
+
+    -- Output parameters  
+    @updated_temporary_absence_id BIGINT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @current_from_date DATE;
+    DECLARE @current_to_date DATE;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- 1. Validation: Kiểm tra bản ghi tạm vắng tồn tại và đang active
+        IF NOT EXISTS (
+            SELECT 1 FROM [BCA].[TemporaryAbsence] ta
+            INNER JOIN [Reference].[TemporaryAbsenceStatuses] tas ON ta.temp_abs_status_id = tas.temp_abs_status_id
+            WHERE ta.temporary_absence_id = @temporary_absence_id 
+              AND tas.status_code = 'ACTIVE'
+        )
+        BEGIN
+            THROW 50001, 'Không tìm thấy đăng ký tạm vắng đang active với ID cung cấp.', 1;
+        END
+
+        -- 2. Lấy thông tin thời gian hiện tại
+        SELECT @current_from_date = from_date, @current_to_date = to_date
+        FROM [BCA].[TemporaryAbsence]
+        WHERE temporary_absence_id = @temporary_absence_id;
+
+        -- 3. Validation: Kiểm tra ngày gia hạn hợp lệ
+        IF @new_to_date <= @current_from_date
+        BEGIN
+            THROW 50002, 'Ngày kết thúc mới phải sau ngày bắt đầu tạm vắng.', 1;
+        END
+
+        IF @current_to_date IS NOT NULL AND @new_to_date <= @current_to_date
+        BEGIN
+            THROW 50003, 'Ngày kết thúc mới phải sau ngày kết thúc hiện tại để được coi là gia hạn.', 1;
+        END
+
+        -- 4. Cập nhật thông tin gia hạn
+        UPDATE [BCA].[TemporaryAbsence]
+        SET [to_date] = @new_to_date,
+            [extension_count] = ISNULL([extension_count], 0) + 1,
+            [last_extension_date] = GETDATE(),
+            [notes] = ISNULL(RTRIM([notes]) + N' | ', N'') + N'Gia hạn đến ' + CONVERT(NVARCHAR, @new_to_date, 103) + N': ' + @extension_reason,
+            [updated_at] = GETDATE(),
+            [updated_by] = @updated_by_user_id
+        WHERE [temporary_absence_id] = @temporary_absence_id;
+
+        SET @updated_temporary_absence_id = @temporary_absence_id;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        THROW;
+    END CATCH;
+END;
+GO
+
+PRINT 'Stored Procedure [API_Internal].[ExtendTemporaryAbsence] đã được tạo thành công.';
+GO
+
+-- ====================================================================================
+-- Stored Procedure: CancelTemporaryAbsence
+-- Description: Hủy đăng ký tạm vắng (trước khi bắt đầu hoặc trong quá trình tạm vắng).
+
+-- ====================================================================================
+
+IF OBJECT_ID('[API_Internal].[CancelTemporaryAbsence]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[CancelTemporaryAbsence];
+GO
+
+CREATE PROCEDURE [API_Internal].[CancelTemporaryAbsence]
+    -- Input parameters
+    @temporary_absence_id BIGINT,
+    @cancellation_reason NVARCHAR(MAX),           -- Lý do hủy
+    @cancelled_by_user_id NVARCHAR(100) = NULL,
+
+    -- Output parameters
+    @cancelled_temporary_absence_id BIGINT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    -- Constants
+    DECLARE @temp_abs_status_id_cancelled SMALLINT = 4;       -- 'CANCELLED' - Đã hủy
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- 1. Validation: Kiểm tra bản ghi tạm vắng tồn tại và có thể hủy
+        IF NOT EXISTS (
+            SELECT 1 FROM [BCA].[TemporaryAbsence] ta
+            INNER JOIN [Reference].[TemporaryAbsenceStatuses] tas ON ta.temp_abs_status_id = tas.temp_abs_status_id
+            WHERE ta.temporary_absence_id = @temporary_absence_id 
+              AND tas.status_code IN ('ACTIVE', 'PENDING') -- Chỉ có thể hủy những trạng thái này
+        )
+        BEGIN
+            THROW 50001, 'Không tìm thấy đăng ký tạm vắng có thể hủy với ID cung cấp.', 1;
+        END
+
+        -- 2. Cập nhật trạng thái hủy
+        UPDATE [BCA].[TemporaryAbsence]
+        SET [temp_abs_status_id] = @temp_abs_status_id_cancelled,
+            [return_date] = CAST(GETDATE() AS DATE), -- Đánh dấu ngày hủy
+            [return_confirmed] = 1,
+            [return_confirmed_by] = @cancelled_by_user_id,
+            [return_confirmed_date] = GETDATE(),
+            [return_notes] = N'Đăng ký tạm vắng đã bị hủy. Lý do: ' + @cancellation_reason,
+            [notes] = ISNULL(RTRIM([notes]) + N' | ', N'') + N'HỦY ĐĂNG KÝ: ' + @cancellation_reason,
+            [updated_at] = GETDATE(),
+            [updated_by] = @cancelled_by_user_id
+        WHERE [temporary_absence_id] = @temporary_absence_id;
+
+        SET @cancelled_temporary_absence_id = @temporary_absence_id;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        THROW;
+    END CATCH;
+END;
+GO
+
+PRINT 'Stored Procedure [API_Internal].[CancelTemporaryAbsence] đã được tạo thành công.';
+GO
+
+-- ====================================================================================
+-- Stored Procedure: GetCurrentTemporaryAbsence
+-- Description: Lấy thông tin tạm vắng hiện tại của công dân (status = ACTIVE)
+-- ====================================================================================
+
+IF OBJECT_ID('[API_Internal].[GetCurrentTemporaryAbsence]', 'P') IS NOT NULL
+    DROP PROCEDURE [API_Internal].[GetCurrentTemporaryAbsence];
+GO
+
+CREATE PROCEDURE [API_Internal].[GetCurrentTemporaryAbsence]
+    @citizen_id VARCHAR(12)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        ta.temporary_absence_id,
+        ta.citizen_id,
+        c.full_name as citizen_name,
+        ta.from_date,
+        ta.to_date,
+        ta.reason,
+        CASE 
+            WHEN ta.destination_address_id IS NOT NULL THEN
+                CONCAT(addr.address_detail, ', ', w.ward_name, ', ', d.district_name, ', ', p.province_name)
+            ELSE ta.destination_detail
+        END as destination_address,
+        ta.contact_information,
+        ta.registration_number,
+        auth.authority_name as registration_authority,
+        tas.status_name_vi as status,
+        tat.type_name_vi as temporary_absence_type,
+        ta.return_date,
+        ta.return_confirmed,
+        ta.extension_count,
+        ta.notes,
+        FORMAT(ta.created_at, 'yyyy-MM-dd HH:mm:ss') as created_at
+    FROM [BCA].[TemporaryAbsence] ta
+    INNER JOIN [BCA].[Citizen] c ON ta.citizen_id = c.citizen_id
+    INNER JOIN [Reference].[TemporaryAbsenceStatuses] tas ON ta.temp_abs_status_id = tas.temp_abs_status_id
+    LEFT JOIN [Reference].[TemporaryAbsenceTypes] tat ON ta.temp_abs_type_id = tat.temp_abs_type_id
+    LEFT JOIN [Reference].[Authorities] auth ON ta.registration_authority_id = auth.authority_id
+    LEFT JOIN [BCA].[Address] addr ON ta.destination_address_id = addr.address_id
+    LEFT JOIN [Reference].[Wards] w ON addr.ward_id = w.ward_id
+    LEFT JOIN [Reference].[Districts] d ON addr.district_id = d.district_id
+    LEFT JOIN [Reference].[Provinces] p ON addr.province_id = p.province_id
+    WHERE ta.citizen_id = @citizen_id 
+      AND tas.status_code = 'ACTIVE'
+    ORDER BY ta.from_date DESC;
+END;
+GO
+
+PRINT 'Stored Procedure [API_Internal].[GetCurrentTemporaryAbsence] đã được tạo thành công.';
+GO
+
+-- Tạo sequence cho registration number nếu chưa có
+IF NOT EXISTS (SELECT * FROM sys.sequences WHERE name = 'SEQ_TemporaryAbsence')
+BEGIN
+    CREATE SEQUENCE dbo.SEQ_TemporaryAbsence
+        START WITH 1
+        INCREMENT BY 1
+        MINVALUE 1
+        MAXVALUE 999999
+        CYCLE;
+    PRINT 'Sequence dbo.SEQ_TemporaryAbsence đã được tạo thành công.';
 END
 GO

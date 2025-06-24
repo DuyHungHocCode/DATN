@@ -619,8 +619,6 @@ GO
 
 PRINT N'Finished creating improved reference tables in DB_BCA.Reference schema.';
 
--- Dữ liệu mẫu cho DocumentTypes và ExecutionStatuses
--- Chú ý: Đây chỉ là mẫu, có thể mở rộng và điều chỉnh
 
 -- Dữ liệu mẫu cho DocumentTypes
 PRINT N'  Thêm dữ liệu mẫu cho Reference.DocumentTypes...';

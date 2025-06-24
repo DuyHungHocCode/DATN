@@ -20,32 +20,32 @@ class DivorceRecordBase(BaseModel):
     property_division: Optional[str] = Field(None, description="Thông tin về phân chia tài sản")
     notes: Optional[str] = Field(None, description="Ghi chú thêm")
 
-    @field_validator('divorce_date', 'registration_date', 'judgment_date')
-    @classmethod
-    def date_must_not_be_in_future(cls, v):
-        if v > date.today():
-            raise ValueError('Ngày không được ở tương lai')
-        return v
+    # @field_validator('divorce_date', 'registration_date', 'judgment_date')
+    # @classmethod
+    # def date_must_not_be_in_future(cls, v):
+    #     if v > date.today():
+    #         raise ValueError('Ngày không được ở tương lai')
+    #     return v
     
-    @field_validator('registration_date')
-    @classmethod
-    def registration_date_must_be_on_or_after_divorce_and_judgment(cls, v, info):
-        divorce_date = info.data.get('divorce_date')
-        judgment_date = info.data.get('judgment_date')
+    # @field_validator('registration_date')
+    # @classmethod
+    # def registration_date_must_be_on_or_after_divorce_and_judgment(cls, v, info):
+    #     divorce_date = info.data.get('divorce_date')
+    #     judgment_date = info.data.get('judgment_date')
 
-        if divorce_date is not None and v < divorce_date:
-            raise ValueError('Ngày đăng ký phải sau hoặc bằng ngày ly hôn')
-        if judgment_date is not None and v < judgment_date:
-            raise ValueError('Ngày đăng ký phải sau hoặc bằng ngày ra quyết định/bản án')
-        return v
+    #     if divorce_date is not None and v < divorce_date:
+    #         raise ValueError('Ngày đăng ký phải sau hoặc bằng ngày ly hôn')
+    #     if judgment_date is not None and v < judgment_date:
+    #         raise ValueError('Ngày đăng ký phải sau hoặc bằng ngày ra quyết định/bản án')
+    #     return v
     
-    @field_validator('judgment_date')
-    @classmethod
-    def judgment_date_must_be_on_or_before_divorce(cls, v, info):
-        divorce_date = info.data.get('divorce_date')
-        if divorce_date is not None and v > divorce_date:
-            raise ValueError('Ngày ra quyết định/bản án phải trước hoặc bằng ngày ly hôn')
-        return v
+    # @field_validator('judgment_date')
+    # @classmethod
+    # def judgment_date_must_be_on_or_before_divorce(cls, v, info):
+    #     divorce_date = info.data.get('divorce_date')
+    #     if divorce_date is not None and v > divorce_date:
+    #         raise ValueError('Ngày ra quyết định/bản án phải trước hoặc bằng ngày ly hôn')
+    #     return v
 
 class DivorceRecordCreate(DivorceRecordBase):
     pass

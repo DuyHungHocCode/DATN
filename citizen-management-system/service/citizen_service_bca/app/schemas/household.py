@@ -18,29 +18,31 @@ class HouseholdMemberDetailResponse(BaseModel):
     }
 
 class HouseholdDetailResponse(BaseModel):
+    # Core household info
     household_id: int
     household_book_no: str
-    head_of_household_id: str
-    head_of_household_full_name: str
+    head_of_household_id: Optional[str] = None
+    head_of_household_name: Optional[str] = None # Can be null if citizen not found
+    full_address: Optional[str] = None          # Can be null if address not found
     
-    address_detail: str
-    ward_name: str
-    district_name: str
-    province_name: str
+    # Detailed address parts, can be null
+    ward_name: Optional[str] = None
+    district_name: Optional[str] = None
+    province_name: Optional[str] = None
     
-    registration_date: date
-    issuing_authority_name: Optional[str] = None # Tên cơ quan cấp đã được giải nghĩa
-    household_type_name: str # Tên loại hộ khẩu đã được giải nghĩa
-    household_status_name: str # Tên trạng thái hộ khẩu đã được giải nghĩa
+    # Other details, can be null
+    registration_date: Optional[date] = None
+    area_code: Optional[str] = None
+    household_type: Optional[str] = None
+    household_status: Optional[str] = None
+    issuing_authority: Optional[str] = None
     
-    ownership_certificate_id: Optional[int] = None # Logical FK to TNMT.OwnershipCertificate
-    rental_contract_id: Optional[int] = None # Logical FK to TNMT.RentalContract
-    notes: Optional[str] = None
+    # Timestamps
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     
+    # Member list
     members: List[HouseholdMemberDetailResponse] = []
-
-    created_at: datetime
-    updated_at: datetime
 
     model_config = {
         "from_attributes": True

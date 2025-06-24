@@ -428,29 +428,29 @@ INSERT INTO [BCA].[TemporaryAbsence] (
     [temporary_absence_id], [citizen_id], [from_date], [to_date], 
     [reason], [destination_detail], [contact_information],
     [registration_authority_id], [registration_number],
-    [return_date], [return_confirmed], [temp_abs_status_id], 
-    [sensitivity_level_id], [created_at], [updated_at]
+    [return_date], [return_confirmed], [temp_abs_status_id], [temp_abs_type_id],
+    [extension_count], [last_extension_date], [sensitivity_level_id], [created_at], [updated_at]
 ) VALUES
     (1, '001201786523', '2023-06-15', '2023-08-20', -- Student summer internship
         N'Thực tập hè', N'Công ty ABC, 123 Nguyễn Huệ, Quận 1, TP.HCM', 
         N'0967890123, quang.trandinh@email.com',
         401, 'TV-2023-001', 
-        '2023-08-19', 1, 2, -- Returned, status RETURNED
-        1, GETDATE(), GETDATE()),
+        '2023-08-19', 1, 2, 2, -- Returned, status RETURNED, type HOC_TAP
+        0, NULL, 1, GETDATE(), GETDATE()),
         
     (2, '001196325874', '2023-10-01', '2024-03-31', -- Work assignment
         N'Công tác nước ngoài', N'Tokyo, Nhật Bản', 
         N'0990123456, thao.phamthi@email.com',
         401, 'TV-2023-002', 
-        NULL, 0, 1, -- Not yet returned, status ACTIVE
-        2, GETDATE(), GETDATE()),
+        NULL, 0, 1, 1, -- Not yet returned, status ACTIVE, type CONG_TAC
+        0, NULL, 2, GETDATE(), GETDATE()),
         
     (3, '001191357924', '2022-05-10', '2022-08-15', -- prison
         N'Chấp hành án phạt tù', N'Trại giam Hòa Bình', 
         NULL,
         401, 'TV-2022-003', 
-        '2022-08-15', 1, 2, -- Returned, status RETURNED
-        3, GETDATE(), GETDATE());
+        '2022-08-15', 1, 2, 4, -- Returned, status RETURNED, type CHAP_HANH_AN
+        0, NULL, 3, GETDATE(), GETDATE());
 SET IDENTITY_INSERT [BCA].[TemporaryAbsence] OFF;
 GO
 

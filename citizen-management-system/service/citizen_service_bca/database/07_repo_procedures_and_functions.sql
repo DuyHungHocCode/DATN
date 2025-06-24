@@ -116,9 +116,15 @@ CREATE PROCEDURE [API_Internal].[FindHouseholdById]
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT * 
-    FROM [BCA].[Household]
-    WHERE household_id = @household_id;
+    SELECT 
+        h.*,
+        hs.status_name_vi AS household_status
+    FROM 
+        [BCA].[Household] h
+    LEFT JOIN 
+        [Reference].[HouseholdStatuses] hs ON h.household_status_id = hs.household_status_id
+    WHERE 
+        h.household_id = @household_id;
 END;
 GO
 PRINT N'Stored Procedure [API_Internal].[FindHouseholdById] created.';

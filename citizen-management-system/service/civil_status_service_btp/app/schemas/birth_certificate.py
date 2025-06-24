@@ -6,6 +6,7 @@ from datetime import date, datetime
 
 class BirthCertificateBase(BaseModel):
     citizen_id: str = Field(..., max_length=12, description="ID CCCD/CMND của trẻ sơ sinh")
+    full_name: str = Field(..., max_length=100, description="Họ và tên của trẻ")
     birth_certificate_no: str = Field(..., max_length=20, description="Số giấy khai sinh")
     registration_date: date = Field(..., description="Ngày đăng ký khai sinh")
     book_id: Optional[str] = Field(None, max_length=20, description="Quyển số")

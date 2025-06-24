@@ -13,6 +13,7 @@ from app.schemas.residence import ResidenceHistoryResponse, ContactInfoResponse,
 from app.schemas.family_tree import FamilyTreeResponse
 from app.schemas.household_change import HouseholdAddMemberRequest, HouseholdTransferMemberRequest, HouseholdRemoveMemberRequest, HouseholdChangeResponse
 from app.api.reference import router as reference_router
+from app.schemas.temporary_absence import TemporaryAbsenceResponse, TemporaryAbsenceRegisterRequest, ConfirmReturnRequest, ExtendTemporaryAbsenceRequest, CancelTemporaryAbsenceRequest, TemporaryAbsenceDetailResponse
 
 
 router = APIRouter()
@@ -744,4 +745,133 @@ def remove_household_member(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Đã xảy ra lỗi không mong muốn khi ghi dữ liệu xóa thành viên hộ khẩu: {str(e)}"
+        )
+
+@router.post("/temporary-absence/register", 
+             response_model=TemporaryAbsenceResponse,
+             summary="Đăng ký tạm vắng",
+             description="Đăng ký tạm vắng cho công dân. Công dân vẫn giữ địa chỉ thường trú nhưng được ghi nhận là tạm thời không có mặt.")
+def register_temporary_absence(
+    request: TemporaryAbsenceRegisterRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Đăng ký tạm vắng cho công dân:
+    
+    - citizen_id: CCCD/CMND của công dân
+    - from_date: Ngày bắt đầu tạm vắng  
+    - to_date: Ngày dự kiến kết thúc (có thể NULL)
+    - reason: Lý do tạm vắng
+    - temporary_absence_type_id: ID loại tạm vắng
+    - destination_address_detail: Địa chỉ chi tiết nơi đến (tùy chọn)
+    - contact_information: Thông tin liên lạc (tùy chọn)
+    - registration_authority_id: ID cơ quan đăng ký
+    """
+    repo = CitizenRepository(db)
+    result = repo.register_temporary_absence(request)
+    return result
+
+
+@router.post("/temporary-absence/confirm-return",
+             response_model=TemporaryAbsenceResponse,
+             summary="Xác nhận trở về",
+             description="Xác nhận công dân đã trở về từ tạm vắng.")
+def confirm_return(
+    request: ConfirmReturnRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Xác nhận công dân đã trở về từ tạm vắng:
+    
+    - temporary_absence_id: ID đăng ký tạm vắng (ưu tiên) 
+    - citizen_id: CCCD/CMND (nếu không có ID)
+    - return_date: Ngày trở về (mặc định là hôm nay)
+    - return_notes: Ghi chú về việc trở về
+    """
+    repo = CitizenRepository(db)
+    result = repo.confirm_return(request)
+    return result
+
+
+@router.put("/temporary-absence/{temporary_absence_id}/extend",
+            response_model=TemporaryAbsenceResponse,
+            summary="Gia hạn tạm vắng",
+            description="Gia hạn thời gian tạm vắng cho công dân đang tạm vắng.")
+def extend_temporary_absence(
+    temporary_absence_id: int,
+    request: ExtendTemporaryAbsenceRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Gia hạn thời gian tạm vắng:
+    
+    - temporary_absence_id: ID đăng ký tạm vắng (từ path)
+    - new_to_date: Ngày kết thúc mới
+    - extension_reason: Lý do gia hạn
+    """
+    # Override request với ID từ path
+    request.temporary_absence_id = temporary_absence_id
+    
+    repo = CitizenRepository(db)
+    result = repo.extend_temporary_absence(request)
+    return result
+
+
+@router.delete("/temporary-absence/{temporary_absence_id}/cancel",
+               response_model=TemporaryAbsenceResponse,
+               summary="Hủy đăng ký tạm vắng",
+               description="Hủy đăng ký tạm vắng (trước khi bắt đầu hoặc trong quá trình tạm vắng).")
+def cancel_temporary_absence(
+    temporary_absence_id: int,
+    request: CancelTemporaryAbsenceRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Hủy đăng ký tạm vắng:
+    
+    - temporary_absence_id: ID đăng ký tạm vắng (từ path)
+    - cancellation_reason: Lý do hủy
+    """
+    # Override request với ID từ path
+    request.temporary_absence_id = temporary_absence_id
+    
+    repo = CitizenRepository(db)
+    result = repo.cancel_temporary_absence(request)
+    return result
+
+
+@router.get("/temporary-absence/{citizen_id}/current",
+            response_model=TemporaryAbsenceDetailResponse,
+            summary="Lấy thông tin tạm vắng hiện tại",
+            description="Lấy thông tin đăng ký tạm vắng hiện tại của công dân.")
+def get_current_temporary_absence(
+    citizen_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy thông tin tạm vắng hiện tại của công dân:
+    
+    --citizen_id: CCCD/CMND của công dân
+    """
+    try:
+        # Gọi stored procedure thay vì raw SQL
+        query = text("EXEC [API_Internal].[GetCurrentTemporaryAbsence] @citizen_id = :citizen_id")
+        
+        result = db.execute(query, {"citizen_id": citizen_id}).fetchone()
+        
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy đăng ký tạm vắng hiện tại cho công dân {citizen_id}"
+            )
+        
+        from app.schemas.temporary_absence import TemporaryAbsenceDetailResponse
+        return TemporaryAbsenceDetailResponse(**dict(result._mapping))
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi truy vấn thông tin tạm vắng: {str(e)}"
         )

@@ -103,8 +103,7 @@ class ReconciliationService:
         """Check consistency of death records between BTP and BCA."""
         logger.info("Starting death records consistency check")
         
-        # Implementation similar to _check_marriage_consistency
-        # ...
+        
 
 # Create singleton instance
 reconciliation_service = ReconciliationService()

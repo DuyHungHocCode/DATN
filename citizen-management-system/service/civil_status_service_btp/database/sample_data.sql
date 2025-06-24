@@ -11,7 +11,7 @@ PRINT N'  Adding sample data to BTP.BirthCertificate...';
 
 SET IDENTITY_INSERT [BTP].[BirthCertificate] ON;
 INSERT INTO [BTP].[BirthCertificate] (
-    [birth_certificate_id], [citizen_id], [birth_certificate_no], 
+    [birth_certificate_id], [citizen_id], [full_name], [birth_certificate_no], 
     [registration_date], [book_id], [page_no], [issuing_authority_id],
     [place_of_birth], [date_of_birth], [gender_id],
     [father_full_name], [father_citizen_id], [father_date_of_birth], [father_nationality_id],
@@ -20,7 +20,7 @@ INSERT INTO [BTP].[BirthCertificate] (
     [birth_notification_no], [status], [created_at], [updated_at]
 ) VALUES
     -- Family 1 children
-    (1, '001299876543', 'GKS-2005-00015', 
+    (1, '001299876543', N'Nguyễn Đức Anh', 'GKS-2005-00015', 
         '2005-03-25', 'KS-2005-A', '12', 201,
         N'Bệnh viện Phụ sản Hà Nội', '2005-03-20', 1,
         N'Nguyễn Văn Minh', '001089123456', '1975-05-10', 1,
@@ -28,7 +28,7 @@ INSERT INTO [BTP].[BirthCertificate] (
         N'Nguyễn Văn Minh', '001089123456', N'Cha', 
         'TTBN-2005-031', 1, GETDATE(), GETDATE()),
         
-    (2, '001209861234', 'GKS-2010-02187', 
+    (2, '001209861234', N'Nguyễn Thị Mai Anh', 'GKS-2010-02187', 
         '2010-12-10', 'KS-2010-B', '45', 201,
         N'Bệnh viện Phụ sản Hà Nội', '2010-12-05', 2,
         N'Nguyễn Văn Minh', '001089123456', '1975-05-10', 1,
@@ -37,7 +37,7 @@ INSERT INTO [BTP].[BirthCertificate] (
         'TTBN-2010-142', 1, GETDATE(), GETDATE()),
         
     -- Family 2 child
-    (3, '001201786523', 'GKS-2000-01243', 
+    (3, '001201786523', N'Trần Đình Quang', 'GKS-2000-01243', 
         '2000-07-12', 'KS-2000-A', '78', 201,
         N'Bệnh viện Bạch Mai', '2000-07-07', 1,
         N'Trần Đình Phúc', '001074853214', '1968-11-22', 1,
@@ -46,7 +46,7 @@ INSERT INTO [BTP].[BirthCertificate] (
         'TTBN-2000-087', 1, GETDATE(), GETDATE()),
         
     -- Family 3 son
-    (4, '001187654321', 'GKS-1978-00785', 
+    (4, '001187654321', N'Lê Văn Hùng', 'GKS-1978-00785', 
         '1978-06-25', 'KS-1978-A', '15', 201,
         N'Bệnh viện Đa khoa Đống Đa', '1978-06-20', 1,
         N'Lê Văn Tùng', '001062415789', '1950-02-15', 1,
@@ -628,7 +628,7 @@ INSERT INTO [BTP].[EventOutbox] (
         '2015-03-20 13:15:42', 1, '2015-03-20 13:16:20', 0),
         
     (4, 'BirthCertificate', '1', 'CitizenBirthRegistered',
-        N'{"citizen_id":"001299876543","birth_certificate_id":1,"birth_date":"2005-03-20","father_id":"001089123456","mother_id":"001091345612"}',
+        N'{"citizen_id":"001299876543","full_name":"Nguyễn Đức Anh","birth_certificate_id":1,"birth_date":"2005-03-20","father_id":"001089123456","mother_id":"001091345612"}',
         '2005-03-25 09:25:31', 1, '2005-03-25 09:26:10', 0);
 SET IDENTITY_INSERT [BTP].[EventOutbox] OFF;
 GO

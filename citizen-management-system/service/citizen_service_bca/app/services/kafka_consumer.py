@@ -5,7 +5,7 @@ import logging
 import asyncio
 import os
 from sqlalchemy import text
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from aiokafka import AIOKafkaConsumer
 from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
@@ -153,12 +153,10 @@ class KafkaEventConsumer:
                 await self._process_citizen_died_event(actual_event_payload)
             elif event_type == 'citizen_married':
                 await self._process_citizen_married_event(actual_event_payload)
-            elif event_type == 'citizen_divorced': # Thêm xử lý cho sự kiện ly hôn nếu có
-                logger.info(f"Processing CitizenDivorced event (not yet implemented fully): {actual_event_payload}")
+            elif event_type == 'citizen_divorced': 
                 await self._process_citizen_divorced_event(actual_event_payload)
-            elif event_type == 'CitizenBirthRegistered': # Thêm xử lý cho sự kiện khai sinh nếu có
-                logger.info(f"Processing CitizenBirthRegistered event (not yet implemented fully): {actual_event_payload}")
-                #  Implement actual birth handling in a separate method
+            elif event_type == 'citizen_birth_registered':
+                await self._process_citizen_birth_registered_event(actual_event_payload)
             else:
                 logger.info(f"Ignoring unsupported event type: {event_type} for aggregate_id: {event_outbox_record.get('aggregate_id', 'N/A')}")
 
@@ -281,16 +279,22 @@ class KafkaEventConsumer:
             filename = f"failed_events/{datetime.now().strftime('%Y%m%d')}_failed_events.jsonl"
             os.makedirs("failed_events", exist_ok=True)
             
+            # Custom JSON serializer để xử lý datetime.date
+            def json_serializer(obj):
+                if isinstance(obj, date):
+                    return obj.isoformat()
+                raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
             failed_event = {
-                "original_message_data": original_message_data, # Lưu toàn bộ bản ghi gốc được gửi từ Kafka
+                "original_message_data": original_message_data,
                 "error": error_msg,
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
             
             with open(filename, "a") as f:
-                f.write(json.dumps(failed_event) + "\n")
+                f.write(json.dumps(failed_event, default=json_serializer) + "\n")
                 
-            logger.info(f"Stored failed event for later processing: {error_msg}. Original message: {original_message_data.get('aggregate_id', 'N/A')}")
+            logger.info(f"Stored failed event for later processing: {error_msg}. Original message aggregate_id: {original_message_data.get('aggregate_id', 'N/A') if isinstance(original_message_data, dict) else 'N/A'}")
         except Exception as e:
             logger.error(f"Failed to store failed event: {e}")
 
@@ -447,6 +451,47 @@ class KafkaEventConsumer:
             db.rollback()
             logger.error(f"Database error when updating marriage status: {e}", exc_info=True)
             raise e
+
+    async def _process_citizen_birth_registered_event(self, payload: Dict[str, Any]):
+        """Xử lý sự kiện khi một công dân mới được đăng ký khai sinh."""
+        try:
+            logger.info(f"Processing CitizenBirthRegistered event with payload: {payload}")
+            
+            # Kiểm tra các trường dữ liệu cần thiết từ payload
+            required_fields = ['citizen_id', 'full_name', 'date_of_birth', 'gender_id']
+            if not all(field in payload for field in required_fields):
+                logger.warning(f"Missing required fields in CitizenBirthRegistered event: {payload}")
+                self._store_failed_event(payload, "Missing required fields for birth registration")
+                return
+            
+            # Parse date
+            date_of_birth_str = payload.get('date_of_birth')
+            try:
+                if 'T' in date_of_birth_str:
+                    date_of_birth_str = date_of_birth_str.split('T')[0]
+                payload['date_of_birth'] = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
+            except (ValueError, TypeError) as e:
+                logger.error(f"Invalid date format for date_of_birth: {date_of_birth_str}, error: {e}")
+                self._store_failed_event(payload, f"Invalid date format for date_of_birth: {e}")
+                return
+
+            # Tạo citizen mới trong DB
+            db = SessionLocal()
+            try:
+                repo = CitizenRepository(db)
+                created = repo.create_newborn_citizen(payload)
+                
+                if created:
+                    logger.info(f"Successfully created new citizen record for {payload.get('citizen_id')} from birth event.")
+                else:
+                    logger.error(f"Failed to create new citizen record for {payload.get('citizen_id')}. Storing event for retry.")
+                    self._store_failed_event(payload, "Failed to create citizen record in repository.")
+            finally:
+                db.close()
+
+        except Exception as e:
+            logger.error(f"Error processing CitizenBirthRegistered event: {e}", exc_info=True)
+            self._store_failed_event(payload, f"Unexpected error in _process_citizen_birth_registered_event: {str(e)}")
 
 # Tạo instance singleton
 kafka_consumer_instance = KafkaEventConsumer()

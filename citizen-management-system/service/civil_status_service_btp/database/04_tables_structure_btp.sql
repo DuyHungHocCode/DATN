@@ -21,6 +21,7 @@ PRINT N'  Creating table [BTP].[BirthCertificate]...';
 CREATE TABLE [BTP].[BirthCertificate] (
     [birth_certificate_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
     [citizen_id] VARCHAR(12) NOT NULL, -- Logical link to BCA.Citizen.citizen_id
+    [full_name] NVARCHAR(100) NOT NULL, -- Thêm tên đầy đủ của trẻ
     [birth_certificate_no] VARCHAR(20) NOT NULL,
     [registration_date] DATE NOT NULL,
     [book_id] VARCHAR(20) NULL,

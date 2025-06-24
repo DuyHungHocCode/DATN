@@ -612,6 +612,7 @@ GO
 CREATE PROCEDURE [API_Internal].[InsertBirthCertificate]
     -- Input parameters matching BTP.BirthCertificate columns
     @citizen_id VARCHAR(12),
+    @full_name NVARCHAR(100),
     @birth_certificate_no VARCHAR(20),
     @registration_date DATE,
     @book_id VARCHAR(20) = NULL,
@@ -644,6 +645,7 @@ BEGIN
 
     -- Kiểm tra các tham số bắt buộc cơ bản
     IF @citizen_id IS NULL OR 
+       @full_name IS NULL OR 
        @birth_certificate_no IS NULL OR 
        @registration_date IS NULL OR 
        @issuing_authority_id IS NULL OR 
@@ -652,7 +654,7 @@ BEGIN
        @gender_id IS NULL OR 
        @declarant_name IS NULL
     BEGIN
-        RAISERROR('Thiếu thông tin bắt buộc để đăng ký khai sinh. Vui lòng cung cấp citizen_id, birth_certificate_no, registration_date, issuing_authority_id, place_of_birth, date_of_birth, gender_id, declarant_name.', 16, 1);
+        RAISERROR('Thiếu thông tin bắt buộc để đăng ký khai sinh. Vui lòng cung cấp citizen_id, full_name, birth_certificate_no, registration_date, issuing_authority_id, place_of_birth, date_of_birth, gender_id, declarant_name.', 16, 1);
         RETURN; -- Kết thúc procedure
     END
 
@@ -664,6 +666,7 @@ BEGIN
         -- Thực hiện INSERT vào bảng BTP.BirthCertificate
         INSERT INTO [BTP].[BirthCertificate] (
             [citizen_id],
+            [full_name],
             [birth_certificate_no],
             [registration_date],
             [book_id],
@@ -693,6 +696,7 @@ BEGIN
         )
         VALUES (
             @citizen_id,
+            @full_name,
             @birth_certificate_no,
             @registration_date,
             @book_id,

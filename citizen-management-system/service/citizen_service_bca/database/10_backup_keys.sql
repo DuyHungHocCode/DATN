@@ -17,7 +17,7 @@ PRINT N'Step 1: Backing up the Service Master Key (SMK)...';
 -- It's backed up to a file and protected by a password.
 BACKUP SERVICE MASTER KEY
 TO FILE = '/var/opt/mssql/backups/SMK_Backup.key' -- <-- Path inside the container
-ENCRYPTION BY PASSWORD = 'YourStrongPasswordHere';
+ENCRYPTION BY PASSWORD = 'H1u@2025';
 PRINT N'  Service Master Key backed up.';
 GO
 
@@ -25,7 +25,7 @@ PRINT N'Step 2: Backing up the Database Master Key (DMK)...';
 -- The Database Master Key (DMK) is used for TDE.
 BACKUP MASTER KEY
 TO FILE = '/var/opt/mssql/backups/DMK_Backup_BCA.key' -- <-- Path inside the container
-ENCRYPTION BY PASSWORD = 'YourStrongPasswordHere';
+ENCRYPTION BY PASSWORD = 'H1u@2025';
 PRINT N'  Database Master Key for BCA backed up.';
 GO
 
@@ -36,7 +36,7 @@ BACKUP CERTIFICATE TdeCertificateBCA
 TO FILE = '/var/opt/mssql/backups/TdeCertificateBCA.cer' -- <-- Path inside the container
 WITH PRIVATE KEY (
     FILE = '/var/opt/mssql/backups/TdeCertificateBCA_PrivateKey.pvk', -- <-- Path inside the container
-    ENCRYPTION BY PASSWORD = 'NewStrongPasswordForCertificate' -- <-- Use a new, strong password
+    ENCRYPTION BY PASSWORD = 'H1u@2025' -- <-- Use a new, strong password
 );
 PRINT N'  TDE Certificate for BCA backed up.';
 GO

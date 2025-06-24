@@ -201,7 +201,9 @@ CREATE TABLE [BCA].[TemporaryAbsence] (
     [verification_date] DATE NULL,
     [verified_by] NVARCHAR(100) NULL,
     [temp_abs_status_id] SMALLINT NOT NULL, -- FK to Reference.TemporaryAbsenceStatuses
-    [temporary_absence_type_id] SMALLINT NULL, -- FK to Reference.TemporaryAbsenceTypes
+    [temp_abs_type_id] SMALLINT NULL, -- FK to Reference.TemporaryAbsenceTypes
+    [extension_count] SMALLINT DEFAULT 0,
+    [last_extension_date] DATE NULL,
     [notes] NVARCHAR(MAX) NULL,
     [sensitivity_level_id] SMALLINT NOT NULL, -- FK to Reference.DataSensitivityLevels
     [created_at] DATETIME2(7) DEFAULT SYSDATETIME(),

@@ -4,6 +4,7 @@ from typing import Optional, List, Dict, Any
 from datetime import date
 from fastapi import HTTPException, status
 import logging
+from app.schemas.temporary_absence import TemporaryAbsenceResponse
 from app.schemas.household import HouseholdDetailResponse, HouseholdMemberDetailResponse # Thêm import này
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -549,6 +550,7 @@ class CitizenRepository:
                 DECLARE @new_household_member_id BIGINT;
                 DECLARE @new_log_id INT;
                 DECLARE @new_residence_history_id BIGINT;
+                DECLARE @new_citizen_address_id BIGINT;
                 
                 EXEC [API_Internal].[AddHouseholdMember]
                     @citizen_id = :citizen_id,
@@ -561,11 +563,13 @@ class CitizenRepository:
                     @notes = :notes,
                     @new_household_member_id = @new_household_member_id OUTPUT,
                     @new_log_id = @new_log_id OUTPUT,
-                    @new_residence_history_id = @new_residence_history_id OUTPUT;
+                    @new_residence_history_id = @new_residence_history_id OUTPUT,
+                    @new_citizen_address_id = @new_citizen_address_id OUTPUT;
                 
                 SELECT @new_household_member_id AS household_member_id, 
                        @new_log_id AS log_id,
-                       @new_residence_history_id AS residence_history_id;
+                       @new_residence_history_id AS residence_history_id,
+                       @new_citizen_address_id AS citizen_address_id;
             """)
             
             params = {
@@ -584,16 +588,17 @@ class CitizenRepository:
             
             if output_row:
                 self.db.commit()
-                logger.info(f"Successfully added household member: log_id={output_row.log_id}, household_member_id={output_row.household_member_id}")
+                logger.info(f"Successfully added household member: log_id={output_row.log_id}, household_member_id={output_row.household_member_id}, citizen_address_id={output_row.citizen_address_id}")
                 
                 # Trả về response theo schema HouseholdChangeResponse
                 from app.schemas.household_change import HouseholdChangeResponse
                 
                 return HouseholdChangeResponse(
                     success=True,
-                    message=f"Đã thêm công dân {request_data.citizen_id} vào hộ khẩu {request_data.to_household_id} thành công.",
+                    message=f"Đã thêm công dân {request_data.citizen_id} vào hộ khẩu {request_data.to_household_id} thành công. Đã cập nhật địa chỉ thường trú.",
                     log_id=output_row.log_id,
-                    household_member_id=output_row.household_member_id
+                    household_member_id=output_row.household_member_id,
+                    citizen_address_id=getattr(output_row, 'citizen_address_id', None)
                 )
             else:
                 self.db.rollback()
@@ -629,6 +634,7 @@ class CitizenRepository:
                 DECLARE @new_household_member_id BIGINT;
                 DECLARE @new_log_id INT;
                 DECLARE @new_residence_history_id BIGINT;
+                DECLARE @new_citizen_address_id BIGINT;
                 
                 EXEC [API_Internal].[TransferHouseholdMember]
                     @citizen_id = :citizen_id,
@@ -643,12 +649,14 @@ class CitizenRepository:
                     @old_household_member_id = @old_household_member_id OUTPUT,
                     @new_household_member_id = @new_household_member_id OUTPUT,
                     @new_log_id = @new_log_id OUTPUT,
-                    @new_residence_history_id = @new_residence_history_id OUTPUT;
+                    @new_residence_history_id = @new_residence_history_id OUTPUT,
+                    @new_citizen_address_id = @new_citizen_address_id OUTPUT;
                 
                 SELECT @old_household_member_id AS old_household_member_id,
                        @new_household_member_id AS new_household_member_id, 
                        @new_log_id AS log_id,
-                       @new_residence_history_id AS residence_history_id;
+                       @new_residence_history_id AS residence_history_id,
+                       @new_citizen_address_id AS citizen_address_id;
             """)
             
             params = {
@@ -668,15 +676,16 @@ class CitizenRepository:
             
             if output_row:
                 self.db.commit()
-                logger.info(f"Successfully transferred household member: log_id={output_row.log_id}, new_household_member_id={output_row.new_household_member_id}")
+                logger.info(f"Successfully transferred household member: log_id={output_row.log_id}, new_household_member_id={output_row.new_household_member_id}, citizen_address_id={output_row.citizen_address_id}")
                 
                 # Trả về response theo schema HouseholdChangeResponse
                 from app.schemas.household_change import HouseholdChangeResponse
                 return HouseholdChangeResponse(
                     success=True,
-                    message=f"Đã chuyển công dân {request_data.citizen_id} từ hộ khẩu {request_data.from_household_id} sang hộ khẩu {request_data.to_household_id} thành công.",
+                    message=f"Đã chuyển công dân {request_data.citizen_id} từ hộ khẩu {request_data.from_household_id} sang hộ khẩu {request_data.to_household_id} thành công. Đã cập nhật địa chỉ thường trú.",
                     log_id=output_row.log_id,
-                    household_member_id=output_row.new_household_member_id
+                    household_member_id=output_row.new_household_member_id,
+                    citizen_address_id=getattr(output_row, 'citizen_address_id', None)
                 )
             else:
                 self.db.rollback()
@@ -815,3 +824,318 @@ class CitizenRepository:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"An error occurred while removing the household member: {str(e)}"
             )
+    
+    def register_temporary_absence(self, request_data):
+        """
+        Đăng ký tạm vắng cho công dân.
+        
+        Args:
+            request_data: TemporaryAbsenceRegisterRequest object
+            
+        Returns:
+            TemporaryAbsenceResponse object
+        """
+        try:
+            logger.info(f"Registering temporary absence for citizen: {request_data.citizen_id}")
+            
+            # Chuẩn bị parameters cho stored procedure
+            sql = text("""
+                DECLARE @new_temporary_absence_id BIGINT;
+                DECLARE @registration_number VARCHAR(50);
+                
+                EXEC [API_Internal].[RegisterTemporaryAbsence]
+                    @citizen_id = :citizen_id,
+                    @from_date = :from_date,
+                    @to_date = :to_date,
+                    @reason = :reason,
+                    @temporary_absence_type_id = :temporary_absence_type_id,
+                    @destination_address_detail = :destination_address_detail,
+                    @destination_ward_id = :destination_ward_id,
+                    @destination_district_id = :destination_district_id,
+                    @destination_province_id = :destination_province_id,
+                    @contact_information = :contact_information,
+                    @registration_authority_id = :registration_authority_id,
+                    @sensitivity_level_id = :sensitivity_level_id,
+                    @created_by_user_id = :created_by_user_id,
+                    @notes = :notes,
+                    @new_temporary_absence_id = @new_temporary_absence_id OUTPUT,
+                    @registration_number = @registration_number OUTPUT;
+                
+                SELECT 
+                    @new_temporary_absence_id AS temporary_absence_id,
+                    @registration_number AS registration_number;
+            """)
+            
+            # Execute stored procedure
+            result = self.db.execute(sql, {
+                'citizen_id': request_data.citizen_id,
+                'from_date': request_data.from_date,
+                'to_date': request_data.to_date,
+                'reason': request_data.reason,
+                'temporary_absence_type_id': request_data.temporary_absence_type_id,
+                'destination_address_detail': request_data.destination_address_detail,
+                'destination_ward_id': request_data.destination_ward_id,
+                'destination_district_id': request_data.destination_district_id,
+                'destination_province_id': request_data.destination_province_id,
+                'contact_information': request_data.contact_information,
+                'registration_authority_id': request_data.registration_authority_id,
+                'sensitivity_level_id': request_data.sensitivity_level_id,
+                'created_by_user_id': 'API_USER',  # TODO: Get from authentication context
+                'notes': request_data.notes
+            })
+            
+            # Get the result
+            output_row = result.fetchone()
+            if output_row is None:
+                raise ValueError("No output returned from stored procedure")
+            
+            logger.info(f"Successfully registered temporary absence: {output_row.temporary_absence_id}, registration: {output_row.registration_number}")
+            
+            # Return response
+            
+            return TemporaryAbsenceResponse(
+                success=True,
+                message=f"Đã đăng ký tạm vắng cho công dân {request_data.citizen_id} thành công.",
+                temporary_absence_id=output_row.temporary_absence_id,
+                registration_number=output_row.registration_number,
+                citizen_id=request_data.citizen_id,
+                from_date=request_data.from_date,
+                to_date=request_data.to_date,
+                status="ACTIVE"
+            )
+            
+        except Exception as e:
+            logger.error(f"Error registering temporary absence: {str(e)}")
+            raise
+            
+    def confirm_return(self, request_data):
+        """
+        Xác nhận công dân đã trở về từ tạm vắng.
+        
+        Args:
+            request_data: ConfirmReturnRequest object
+            
+        Returns:
+            TemporaryAbsenceResponse object
+        """
+        try:
+            logger.info(f"Confirming return for temporary absence: {request_data.temporary_absence_id or f'citizen {request_data.citizen_id}'}")
+            
+            # Chuẩn bị parameters cho stored procedure
+            sql = text("""
+                DECLARE @updated_temporary_absence_id BIGINT;
+                
+                EXEC [API_Internal].[ConfirmReturn]
+                    @temporary_absence_id = :temporary_absence_id,
+                    @citizen_id = :citizen_id,
+                    @return_date = :return_date,
+                    @return_notes = :return_notes,
+                    @confirmed_by_user_id = :confirmed_by_user_id,
+                    @updated_temporary_absence_id = @updated_temporary_absence_id OUTPUT;
+                
+                SELECT 
+                    @updated_temporary_absence_id AS temporary_absence_id;
+            """)
+            
+            # Execute stored procedure
+            result = self.db.execute(sql, {
+                'temporary_absence_id': request_data.temporary_absence_id,
+                'citizen_id': request_data.citizen_id,
+                'return_date': request_data.return_date,
+                'return_notes': request_data.return_notes,
+                'confirmed_by_user_id': 'API_USER'  # TODO: Get from authentication context
+            })
+            
+            # Get the result
+            output_row = result.fetchone()
+            if output_row is None:
+                raise ValueError("No output returned from stored procedure")
+            
+            logger.info(f"Successfully confirmed return for temporary absence: {output_row.temporary_absence_id}")
+            
+            # Return response            
+            return TemporaryAbsenceResponse(
+                success=True,
+                message=f"Đã xác nhận trở về từ tạm vắng thành công.",
+                temporary_absence_id=output_row.temporary_absence_id,
+                registration_number="",  # Not returned by this SP
+                citizen_id=request_data.citizen_id or "",
+                from_date=request_data.return_date or date.today(),
+                to_date=request_data.return_date,
+                status="RETURNED"
+            )
+            
+        except Exception as e:
+            logger.error(f"Error confirming return: {str(e)}")
+            raise
+            
+    def extend_temporary_absence(self, request_data):
+        """
+        Gia hạn thời gian tạm vắng.
+        
+        Args:
+            request_data: ExtendTemporaryAbsenceRequest object
+            
+        Returns:
+            TemporaryAbsenceResponse object
+        """
+        try:
+            logger.info(f"Extending temporary absence: {request_data.temporary_absence_id}")
+            
+            # Chuẩn bị parameters cho stored procedure
+            sql = text("""
+                DECLARE @updated_temporary_absence_id BIGINT;
+                
+                EXEC [API_Internal].[ExtendTemporaryAbsence]
+                    @temporary_absence_id = :temporary_absence_id,
+                    @new_to_date = :new_to_date,
+                    @extension_reason = :extension_reason,
+                    @updated_by_user_id = :updated_by_user_id,
+                    @updated_temporary_absence_id = @updated_temporary_absence_id OUTPUT;
+                
+                SELECT 
+                    @updated_temporary_absence_id AS temporary_absence_id;
+            """)
+            
+            # Execute stored procedure
+            result = self.db.execute(sql, {
+                'temporary_absence_id': request_data.temporary_absence_id,
+                'new_to_date': request_data.new_to_date,
+                'extension_reason': request_data.extension_reason,
+                'updated_by_user_id': 'API_USER'  # TODO: Get from authentication context
+            })
+            
+            # Get the result
+            output_row = result.fetchone()
+            if output_row is None:
+                raise ValueError("No output returned from stored procedure")
+            
+            logger.info(f"Successfully extended temporary absence: {output_row.temporary_absence_id}")
+            
+            # Return response            
+            return TemporaryAbsenceResponse(
+                success=True,
+                message=f"Đã gia hạn tạm vắng đến {request_data.new_to_date} thành công.",
+                temporary_absence_id=output_row.temporary_absence_id,
+                registration_number="",  # Not returned by this SP
+                citizen_id="",  # Not returned by this SP
+                from_date=date.today(),  # Placeholder
+                to_date=request_data.new_to_date,
+                status="ACTIVE"
+            )
+            
+        except Exception as e:
+            logger.error(f"Error extending temporary absence: {str(e)}")
+            raise
+            
+    def cancel_temporary_absence(self, request_data):
+        """
+        Hủy đăng ký tạm vắng.
+        
+        Args:
+            request_data: CancelTemporaryAbsenceRequest object
+            
+        Returns:
+            TemporaryAbsenceResponse object
+        """
+        try:
+            logger.info(f"Cancelling temporary absence: {request_data.temporary_absence_id}")
+            
+            # Chuẩn bị parameters cho stored procedure
+            sql = text("""
+                DECLARE @cancelled_temporary_absence_id BIGINT;
+                
+                EXEC [API_Internal].[CancelTemporaryAbsence]
+                    @temporary_absence_id = :temporary_absence_id,
+                    @cancellation_reason = :cancellation_reason,
+                    @cancelled_by_user_id = :cancelled_by_user_id,
+                    @cancelled_temporary_absence_id = @cancelled_temporary_absence_id OUTPUT;
+                
+                SELECT 
+                    @cancelled_temporary_absence_id AS temporary_absence_id;
+            """)
+            
+            # Execute stored procedure
+            result = self.db.execute(sql, {
+                'temporary_absence_id': request_data.temporary_absence_id,
+                'cancellation_reason': request_data.cancellation_reason,
+                'cancelled_by_user_id': 'API_USER'  # TODO: Get from authentication context
+            })
+            
+            # Get the result
+            output_row = result.fetchone()
+            if output_row is None:
+                raise ValueError("No output returned from stored procedure")
+            
+            logger.info(f"Successfully cancelled temporary absence: {output_row.temporary_absence_id}")
+            
+            # Return response            
+            return TemporaryAbsenceResponse(
+                success=True,
+                message=f"Đã hủy đăng ký tạm vắng thành công.",
+                temporary_absence_id=output_row.temporary_absence_id,
+                registration_number="",  # Not returned by this SP
+                citizen_id="",  # Not returned by this SP
+                from_date=date.today(),  # Placeholder
+                to_date=None,
+                status="CANCELLED"
+            )
+            
+        except Exception as e:
+            logger.error(f"Error cancelling temporary absence: {str(e)}")
+            raise
+
+    def create_newborn_citizen(self, event_data: Dict[str, Any]) -> bool:
+        """
+        Thêm một công dân mới (trẻ sơ sinh) vào hệ thống từ sự kiện khai sinh.
+        Gọi stored procedure API_Internal.InsertNewbornCitizen.
+        """
+        try:
+            citizen_id = event_data.get('citizen_id')
+            logger.info(f"Calling stored procedure InsertNewbornCitizen for citizen {citizen_id}")
+
+            # Các tham số từ payload, với giá trị mặc định là None nếu thiếu
+            params = {
+                "citizen_id": citizen_id,
+                "full_name": event_data.get('full_name'),
+                "date_of_birth": event_data.get('date_of_birth'),
+                "gender_id": event_data.get('gender_id'),
+                "father_citizen_id": event_data.get('father_citizen_id'),
+                "mother_citizen_id": event_data.get('mother_citizen_id')
+                # Các trường khác như native_place, birth_place sẽ được SP tự suy luận
+            }
+
+            # Kiểm tra các tham số bắt buộc
+            if not all([params['citizen_id'], params['full_name'], params['date_of_birth'], params['gender_id']]):
+                logger.error(f"Missing required parameters for creating newborn citizen. Data: {event_data}")
+                return False
+
+            sql = text("""
+                DECLARE @new_citizen_id BIGINT;
+                EXEC [API_Internal].[InsertNewbornCitizen]
+                    @citizen_id = :citizen_id,
+                    @full_name = :full_name,
+                    @date_of_birth = :date_of_birth,
+                    @gender_id = :gender_id,
+                    @father_citizen_id = :father_citizen_id,
+                    @mother_citizen_id = :mother_citizen_id,
+                    @new_citizen_id = @new_citizen_id OUTPUT;
+                SELECT @new_citizen_id as new_id;
+            """)
+            
+            result = self.db.execute(sql, params)
+            new_id_row = result.fetchone()
+
+            if new_id_row and new_id_row.new_id:
+                self.db.commit()
+                logger.info(f"Successfully created newborn citizen {citizen_id} with new internal ID: {new_id_row.new_id} via stored procedure.")
+                return True
+            else:
+                self.db.rollback()
+                logger.error(f"Failed to create newborn citizen {citizen_id}. Stored procedure did not return a new ID.")
+                return False
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Database error calling InsertNewbornCitizen for citizen {citizen_id}: {e}", exc_info=True)
+            return False

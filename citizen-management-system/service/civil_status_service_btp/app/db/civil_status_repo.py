@@ -135,12 +135,12 @@ class CivilStatusRepository:
                     @husband_full_name = :husband_full_name,
                     @husband_date_of_birth = :husband_date_of_birth,
                     @husband_nationality_id = :husband_nationality_id,
-                    @husband_previous_marriage_status = :husband_previous_marriage_status,
+                    @husband_previous_marital_status_id = :husband_previous_marital_status_id,
                     @wife_id = :wife_id,
                     @wife_full_name = :wife_full_name,
                     @wife_date_of_birth = :wife_date_of_birth,
                     @wife_nationality_id = :wife_nationality_id,
-                    @wife_previous_marriage_status = :wife_previous_marriage_status,
+                    @wife_previous_marital_status_id = :wife_previous_marital_status_id,
                     @marriage_date = :marriage_date,
                     @registration_date = :registration_date,
                     @issuing_authority_id = :issuing_authority_id,
@@ -250,8 +250,7 @@ class CivilStatusRepository:
 
     def create_birth_certificate(self, certificate: BirthCertificateCreate) -> int | None:
         """
-        Gọi stored procedure API_Internal.InsertBirthCertificate để thêm bản ghi khai sinh.
-        Trả về ID của bản ghi mới được tạo hoặc None nếu thất bại.
+        Gọi stored procedure API_Internal.InsertBirthCertificate để thêm bản ghi.
         """
         try:
             params = certificate.model_dump()
@@ -261,6 +260,7 @@ class CivilStatusRepository:
                 DECLARE @output_id BIGINT;
                 EXEC [API_Internal].[InsertBirthCertificate]
                     @citizen_id = :citizen_id,
+                    @full_name = :full_name,
                     @birth_certificate_no = :birth_certificate_no,
                     @registration_date = :registration_date,
                     @book_id = :book_id,

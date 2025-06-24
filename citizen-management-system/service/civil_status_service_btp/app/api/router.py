@@ -623,18 +623,19 @@ async def register_birth_certificate(
         # 3. Create outbox event for Debezium to capture
         outbox_payload = {
             "citizen_id": certificate_data.citizen_id,
+            "full_name": certificate_data.full_name,
+            "date_of_birth": certificate_data.date_of_birth.isoformat(),
+            "gender_id": certificate_data.gender_id,
+            "father_citizen_id": certificate_data.father_citizen_id,
+            "mother_citizen_id": certificate_data.mother_citizen_id,
             "birth_certificate_id": new_certificate_id,
-            "birth_date": certificate_data.date_of_birth.isoformat(),
-            "father_id": certificate_data.father_citizen_id,
-            "mother_id": certificate_data.mother_citizen_id,
-            "registration_date": certificate_data.registration_date.isoformat(),
             "birth_certificate_no": certificate_data.birth_certificate_no
         }
 
         outbox_id = outbox_repo.create_outbox_message(
             "BirthCertificate",
             str(new_certificate_id),
-            "citizen_birth_registered", # Tên sự kiện cho khai sinh
+            "citizen_birth_registered",
             outbox_payload
         )
 

@@ -15,14 +15,14 @@ class MarriageCertificateBase(BaseModel):
     husband_full_name: str = Field(..., max_length=100, description="Họ tên đầy đủ của chồng")
     husband_date_of_birth: date = Field(..., description="Ngày sinh của chồng")
     husband_nationality_id: int = Field(..., description="ID quốc tịch của chồng")
-    husband_previous_marriage_status: Optional[str] = Field(None, description="Tình trạng hôn nhân trước đây của chồng")
+    husband_previous_marital_status_id: Optional[int] = Field(None, description="ID tình trạng hôn nhân trước đây của chồng")
     
     # Wife info
     wife_id: str = Field(..., max_length=12, description="ID CCCD/CMND của vợ") 
     wife_full_name: str = Field(..., max_length=100, description="Họ tên đầy đủ của vợ")
     wife_date_of_birth: date = Field(..., description="Ngày sinh của vợ")
     wife_nationality_id: int = Field(..., description="ID quốc tịch của vợ")
-    wife_previous_marriage_status: Optional[str] = Field(None, description="Tình trạng hôn nhân trước đây của vợ")
+    wife_previous_marital_status_id: Optional[int] = Field(None, description="ID tình trạng hôn nhân trước đây của vợ")
     
     # Registration info
     marriage_date: date = Field(..., description="Ngày kết hôn")
@@ -79,11 +79,11 @@ class MarriageCertificateResponse(BaseModel):
     husband_full_name: Optional[str] = None
     husband_date_of_birth: Optional[date] = None
     husband_nationality_id: Optional[int] = None
-    husband_previous_marriage_status: Optional[str] = None
+    husband_previous_marital_status_id: Optional[int] = None
     wife_full_name: Optional[str] = None
     wife_date_of_birth: Optional[date] = None
     wife_nationality_id: Optional[int] = None
-    wife_previous_marriage_status: Optional[str] = None
+    wife_previous_marital_status_id: Optional[int] = None
     issuing_place: Optional[str] = None
     witness1_name: Optional[str] = None
     witness2_name: Optional[str] = None
